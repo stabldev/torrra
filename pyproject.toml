@@ -1,7 +1,7 @@
 [project]
 name = "torrra"
 version = "0.1.1"
-description = "CLI-based torrent search and downloader"
+description = "A Python tool that lets you find and download torrents without leaving your CLI."
 readme = "README.md"
 authors = [{ name = "stabldev" }]
 requires-python = ">=3.13"
@@ -13,7 +13,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-libtorrent = ["libtorrent>=2.0.11"]
+libtorrent = [
+    "libtorrent>=2.0.11",
+    "libtorrent-windows-dll>=0.0.2; sys_platform == 'win32'",
+]
 
 [project.scripts]
 torrra = "torrra:main"
