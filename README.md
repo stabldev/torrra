@@ -6,7 +6,7 @@
 ![Python](https://img.shields.io/pypi/pyversions/torrra)
 ![License](https://img.shields.io/github/license/stabldev/torrra)
 
-![torrra_demo](https://github.com/user-attachments/assets/dacf5c5a-f24b-4e69-bd2f-dca4023ba867)
+![torrra_demo](./assets/torrra_demo.gif)
 
 ## Features
 
@@ -58,7 +58,7 @@ pip install --system "torrra"
 
 ### OR: compile from source (advanced)
 
-See libtorrent's build guide:  
+See libtorrent's build guide:
 https://libtorrent.org/building.html
 
 ### Notes
@@ -90,7 +90,7 @@ Follow the prompts:
 3. Select a torrent
 4. Choose quality / magnet link
 5. Pick a download folder
- 
+
 ## Indexer Support
 
 Currently supported:
