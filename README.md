@@ -6,7 +6,7 @@
 ![Python](https://img.shields.io/pypi/pyversions/torrra)
 ![License](https://img.shields.io/github/license/stabldev/torrra)
 
-![torrra_demo](./assets/torrra_demo.gif)
+![demo](./docs/demo.gif)
 
 ## Features
 
