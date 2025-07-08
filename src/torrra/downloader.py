@@ -1,9 +1,10 @@
+import os
 import sys
 try:
     import libtorrent as lt
 except ImportError:
     print("Error: libtorrent not found")
-    print("Installation guide: https://github.com/stabldev/torrra?tab=readme-ov-file#-installation")
+    print("Installation guide: https://github.com/stabldev/torrra?tab=readme-ov-file#installation")
     sys.exit(1)
 
 import time
@@ -21,9 +22,12 @@ from rich.console import Console
 console = Console()
 
 
-def download_magnet(magnet_uri: str, save_path: str):
+def download_magnet(magnet_uri: str, path: str):
     ses = lt.session()
     ses.listen_on(6881, 6891)
+
+    # handle relative and absolute paths
+    save_path = os.path.abspath(os.path.expanduser(path))
 
     params = {
         "save_path": save_path,
