@@ -13,8 +13,7 @@ class Indexer(BaseIndexer):
         url = f"https://yts.mx/browse-movies/{query}/all/all/0/latest/0/all"
         parser = self._get_parser(url)
 
-        titles = []
-        urls = []
+        titles_links: List[tuple[str, str]] = []
 
         nodes = parser.css(
             "div.browse-content div.browse-movie-wrap div.browse-movie-bottom"
@@ -30,19 +29,23 @@ class Indexer(BaseIndexer):
             if query not in title.lower() or link is None:
                 continue
 
-            titles.append(f"{title} {year}")
-            urls.append(link)
+            titles_links.append((f"{title} {year}".strip(), link))
 
-        magnets_list = asyncio.run(self._fetch_magnet_uris(urls))
+        magnets_list = asyncio.run(self._fetch_magnet_uris(titles_links))
 
         torrents = []
-        for i, magnets in enumerate(magnets_list):
+        for title, magnets in zip([t[0] for t in titles_links], magnets_list):
             for magnet in magnets:
-                torrents.append(Torrent(title=f"{titles[i]} {magnet.title}", magnet_uri=magnet.magnet_uri))
+                torrents.append(
+                    Torrent(
+                        title=f"{title} {magnet.title}",
+                        magnet_uri=magnet.magnet_uri
+                    )
+                )
 
         return torrents
 
-    async def _fetch_magnet_uris(self, urls: List[str]) -> List[List[Torrent]]:
+    async def _fetch_magnet_uris(self, items: List[tuple[str, str]]) -> List[List[Torrent]]:
         async def fetch(client: httpx.AsyncClient, url: str):
             try:
                 res = await client.get(url, timeout=10)
@@ -75,5 +78,5 @@ class Indexer(BaseIndexer):
                 return []
 
         async with httpx.AsyncClient() as client:
-            tasks = [fetch(client, url) for url in urls]
+            tasks = [fetch(client, url) for (_, url) in items]
             return await asyncio.gather(*tasks)
