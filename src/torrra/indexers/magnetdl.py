@@ -39,7 +39,7 @@ class Indexer(BaseIndexer):
         url = self._get_url(link)
         parser = self._get_parser(url)
 
-        magnet_uri_node = parser.css_first(".download-links-dontblock > li:nth-child(1) > a:nth-child(1)")
+        magnet_uri_node = parser.css_first("ul.download-links-dontblock li a")
         magnet_uri = magnet_uri_node.attributes.get("href") if magnet_uri_node else ""
 
         return magnet_uri

@@ -26,7 +26,7 @@ class Indexer(BaseIndexer):
             year = year_node.text(strip=True) if year_node else ""
 
             torrent_title = f"{title} {year}".strip()
-            magnets = self.get_magnets(link)
+            magnets = self._get_magnet_uri_s(link)
 
             for magnet in magnets:
                 res.append(
@@ -38,7 +38,7 @@ class Indexer(BaseIndexer):
 
         return res
 
-    def get_magnets(self, link: str) -> List[Torrent]:
+    def _get_magnet_uri_s(self, link: str) -> List[Torrent]:
         parser = self._get_parser(link)
         res = []
 
