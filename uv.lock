@@ -194,35 +194,22 @@ version = "0.1.2"
 source = { editable = "." }
 dependencies = [
     { name = "httpx" },
+    { name = "libtorrent" },
+    { name = "libtorrent-windows-dll", marker = "sys_platform == 'win32'" },
     { name = "questionary" },
     { name = "rich" },
     { name = "selectolax" },
 ]
 
-[package.optional-dependencies]
-libtorrent = [
-    { name = "libtorrent" },
-    { name = "libtorrent-windows-dll", marker = "sys_platform == 'win32'" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "libtorrent" },
-]
-
 [package.metadata]
 requires-dist = [
     { name = "httpx", specifier = ">=0.28.1" },
-    { name = "libtorrent", marker = "extra == 'libtorrent'", specifier = ">=2.0.11" },
-    { name = "libtorrent-windows-dll", marker = "sys_platform == 'win32' and extra == 'libtorrent'", specifier = ">=0.0.2" },
+    { name = "libtorrent", specifier = ">=2.0.11" },
+    { name = "libtorrent-windows-dll", marker = "sys_platform == 'win32'", specifier = ">=0.0.2" },
     { name = "questionary", specifier = ">=2.1.0" },
     { name = "rich", specifier = ">=14.0.0" },
     { name = "selectolax", specifier = ">=0.3.31" },
 ]
-provides-extras = ["libtorrent"]
-
-[package.metadata.requires-dev]
-dev = [{ name = "libtorrent", specifier = ">=2.0.11" }]
 
 [[package]]
 name = "wcwidth"

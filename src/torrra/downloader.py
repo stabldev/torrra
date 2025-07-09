@@ -1,13 +1,6 @@
 import os
-import sys
-try:
-    import libtorrent as lt
-except ImportError:
-    print("Error: libtorrent not found")
-    print("Installation guide: https://github.com/stabldev/torrra?tab=readme-ov-file#installation")
-    sys.exit(1)
-
 import time
+import libtorrent as lt
 from rich.progress import (
     Progress,
     BarColumn,
@@ -22,7 +15,7 @@ from rich.console import Console
 console = Console()
 
 
-def download_magnet(magnet_uri: str, path: str):
+def download_magnet(magnet_uri: str, path: str) -> None:
     ses = lt.session()
     ses.listen_on(6881, 6891)
 
