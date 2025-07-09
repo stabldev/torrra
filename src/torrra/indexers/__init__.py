@@ -1,1 +1,4 @@
-INDEXERS = {"yts.mx": "torrra.indexers.yts_mx"}
+INDEXERS = {
+    "yts (movies)": "torrra.indexers.yts",
+    "magnetdl": "torrra.indexers.magnetdl",
+}
