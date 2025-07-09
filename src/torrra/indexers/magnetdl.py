@@ -1,3 +1,6 @@
+import httpx
+import asyncio
+from selectolax.parser import HTMLParser
 from typing import List
 from urllib.parse import quote_plus
 
@@ -10,7 +13,8 @@ class Indexer(BaseIndexer):
         url = self._get_url(f"/lmsearch?q={normalized_query}&cat=lmsearch")
         parser = self._get_parser(url)
 
-        res = []
+        results = []
+        urls = []
 
         nodes = parser.css("table tbody tr")
         for node in nodes:
@@ -23,23 +27,37 @@ class Indexer(BaseIndexer):
             if query not in title.lower() or link is None:
                 continue
 
-            magnet_uri = self._get_magnet_uri(link)
+            urls.append(self._get_url(link))
+            results.append({
+                "title": title,
+                "size": size
+            })
+
+        magnet_uris = asyncio.run(self._fetch_magnet_uris(urls))
+
+        torrents: List[Torrent] = []
+        for i, magnet_uri in enumerate(magnet_uris):
             if not magnet_uri:
                 continue
 
-            torrent_title = f"{title} {size}"
-            res.append(Torrent(title=torrent_title, magnet_uri=magnet_uri))
+            full_title = f"{results[i]['title']} {results[i]['size']}"
+            torrents.append(Torrent(title=full_title, magnet_uri=magnet_uri))
 
-        return res
+        return torrents
 
     def _get_url(self, url: str) -> str:
-        return f"https://magnetdl.hair{str}"
+        return f"https://magnetdl.hair{url}"
 
-    def _get_magnet_uri(self, link: str) -> str | None:
-        url = self._get_url(link)
-        parser = self._get_parser(url)
+    async def _fetch_magnet_uris(self, urls: List[str]):
+        async def fetch(client: httpx.AsyncClient, url: str):
+            try:
+                res = await client.get(url, timeout=10)
+                parser = HTMLParser(res.text)
+                node = parser.css_first("ul.download-links-dontblock li a")
+                return node.attributes.get("href") if node else ""
+            except:
+                return None
 
-        magnet_uri_node = parser.css_first("ul.download-links-dontblock li a")
-        magnet_uri = magnet_uri_node.attributes.get("href") if magnet_uri_node else ""
-
-        return magnet_uri
+        async with httpx.AsyncClient() as client:
+            tasks = [fetch(client, url) for url in urls]
+            return await asyncio.gather(*tasks)
