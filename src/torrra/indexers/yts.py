@@ -38,14 +38,15 @@ class Indexer(BaseIndexer):
             for magnet in magnets:
                 torrents.append(
                     Torrent(
-                        title=f"{title} {magnet.title}",
-                        magnet_uri=magnet.magnet_uri
+                        title=f"{title} {magnet.title}", magnet_uri=magnet.magnet_uri
                     )
                 )
 
         return torrents
 
-    async def _fetch_magnet_uris(self, items: List[tuple[str, str]]) -> List[List[Torrent]]:
+    async def _fetch_magnet_uris(
+        self, items: List[tuple[str, str]]
+    ) -> List[List[Torrent]]:
         async def fetch(client: httpx.AsyncClient, url: str):
             try:
                 res = await client.get(url, timeout=10)
@@ -55,7 +56,9 @@ class Indexer(BaseIndexer):
                 nodes = parser.css("div.modal div.modal-torrent")
                 for node in nodes:
                     resolution_node = node.css_first("div.modal-quality span")
-                    resolution = resolution_node.text(strip=True) if resolution_node else ""
+                    resolution = (
+                        resolution_node.text(strip=True) if resolution_node else ""
+                    )
 
                     quality_info = resolution
 
@@ -66,7 +69,9 @@ class Indexer(BaseIndexer):
                         quality_info = f"{source} {resolution} {size}"
 
                     magnet_node = node.css_first("a.magnet")
-                    magnet_uri = magnet_node.attributes.get("href") if magnet_node else ""
+                    magnet_uri = (
+                        magnet_node.attributes.get("href") if magnet_node else ""
+                    )
 
                     if not magnet_uri:
                         continue
