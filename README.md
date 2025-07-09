@@ -18,56 +18,15 @@
 
 ## Installation
 
-Requirements: Python 3.11+ and [libtorrent](https://libtorrent.org/) (choose an installation method below)
-
-### All-in-one installation
+Requirements: Python 3.13+ and [libtorrent](https://libtorrent.org/).
 
 ```bash
-pipx install "torrra[libtorrent]"
+pipx install torrra
 ```
 
 > Works on all platforms using the pip-installed libtorrent.
 
-### For system package users
-
-```bash
-# arch
-sudo pacman -S libtorrent-rasterbar
-# debian/ubuntu
-sudo apt install python3-libtorrent
-# macOS (homebrew)
-brew install libtorrent-rasterbar
-
-# then install torrra with system lib access:
-pipx install --system-site-packages torrra
-```
-
-### Basic pip installation (for venv)
-
-```bash
-pip install "torrra[libtorrent]"
-```
-
-### Windows-specific
-
-```bash
-pip install "torrra[libtorrent]"
-# or using system libtorrent (if available):
-pip install --system "torrra"
-```
-
-### OR: compile from source (advanced)
-
-See libtorrent's build guide:
-https://libtorrent.org/building.html
-
-### Notes
-
-- The `[libtorrent]` extra installs the Python wheel version of libtorrent.
-- Using system packages (like `pacman`, `apt`, `brew`) may provide better performance.
-- Use `--system-site-packages` only if you already have system-wide libtorrent installed.
-
-### For local development:
+For local development:
 
 ```bash
 git clone https://github.com/yourusername/torrra
@@ -76,20 +35,6 @@ cd torrra
 uv sync
 uv run torrra
 ```
-
-## Usage
-
-```bash
-torrra
-```
-
-Follow the prompts:
-
-1. Enter search query
-2. Pick an indexer
-3. Select a torrent
-4. Choose quality / magnet link
-5. Pick a download folder
 
 ## Indexer Support
 
