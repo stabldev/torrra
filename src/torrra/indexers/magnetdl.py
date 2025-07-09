@@ -1,11 +1,13 @@
-import httpx
 import asyncio
-from selectolax.parser import HTMLParser
 from typing import List
 from urllib.parse import quote_plus
 
+import httpx
+from selectolax.parser import HTMLParser
+
 from torrra.indexers.base import BaseIndexer
 from torrra.types import Torrent
+
 
 class Indexer(BaseIndexer):
     def search(self, query: str) -> List[Torrent]:
@@ -27,11 +29,8 @@ class Indexer(BaseIndexer):
             if query not in title.lower() or link is None:
                 continue
 
+            results.append({"title": title, "size": size})
             urls.append(self._get_url(link))
-            results.append({
-                "title": title,
-                "size": size
-            })
 
         magnet_uris = asyncio.run(self._fetch_magnet_uris(urls))
 
