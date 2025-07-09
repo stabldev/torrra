@@ -1,6 +1,7 @@
 import os
 import time
 import libtorrent as lt
+from rich.console import Console
 from rich.progress import (
     Progress,
     BarColumn,
@@ -10,7 +11,8 @@ from rich.progress import (
     TaskProgressColumn,
     DownloadColumn,
 )
-from rich.console import Console
+
+from torrra.constants import UI_STRINGS
 
 console = Console()
 
@@ -29,7 +31,8 @@ def download_magnet(magnet_uri: str, path: str) -> None:
 
     handle = lt.add_magnet_uri(ses, magnet_uri, params)
 
-    console.print("[bold green]Downloading metadata...[/bold green]")
+    console.print(UI_STRINGS["status_downloading_metadata"])
+
     while not handle.has_metadata():
         time.sleep(0.5)
 
@@ -37,11 +40,11 @@ def download_magnet(magnet_uri: str, path: str) -> None:
     total_size = torrent_info.total_size()
     file_count = torrent_info.num_files()
 
+    console.print(UI_STRINGS["status_starting_download"].format(name=handle.name()))
     console.print(
-        f"[bold green]Starting download: [cyan]{handle.name()}[/cyan][/bold green]"
-    )
-    console.print(
-        f"[yellow]Size:[/yellow] {total_size/(1024*1024):.2f} MB | [yellow]Files:[/yellow] {file_count}"
+        UI_STRINGS["info_size_files"].format(
+            size=total_size / (1024 * 1024), count=file_count
+        )
     )
 
     with Progress(
@@ -75,7 +78,5 @@ def download_magnet(magnet_uri: str, path: str) -> None:
             prev_time = cur_time
             time.sleep(0.5)
 
-    console.print(
-        f"\n[bold green]✓ Download complete: [cyan]{handle.name()}[/cyan][/bold green]"
-    )
-    console.print(f"[green]Saved to: [underline]{save_path}[/underline][/green]")
+    console.print(UI_STRINGS["status_download_complete"].format(name=handle.name()))
+    console.print(UI_STRINGS["info_saved_to"].format(path=save_path))
