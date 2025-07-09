@@ -8,7 +8,7 @@ from rich.console import Console
 from torrra.constants import UI_STRINGS
 from torrra.downloader import download_magnet
 from torrra.indexers import INDEXERS
-from torrra.types import Magnet, Torrent
+from torrra.types import Torrent
 from torrra.utils import get_indexer
 
 console = Console()
@@ -42,22 +42,6 @@ def main() -> None:
     if not selected_torrent:
         return
 
-    with console.status(
-        UI_STRINGS["status_fetching_magnets"].format(title=selected_torrent.title)
-    ):
-        magnets: List[Magnet] = indexer.get_magnets(selected_torrent.link)
-
-    if not magnets:
-        console.print(UI_STRINGS["error_no_magnets"])
-        return
-
-    magnet_choices = [Choice(title=magnet.title, value=magnet) for magnet in magnets]
-    selected_magnet: Magnet | None = questionary.select(
-        UI_STRINGS["prompt_select_result"], choices=magnet_choices
-    ).ask()
-    if not selected_magnet:
-        return
-
     save_path = questionary.path(
         UI_STRINGS["prompt_download_path"],
         only_directories=True,
@@ -65,4 +49,4 @@ def main() -> None:
     ).ask()
 
     # initiate download
-    download_magnet(selected_magnet.magnet_uri, save_path)
+    download_magnet(selected_torrent.magnet_uri, save_path)

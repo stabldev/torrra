@@ -1,7 +1,7 @@
 from typing import List
 
 from torrra.indexers.base import BaseIndexer
-from torrra.types import Magnet, Torrent
+from torrra.types import Torrent
 
 
 class Indexer(BaseIndexer):
@@ -26,10 +26,19 @@ class Indexer(BaseIndexer):
             year = year_node.text(strip=True) if year_node else ""
 
             torrent_title = f"{title} {year}".strip()
-            res.append(Torrent(title=torrent_title, link=link))
+            magnets = self.get_magnets(link)
+
+            for magnet in magnets:
+                res.append(
+                    Torrent(
+                        title=f"{torrent_title} {magnet.title}",
+                        magnet_uri=magnet.magnet_uri,
+                    )
+                )
+
         return res
 
-    def get_magnets(self, link: str) -> List[Magnet]:
+    def get_magnets(self, link: str) -> List[Torrent]:
         parser = self._get_parser(link)
         res = []
 
@@ -52,5 +61,5 @@ class Indexer(BaseIndexer):
             if not magnet_uri:
                 continue
 
-            res.append(Magnet(title=quality_info, magnet_uri=magnet_uri))
+            res.append(Torrent(title=quality_info, magnet_uri=magnet_uri))
         return res
