@@ -1,4 +1,5 @@
 INDEXERS = {
-    "yts (movies)": "torrra.indexers.yts",
+    "yts": "torrra.indexers.yts",
     "magnetdl": "torrra.indexers.magnetdl",
+    "movierulz": "torrra.indexers.movierulz"
 }
