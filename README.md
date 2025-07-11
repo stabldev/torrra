@@ -10,7 +10,7 @@
 
 ## Features
 
-- Search torrents from multiple indexers (`YTS` supported; more coming)
+- Search torrents from multiple indexers
 - Fetch magnet links directly
 - Download torrents via libtorrent
 - Pretty CLI with Rich-powered progress bars
