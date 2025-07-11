@@ -7,7 +7,6 @@
 ![License](https://img.shields.io/github/license/stabldev/torrra)
 
 ![demo](./docs/demo.gif)
-![torrra_v0 2 x_demo_cropped](https://github.com/user-attachments/assets/9c1d6743-c966-4417-94c3-c976e8d29533)
 
 ## Features
 
