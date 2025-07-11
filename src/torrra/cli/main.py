@@ -1,16 +1,17 @@
-import questionary
-from questionary import Choice
-from prompt_toolkit.shortcuts import CompleteStyle
 from typing import List
+
+import questionary
+from prompt_toolkit.shortcuts import CompleteStyle
+from questionary import Choice
 from rich.console import Console
 
+from torrra.cli import custom_styles
 from torrra.constants import UI_STRINGS
 from torrra.downloader import download_magnet
 from torrra.helpers.intro import show_welcome
 from torrra.indexers import INDEXERS
 from torrra.types import Torrent
 from torrra.utils import get_indexer
-from torrra.cli import custom_styles
 
 console = Console()
 

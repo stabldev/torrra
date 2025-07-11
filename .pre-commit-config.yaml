@@ -1,7 +1,19 @@
 repos:
   - repo: https://github.com/astral-sh/uv-pre-commit
-    # uv version.
-    rev: 0.7.19
+    rev: 0.7.18
     hooks:
       - id: uv-lock
       - id: uv-export
+
+  - repo: https://github.com/psf/black-pre-commit-mirror
+    rev: 25.1.0
+    hooks:
+      - id: black
+        language_version: python3.13
+
+  - repo: https://github.com/pycqa/isort
+    rev: 6.0.1
+    hooks:
+      - id: isort
+        name: isort (python)
+        args: ["--profile", "black"]

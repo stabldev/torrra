@@ -1,5 +1,5 @@
-import re
 import asyncio
+import re
 from typing import List, Tuple
 from urllib.parse import quote_plus
 

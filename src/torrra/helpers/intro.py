@@ -1,7 +1,7 @@
-from rich.panel import Panel
-from rich.console import Console
-from rich.text import Text
 from rich.box import ASCII
+from rich.console import Console
+from rich.panel import Panel
+from rich.text import Text
 
 from torrra._version import __version__
 

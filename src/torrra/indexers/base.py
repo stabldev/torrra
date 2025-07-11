@@ -1,9 +1,10 @@
+from abc import ABC, abstractmethod
 from typing import List
+
 from selectolax.parser import HTMLParser
 
-from torrra.types import Torrent
 from torrra.helpers.html import parse_html
-from abc import ABC, abstractmethod
+from torrra.types import Torrent
 
 
 class BaseIndexer(ABC):

@@ -1,15 +1,16 @@
 import os
 import time
+
 import libtorrent as lt
 from rich.console import Console
 from rich.progress import (
-    Progress,
     BarColumn,
-    TransferSpeedColumn,
-    TimeRemainingColumn,
-    TextColumn,
-    TaskProgressColumn,
     DownloadColumn,
+    Progress,
+    TaskProgressColumn,
+    TextColumn,
+    TimeRemainingColumn,
+    TransferSpeedColumn,
 )
 
 from torrra.constants import UI_STRINGS
