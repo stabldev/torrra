@@ -1,4 +1,4 @@
-# `torrra`
+# torrra
 
 > A Python tool that lets you find and download torrents without leaving your CLI.
 
