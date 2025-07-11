@@ -12,6 +12,7 @@ from torrra.types import Torrent
 
 class Indexer(BaseIndexer):
     BASE_URL = ""
+
     def search(self, query: str) -> List[Torrent]:
         normalized_query = quote_plus(query)
         url = f"https://www.5movierulz.voto/search_movies?s={normalized_query}"
@@ -43,14 +44,15 @@ class Indexer(BaseIndexer):
             for magnet in magnets:
                 results.append(
                     Torrent(
-                        title=f"{title} {magnet.title}",
-                        magnet_uri=magnet.magnet_uri
+                        title=f"{title} {magnet.title}", magnet_uri=magnet.magnet_uri
                     )
                 )
 
         return results
 
-    async def _fetch_magnet_uris(self, items: List[Tuple[str, str]]) -> List[List[Torrent]]:
+    async def _fetch_magnet_uris(
+        self, items: List[Tuple[str, str]]
+    ) -> List[List[Torrent]]:
         async def fetch(client: httpx.AsyncClient, url: str):
             res = await client.get(url, timeout=10)
             parser = HTMLParser(res.text)
@@ -58,7 +60,9 @@ class Indexer(BaseIndexer):
             results = []
 
             a_nodes = parser.css("div.entry-content p a")
-            nodes = [node for node in a_nodes if "GET THIS TORRENT" in node.text(strip=True)]
+            nodes = [
+                node for node in a_nodes if "GET THIS TORRENT" in node.text(strip=True)
+            ]
 
             for node in nodes:
                 magnet_uri = node.attributes.get("href")
@@ -67,7 +71,11 @@ class Indexer(BaseIndexer):
 
                 title_node = node.css_first("small")
                 title = title_node.text(strip=True) if title_node else ""
-                formatted_title = re.sub(r'\b(\d+(\.\d+)?)\s*(gb|mb|kb)\b', lambda m: f"{m.group(1)} {m.group(3).upper()}", title)
+                formatted_title = re.sub(
+                    r"\b(\d+(\.\d+)?)\s*(gb|mb|kb)\b",
+                    lambda m: f"{m.group(1)} {m.group(3).upper()}",
+                    title,
+                )
 
                 results.append(Torrent(title=formatted_title, magnet_uri=magnet_uri))
 

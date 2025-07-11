@@ -7,6 +7,7 @@ from rich.console import Console
 
 from torrra.constants import UI_STRINGS
 from torrra.downloader import download_magnet
+from torrra.helpers.intro import show_welcome
 from torrra.indexers import INDEXERS
 from torrra.types import Torrent
 from torrra.utils import get_indexer
@@ -15,6 +16,9 @@ console = Console()
 
 
 def main() -> None:
+    # show welcome stuff
+    show_welcome()
+
     query = questionary.text(UI_STRINGS["prompt_search_query"]).ask()
     if not query:
         return
