@@ -13,19 +13,17 @@ def show_welcome():
     desc = Text(f"v{__version__}", style="dim", justify="center")
 
     body = Text(
-        "\n".join([
-            "Find and download torrents right from your terminal.",
-            "Powered by libtorrent and Python ❤️",
-        ]),
+        "\n".join(
+            [
+                "Find and download torrents right from your terminal.",
+                "Powered by libtorrent and Python ❤️",
+            ]
+        ),
         justify="center",
     )
 
     panel = Panel.fit(
-        body,
-        title=title,
-        subtitle=desc,
-        border_style="bright_blue",
-        box=ASCII
+        body, title=title, subtitle=desc, border_style="bright_blue", box=ASCII
     )
 
     console.print(panel)
