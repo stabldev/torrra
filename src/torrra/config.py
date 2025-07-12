@@ -5,14 +5,10 @@ from typing import Any, Dict
 import tomli_w
 from platformdirs import user_config_dir, user_downloads_dir
 
+from torrra.exceptions import ConfigError
+
 CONFIG_DIR = Path(user_config_dir("torrra"))
 CONFIG_FILE = CONFIG_DIR / "config.toml"
-
-
-class ConfigError(Exception):
-    """Custom error for config key issues."""
-
-    pass
 
 
 class Config:
@@ -49,7 +45,7 @@ class Config:
             with open(CONFIG_FILE, "rb") as f:
                 self.config = tomllib.load(f)
         except Exception as e:
-            print(f"Error loading config: {e}, using defaults...")
+            print(f"error: loading config: {e}")
 
     def _create_default_config(self) -> None:
         self.config = {

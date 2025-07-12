@@ -1,6 +1,7 @@
 from typing import Any
 
-from torrra.config import Config, ConfigError
+from torrra.config import Config
+from torrra.exceptions import ConfigError
 
 
 def handle_config_command(args: Any):
