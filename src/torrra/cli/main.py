@@ -1,5 +1,6 @@
 import argparse
 
+from torrra.cli.config import handle_config_command
 from torrra.cli.torrent import run_torrent_flow
 
 
@@ -24,6 +25,6 @@ def main() -> None:
     args = parser.parse_args()
 
     if args.command == "config":
-        print("run config flow")
+        handle_config_command(args)
     else:
         run_torrent_flow()

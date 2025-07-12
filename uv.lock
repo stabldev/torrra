@@ -120,6 +120,15 @@ wheels = [
 ]
 
 [[package]]
+name = "platformdirs"
+version = "4.3.8"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/fe/8b/3c73abc9c759ecd3f1f7ceff6685840859e8070c4d947c93fae71f6a0bf2/platformdirs-4.3.8.tar.gz", hash = "sha256:3d512d96e16bcb959a814c9f348431070822a6496326a4be0911c40b5a74c2bc", size = 21362, upload-time = "2025-05-07T22:47:42.121Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/fe/39/979e8e21520d4e47a0bbe349e2713c0aac6f3d853d0e5b34d76206c439aa/platformdirs-4.3.8-py3-none-any.whl", hash = "sha256:ff7059bb7eb1179e2685604f4aaf157cfd9535242bd23742eadc3c13542139b4", size = 18567, upload-time = "2025-05-07T22:47:40.376Z" },
+]
+
+[[package]]
 name = "prompt-toolkit"
 version = "3.0.51"
 source = { registry = "https://pypi.org/simple" }
@@ -189,6 +198,15 @@ wheels = [
 ]
 
 [[package]]
+name = "tomli-w"
+version = "1.2.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/19/75/241269d1da26b624c0d5e110e8149093c759b7a286138f4efd61a60e75fe/tomli_w-1.2.0.tar.gz", hash = "sha256:2dd14fac5a47c27be9cd4c976af5a12d87fb1f0b4512f81d69cce3b35ae25021", size = 7184, upload-time = "2025-01-15T12:07:24.262Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c7/18/c86eb8e0202e32dd3df50d43d7ff9854f8e0603945ff398974c1d91ac1ef/tomli_w-1.2.0-py3-none-any.whl", hash = "sha256:188306098d013b691fcadc011abd66727d3c414c571bb01b1a174ba8c983cf90", size = 6675, upload-time = "2025-01-15T12:07:22.074Z" },
+]
+
+[[package]]
 name = "torrra"
 version = "0.2.3"
 source = { editable = "." }
@@ -196,9 +214,11 @@ dependencies = [
     { name = "httpx" },
     { name = "libtorrent" },
     { name = "libtorrent-windows-dll", marker = "sys_platform == 'win32'" },
+    { name = "platformdirs" },
     { name = "questionary" },
     { name = "rich" },
     { name = "selectolax" },
+    { name = "tomli-w" },
 ]
 
 [package.metadata]
@@ -206,9 +226,11 @@ requires-dist = [
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "libtorrent", specifier = ">=2.0.11" },
     { name = "libtorrent-windows-dll", marker = "sys_platform == 'win32'", specifier = ">=0.0.2" },
+    { name = "platformdirs", specifier = ">=4.3.8" },
     { name = "questionary", specifier = ">=2.1.0" },
     { name = "rich", specifier = ">=14.0.0" },
     { name = "selectolax", specifier = ">=0.3.31" },
+    { name = "tomli-w", specifier = ">=1.2.0" },
 ]
 
 [[package]]
