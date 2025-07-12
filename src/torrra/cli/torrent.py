@@ -1,3 +1,4 @@
+import importlib
 from typing import List
 
 import questionary
@@ -6,33 +7,31 @@ from questionary import Choice
 from rich.console import Console
 
 from torrra.constants import UI_STRINGS
-from torrra.downloader import download_magnet
-from torrra.helpers import custom_styles, intro
+from torrra.core.downloader import download_magnet
 from torrra.indexers import INDEXERS_MAP
 from torrra.types import Torrent
-from torrra.utils import get_indexer
+from torrra.utils import styles, welcome
 
 console = Console()
 
 
 def run_torrent_flow() -> None:
-    intro.show_welcome()
+    welcome.show_welcome()
 
-    query = questionary.text(
-        UI_STRINGS["prompt_search_query"], style=custom_styles.TEXT
-    ).ask()
+    query = questionary.text(UI_STRINGS["prompt_search_query"], style=styles.TEXT).ask()
     if not query:
         return
 
     indexer_name = questionary.select(
         UI_STRINGS["prompt_choose_indexer"],
         choices=list(INDEXERS_MAP.keys()),
-        style=custom_styles.SELECT,
+        style=styles.SELECT,
     ).ask()
     if not indexer_name:
         return
 
-    indexer = get_indexer(indexer_name)
+    indexer_module_path = INDEXERS_MAP[indexer_name]
+    indexer = importlib.import_module(indexer_module_path).Indexer()
 
     with console.status(
         UI_STRINGS["status_searching"].format(indexer=indexer_name, query=query)
@@ -50,7 +49,7 @@ def run_torrent_flow() -> None:
     selected_torrent: Torrent | None = questionary.select(
         UI_STRINGS["prompt_select_result"],
         choices=torrent_choices,
-        style=custom_styles.SELECT,
+        style=styles.SELECT,
     ).ask()
     if not selected_torrent:
         return
@@ -59,7 +58,7 @@ def run_torrent_flow() -> None:
         UI_STRINGS["prompt_download_path"],
         only_directories=True,
         complete_style=CompleteStyle.COLUMN,
-        style=custom_styles.TEXT,
+        style=styles.TEXT,
     ).ask()
     if not save_path:
         return
