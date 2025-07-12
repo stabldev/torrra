@@ -1,3 +1,4 @@
+import ast
 import tomllib
 from pathlib import Path
 from typing import Any, Dict, List
@@ -35,6 +36,26 @@ class Config:
             )
 
         return current
+
+    def set(self, key_path: str, value: Any) -> None:
+        current = self.config
+        keys = key_path.split(".")
+
+        try:
+            for key in keys[:-1]:
+                if key not in current:
+                    current[key] = {}
+                elif not isinstance(current[key], dict):
+                    raise ConfigError(
+                        f"error: cannot set '{key_path}': '{key}' is not a section"
+                    )
+                current = current[key]
+
+            current[keys[-1]] = ast.literal_eval(value)
+            self._save_config()
+
+        except (KeyError, TypeError) as e:
+            raise ConfigError(f"error: failed to set '{key_path}': {str(e)}")
 
     def list(self) -> List[str]:
         results = []
