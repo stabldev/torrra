@@ -1,6 +1,6 @@
 import tomllib
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import tomli_w
 from platformdirs import user_config_dir, user_downloads_dir
@@ -35,6 +35,16 @@ class Config:
             )
 
         return current
+
+    def list(self) -> List[str]:
+        results = []
+        for section in self.config:
+            for key, value in self.config[section].items():
+                if isinstance(value, bool):
+                    value = str(value).lower()
+                results.append(f"{section}.{key}={value}")
+
+        return results
 
     def _load_config(self) -> None:
         if not CONFIG_FILE.exists():

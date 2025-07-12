@@ -9,6 +9,11 @@ def handle_config_command(args: Any):
 
     if args.get:
         try:
-            print(config.get(args.get))
+            get_res = config.get(args.get)
+            print(get_res)
         except ConfigError as e:
             print(e)
+
+    elif args.list:
+        list_res = config.list()
+        print("\n".join(list_res))
