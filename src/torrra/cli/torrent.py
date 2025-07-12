@@ -1,3 +1,4 @@
+import importlib
 from typing import List
 
 import questionary
@@ -10,7 +11,6 @@ from torrra.downloader import download_magnet
 from torrra.helpers import custom_styles, intro
 from torrra.indexers import INDEXERS_MAP
 from torrra.types import Torrent
-from torrra.utils import get_indexer
 
 console = Console()
 
@@ -32,7 +32,8 @@ def run_torrent_flow() -> None:
     if not indexer_name:
         return
 
-    indexer = get_indexer(indexer_name)
+    indexer_module_path = INDEXERS_MAP[indexer_name]
+    indexer = importlib.import_module(indexer_module_path).Indexer()
 
     with console.status(
         UI_STRINGS["status_searching"].format(indexer=indexer_name, query=query)
