@@ -1,6 +1,6 @@
 from typing import Any
 
-from torrra.config import Config
+from torrra.core.config import Config
 from torrra.exceptions import ConfigError
 
 

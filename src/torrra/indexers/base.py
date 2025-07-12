@@ -3,8 +3,8 @@ from typing import List
 
 from selectolax.parser import HTMLParser
 
-from torrra.helpers.html import parse_html
 from torrra.types import Torrent
+from torrra.utils.html import parse_html
 
 
 class BaseIndexer(ABC):
