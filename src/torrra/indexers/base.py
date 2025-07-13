@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Optional
 
 from selectolax.parser import HTMLParser
 
@@ -13,5 +13,5 @@ class BaseIndexer(ABC):
         return HTMLParser(html)
 
     @abstractmethod
-    def search(self, query: str) -> List[Torrent]:
+    def search(self, query: str, max_results: Optional[int] = None) -> List[Torrent]:
         pass

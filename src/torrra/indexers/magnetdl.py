@@ -1,5 +1,5 @@
 import asyncio
-from typing import List
+from typing import List, Optional
 from urllib.parse import quote_plus
 
 import httpx
@@ -12,7 +12,7 @@ from torrra.types import Torrent
 class Indexer(BaseIndexer):
     BASE_URL = "https://magnetdl.hair"
 
-    def search(self, query: str) -> List[Torrent]:
+    def search(self, query: str, max_results: Optional[int] = None) -> List[Torrent]:
         normalized_query = quote_plus(query)
         url = f"{self.BASE_URL}/lmsearch?q={normalized_query}&cat=lmsearch"
         parser = self._get_parser(url)
@@ -33,6 +33,9 @@ class Indexer(BaseIndexer):
 
             results.append({"title": title, "size": size})
             urls.append(f"{self.BASE_URL}{link}")
+
+            if max_results and len(results) >= max_results:
+                break
 
         magnet_uris = asyncio.run(self._fetch_magnet_uris(urls))
 

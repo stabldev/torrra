@@ -1,6 +1,6 @@
 import asyncio
 import re
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 from urllib.parse import quote_plus
 
 import httpx
@@ -13,7 +13,7 @@ from torrra.types import Torrent
 class Indexer(BaseIndexer):
     BASE_URL = "https://www.5movierulz.life"
 
-    def search(self, query: str) -> List[Torrent]:
+    def search(self, query: str, max_results: Optional[int] = None) -> List[Torrent]:
         normalized_query = quote_plus(query)
         url = f"{self.BASE_URL}/search_movies?s={normalized_query}"
         parser = self._get_parser(url)
@@ -37,6 +37,8 @@ class Indexer(BaseIndexer):
                 continue
 
             titles_links.append((title, link))
+            if max_results and len(titles_links) >= max_results:
+                break
 
         magnets_list = asyncio.run(self._fetch_magnet_uris(titles_links))
 

@@ -88,7 +88,7 @@ class Config:
             "general": {
                 "download_path": user_downloads_dir(),
                 "remember_last_path": True,
-                "max_results": 10,
+                "max_results": 5,
             }
         }
 
