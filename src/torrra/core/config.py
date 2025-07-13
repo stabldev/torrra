@@ -51,7 +51,12 @@ class Config:
                     )
                 current = current[key]
 
-            current[keys[-1]] = ast.literal_eval(value)
+            try:
+                value = ast.literal_eval(value)
+            except (ValueError, SyntaxError):
+                pass
+
+            current[keys[-1]] = value
             self._save_config()
 
         except (KeyError, TypeError) as e:
