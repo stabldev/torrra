@@ -4,7 +4,9 @@
 
 [![PyPI](https://img.shields.io/pypi/v/torrra)](https://pypi.org/project/torrra/)
 [![AUR Version](https://img.shields.io/aur/version/torrra)](https://aur.archlinux.org/packages/torrra)
+[![GitHub release](https://img.shields.io/github/v/release/stabldev/torrra?sort=semver)](https://github.com/stabldev/torrra/releases)
 [![License](https://img.shields.io/github/license/stabldev/torrra)](https://github.com/stabldev/torrra/blob/main/LICENSE)
+[![GitHub Issues or Pull Requests](https://img.shields.io/github/issues/stabldev/torrra)](https://github.com/stabldev/torrra/issues)
 
 ![demo](./docs/demo.gif)
 
@@ -18,21 +20,51 @@
 
 ## Installation
 
-Requirements: Python 3.13+ and [libtorrent](https://libtorrent.org/).
+> Requires **Python 3.13+**. For torrent support, [libtorrent](https://libtorrent.org/) is needed (see options below).
+
+### Recommended (cross-platform)
 
 ```bash
 pipx install torrra
 ```
 
-> Works on all platforms using the pip-installed libtorrent.
+- Works on **Linux**, **macOS**, and **Windows**
+- Uses `libtorrent` installed via pip
 
-For local development:
+### Arch Linux
+
+#### 1. From AUR (builds from source)
 
 ```bash
-git clone https://github.com/yourusername/torrra
+yay -S torrra
+```
+
+#### 2. From AUR binary package (faster install, no Python deps)
+
+```bash
+yay -S torrra-bin
+```
+
+> `torrra-bin` includes a precompiled standalone binary for x86_64 Linux.
+
+### Standalone Binaries (no Python needed)
+
+Download from the [GitHub Releases](https://github.com/stabldev/torrra/releases):
+
+| OS       | File                          |
+|----------|-------------------------------|
+| Linux    | `torrra-vX.Y.Z-linux-x86_64`  |
+| Windows  | `torrra-vX.Y.Z-windows.exe`   |
+| macOS    | `torrra-vX.Y.Z-macos-x86_64`  |
+
+Make sure to `chmod +x` the binary if needed.
+
+### Local Development
+
+```bash
+git clone https://github.com/stabldev/torrra
 cd torrra
-# or use requirements.txt
-uv sync
+uv sync  # or `pip install -e .`
 uv run torrra
 ```
 
