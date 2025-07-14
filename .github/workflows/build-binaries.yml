@@ -1,0 +1,54 @@
+name: Build Binaries
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+          pip install pyinstaller
+
+      - name: Build standalone binary
+        run: pyinstaller torrra.spec
+
+      - name: Rename binary by platform
+        shell: bash
+        run: |
+          mkdir -p dist-out
+          ARCH=$(uname -m)
+
+          if [[ "$RUNNER_OS" == "Linux" ]]; then
+            cp dist/torrra "dist-out/torrra-${GITHUB_REF_NAME}-linux-${ARCH}"
+          elif [[ "$RUNNER_OS" == "Windows" ]]; then
+            cp dist/torrra.exe "dist-out/torrra-${GITHUB_REF_NAME}-windows-${ARCH}.exe"
+          elif [[ "$RUNNER_OS" == "macOS" ]]; then
+            cp dist/torrra "dist-out/torrra-${GITHUB_REF_NAME}-macos-${ARCH}"
+          fi
+
+      - name: Upload binary to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist-out/*
