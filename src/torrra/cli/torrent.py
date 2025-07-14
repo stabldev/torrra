@@ -1,4 +1,3 @@
-import importlib
 from typing import List
 
 import questionary
@@ -31,14 +30,13 @@ def run_torrent_flow() -> None:
     if not indexer_name:
         return
 
-    indexer_module_path = INDEXERS_MAP[indexer_name]
-    indexer = importlib.import_module(indexer_module_path).Indexer()
-
     with console.status(
         UI_STRINGS["status_searching"].format(indexer=indexer_name, query=query)
     ):
         max_results = config.get("general.max_results") or None
-        torrents: List[Torrent] = indexer.search(query, max_results)
+        torrents: List[Torrent] = INDEXERS_MAP[indexer_name]().search(
+            query, max_results
+        )
 
     if not torrents:
         console.print(UI_STRINGS["error_no_results"])

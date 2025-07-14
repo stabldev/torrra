@@ -1,5 +1,7 @@
+from torrra.indexers import magnetdl, movierulz, yts
+
 INDEXERS_MAP = {
-    "yts": "torrra.indexers.yts",
-    "magnetdl": "torrra.indexers.magnetdl",
-    "movierulz": "torrra.indexers.movierulz",
+    "yts": yts.Indexer,
+    "magnetdl": magnetdl.Indexer,
+    "movierulz": movierulz.Indexer,
 }
