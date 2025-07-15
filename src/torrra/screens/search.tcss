@@ -1,10 +1,16 @@
 #search {
-    padding: 0;
+    padding: 0 1;
     margin: 0;
-    height: auto;
     background: transparent;
+    border: solid $secondary-muted;
+}
+
+#search:focus {
+    border: solid $secondary;
 }
 
 #results_list {
     background: transparent;
+    border: solid $secondary-muted;
+    padding: 0 1;
 }

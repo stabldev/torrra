@@ -1,7 +1,7 @@
 from textual.app import ComposeResult
 from textual.containers import Vertical
 from textual.screen import Screen
-from textual.widgets import Input, Label, ListItem, ListView, Static
+from textual.widgets import Input, Label, ListItem, ListView
 
 from torrra.core.searcher import search_torrents
 
@@ -12,7 +12,6 @@ class SearchScreen(Screen):
     def compose(self) -> ComposeResult:
         yield Vertical(
             Input(placeholder="Search...", id="search"),
-            Static("Results:", id="results_label"),
             ListView(id="results_list"),
         )
 
