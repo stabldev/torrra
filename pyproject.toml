@@ -13,6 +13,7 @@ dependencies = [
     "questionary>=2.1.0",
     "rich>=14.0.0",
     "selectolax>=0.3.31",
+    "textual>=4.0.0",
     "tomli-w>=1.2.0",
 ]
 

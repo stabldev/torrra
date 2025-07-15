@@ -3,7 +3,7 @@ from typing import List, Optional
 
 from selectolax.parser import HTMLParser
 
-from torrra.types import Torrent
+from torrra._types import Torrent
 from torrra.utils.html import parse_html
 
 

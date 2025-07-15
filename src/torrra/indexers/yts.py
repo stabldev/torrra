@@ -4,8 +4,8 @@ from typing import List, Optional
 import httpx
 from selectolax.parser import HTMLParser
 
+from torrra._types import Torrent
 from torrra.indexers.base import BaseIndexer
-from torrra.types import Torrent
 
 
 class Indexer(BaseIndexer):

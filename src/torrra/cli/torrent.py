@@ -4,12 +4,12 @@ import questionary
 from prompt_toolkit.shortcuts import CompleteStyle
 from questionary import Choice
 
+from torrra._types import Torrent
 from torrra.constants import UI_STRINGS
 from torrra.context import console
 from torrra.core.config import Config
 from torrra.core.downloader import download_magnet
 from torrra.indexers import INDEXERS_MAP
-from torrra.types import Torrent
 from torrra.utils import styles, welcome
 
 config = Config()

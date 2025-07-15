@@ -1,0 +1,10 @@
+#search {
+    padding: 0;
+    margin: 0;
+    height: auto;
+    background: transparent;
+}
+
+#results_list {
+    background: transparent;
+}
