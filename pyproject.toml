@@ -18,8 +18,11 @@ dependencies = [
 ]
 
 [project.scripts]
-torrra = "torrra:main"
+torrra = "torrra.app:main"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = ["textual-dev>=1.7.0"]

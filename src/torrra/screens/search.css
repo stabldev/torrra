@@ -26,3 +26,16 @@ SearchScreen #results_table {
 SearchScreen #results_table > .datatable--header {
     background: transparent;
 }
+
+SearchScreen #loader {
+    align: center middle;
+}
+
+SearchScreen #loader LoadingIndicator {
+    height: auto;
+    content-align-horizontal: center;
+}
+
+SearchScreen #loader Static {
+    content-align-horizontal: center;
+}
