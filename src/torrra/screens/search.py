@@ -1,3 +1,4 @@
+from textual import on
 from textual.app import ComposeResult
 from textual.containers import Vertical
 from textual.screen import Screen
@@ -9,7 +10,7 @@ from torrra.core.searcher import search_torrents
 class SearchScreen(Screen):
     CSS_PATH = "search.css"
 
-    def __init__(self, initial_query: str = ""):
+    def __init__(self, initial_query: str):
         super().__init__()
         self.initial_query = initial_query
 
@@ -26,15 +27,15 @@ class SearchScreen(Screen):
             )
 
     def on_mount(self) -> None:
-        if self.initial_query:
-            self.post_message(
-                Input.Submitted(self.query_one("#search", Input), self.initial_query)
-            )
+        self.post_message(
+            Input.Submitted(self.query_one("#search", Input), self.initial_query)
+        )
 
         table = self.query_one("#results_table", DataTable)
         table.add_columns("No.", "Name", "Size", "Seed", "Leech", "Source")
 
-    async def on_input_submitted(self, event: Input.Submitted) -> None:
+    @on(Input.Submitted, "#search")
+    async def handle_search(self, event: Input.Submitted) -> None:
         self.query_one("#search", Input).blur()
         table = self.query_one("#results_table", DataTable)
 

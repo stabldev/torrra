@@ -4,6 +4,8 @@ from textual.containers import Container
 from textual.screen import Screen
 from textual.widgets import Input, Static
 
+from torrra._version import __version__
+
 BANNER = """
 ▀█▀ █▀█ █▀▄ █▀▄ █▀▄ █▀█
  █  █ █ █▀▄ █▀▄ █▀▄ █▀█
@@ -27,7 +29,7 @@ class WelcomeScreen(Screen[str]):
                 id="subtitle",
             )
             yield Input(placeholder="Search...", id="search")
-            yield Static("v0.2.3", id="version")
+            yield Static(f"v{__version__}", id="version")
 
     @on(Input.Submitted, "#search")
     async def handle_search(self, event: Input.Submitted) -> None:
