@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Literal
 
 
 @dataclass
@@ -9,6 +10,6 @@ class Torrent:
 
 @dataclass
 class Provider:
-    name: str
+    name: Literal["Jackett"]
     url: str
     api_key: str

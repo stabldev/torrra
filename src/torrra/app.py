@@ -24,7 +24,7 @@ class TorrraApp(App):
         self.theme = "catppuccin-mocha"
 
         if query := await self.push_screen_wait(WelcomeScreen(provider=self.provider)):
-            search_screen = SearchScreen(query)
+            search_screen = SearchScreen(provider=self.provider, initial_query=query)
             await self.push_screen(search_screen)
 
 
