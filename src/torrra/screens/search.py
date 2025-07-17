@@ -8,6 +8,7 @@ from textual.widgets import DataTable, Input, LoadingIndicator, ProgressBar, Sta
 from textual.widgets.data_table import ColumnKey
 
 from torrra._types import Provider
+from torrra.core.context import config
 from torrra.providers.jackett import JackettClient
 from torrra.utils.helpers import human_readable_size
 
@@ -180,15 +181,17 @@ class SearchScreen(Screen):
 
         import libtorrent as lt
 
-        self.lt_session = lt.session()
+        self.lt_session = lt.session()  # pyright: ignore
         self.lt_session.listen_on(6881, 6891)
 
         params = {
-            "save_path": "./downloads",
-            "storage_mode": lt.storage_mode_t.storage_mode_sparse,
+            "save_path": config.get("general.download_path"),
+            "storage_mode": lt.storage_mode_t.storage_mode_sparse,  # pyright: ignore
         }
 
-        self.lt_handle = lt.add_magnet_uri(self.lt_session, magnet_uri, params)
+        self.lt_handle = lt.add_magnet_uri(  # pyright: ignore
+            self.lt_session, magnet_uri, params
+        )
 
         self.app.call_from_thread(
             self._update_download_ui, "[b $success]Fetching Metadata...[/]", 0
