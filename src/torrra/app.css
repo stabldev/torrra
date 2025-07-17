@@ -1,0 +1,10 @@
+.hidden {
+    display: none;
+}
+
+Input {
+    padding: 0 1;
+    margin: 0;
+    background: transparent;
+    border: solid $secondary-muted;
+}

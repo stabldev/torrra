@@ -1,0 +1,20 @@
+WelcomeScreen {
+    align: center middle;
+}
+
+WelcomeScreen Container {
+    max-width: 50;
+    height: auto;
+}
+
+WelcomeScreen Static {
+    text-align: center;
+}
+
+WelcomeScreen #subtitle {
+    color: $text-secondary;
+}
+
+WelcomeScreen #version {
+    color: $foreground-muted;
+}

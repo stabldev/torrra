@@ -6,7 +6,7 @@ from typing import Any, Dict, List
 import tomli_w
 from platformdirs import user_config_dir, user_downloads_dir
 
-from torrra.exceptions import ConfigError
+from torrra.core.exceptions import ConfigError
 
 CONFIG_DIR = Path(user_config_dir("torrra"))
 CONFIG_FILE = CONFIG_DIR / "config.toml"
@@ -88,7 +88,6 @@ class Config:
             "general": {
                 "download_path": user_downloads_dir(),
                 "remember_last_path": True,
-                "max_results": 5,
             }
         }
 
