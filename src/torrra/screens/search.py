@@ -5,6 +5,7 @@ from textual.app import ComposeResult
 from textual.containers import Vertical
 from textual.screen import Screen
 from textual.widgets import DataTable, Input, LoadingIndicator, Static
+from textual.widgets.data_table import ColumnKey
 
 from torrra._types import Provider
 from torrra.providers.jackett import JackettClient
@@ -13,6 +14,20 @@ from torrra.utils.helpers import human_readable_size
 
 class SearchScreen(Screen):
     CSS_PATH = "search.css"
+    # https://github.com/edward-jazzhands/eds-sandbox/blob/main/python/textual/examples/datatable_expandcol.py
+    no_col_width = 3
+    title_col_minimum = 25  # dynamic
+    size_col_width = 10
+    seeders_col_width = 7
+    leechers_col_width = 5
+    tracker_col_width = 10
+    other_cols_total = (
+        no_col_width
+        + size_col_width
+        + seeders_col_width
+        + leechers_col_width
+        + tracker_col_width
+    )
 
     def __init__(self, provider: Optional[Provider], initial_query: str):
         super().__init__()
@@ -24,19 +39,21 @@ class SearchScreen(Screen):
             placeholder="Search...", id="search", value=self.initial_query
         )
         search_input.border_title = "s"
+        results_table = DataTable(
+            id="results_table",
+            cursor_type="row",
+            show_cursor=True,
+            cell_padding=2,
+            classes="hidden",
+        )
+        results_table.border_title = "Results"
 
         with Vertical():
             yield search_input
             with Vertical(id="loader"):
                 yield Static()
                 yield LoadingIndicator()
-            yield DataTable(
-                id="results_table",
-                cursor_type="row",
-                show_cursor=True,
-                cell_padding=2,
-                classes="hidden",
-            )
+            yield results_table
 
     def on_mount(self) -> None:
         self.post_message(
@@ -44,7 +61,29 @@ class SearchScreen(Screen):
         )
 
         table = self.query_one("#results_table", DataTable)
-        table.add_columns("No.", "Title", "Size", "Seeders", "Peers", "Tracker")
+        table.add_column("No.", width=self.no_col_width, key="no_col")
+        table.add_column("Title", width=self.title_col_minimum, key="title_col")
+        table.add_column("Size", width=self.size_col_width, key="size_col")
+        table.add_column("Seeders", width=self.seeders_col_width, key="seeders_col")
+        table.add_column("Peers", width=self.leechers_col_width, key="leechers_col")
+        table.add_column("Tracker", width=self.tracker_col_width, key="tracker_col")
+
+    def on_resize(self) -> None:
+        table = self.query_one("#results_table", DataTable)
+
+        total_cell_padding = table.cell_padding * 2 * len(table.columns)
+        # space taken for border and padding
+        border_and_padding = 4
+        available_width = (
+            self.size.width
+            - self.other_cols_total
+            - total_cell_padding
+            - border_and_padding
+        )
+
+        second_col_width = max(self.title_col_minimum, available_width)
+        table.columns[ColumnKey("title_col")].width = second_col_width
+        table.refresh()
 
     def on_key(self, event: events.Key) -> None:
         if event.key == "s":
@@ -86,7 +125,14 @@ class SearchScreen(Screen):
                 torrent["Seeders"],
                 torrent["Peers"],
                 torrent["Tracker"],
+                key=torrent["MagnetUri"],
             )
+
+    @on(DataTable.RowSelected, "#results_table")
+    def handle_select(self, event: DataTable.RowSelected) -> None:
+        row_key = event.row_key
+        magnet_uri = row_key.value
+        self.log(f"MagnetUri: {magnet_uri}")
 
     def _get_client(self) -> Optional[JackettClient]:
         if not self.provider:

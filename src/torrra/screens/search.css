@@ -21,9 +21,12 @@ SearchScreen #results_table {
     background: transparent;
     border: solid $secondary-muted;
     padding: 0 1;
+    scrollbar-size: 0 0;
+    height: 1fr;
 }
 
-SearchScreen #results_table > .datatable--header {
+SearchScreen #results_table > .datatable--header,
+SearchScreen #results_table > .datatable--header-hover {
     background: transparent;
 }
 
