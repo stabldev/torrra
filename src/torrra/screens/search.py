@@ -2,7 +2,7 @@ from typing import Optional
 
 from textual import on, work
 from textual.app import ComposeResult
-from textual.containers import Container, Vertical
+from textual.containers import Container, Horizontal, Vertical
 from textual.screen import Screen
 from textual.widgets import DataTable, Input, LoadingIndicator, ProgressBar, Static
 from textual.widgets.data_table import ColumnKey
@@ -61,7 +61,13 @@ class SearchScreen(Screen):
                 c.border_title = "[$secondary]d[/]ownloads"
                 c.can_focus = True
                 yield Static("No active downloads")
-                yield ProgressBar(total=100)
+                with Horizontal(id="bar-and-actions", classes="hidden"):
+                    yield ProgressBar(total=100)
+                    yield Static(
+                        "[$secondary-muted][$secondary]p[/$secondary]ause [$secondary]r[/$secondary]esume",
+                        id="actions",
+                        disabled=True,
+                    )
 
     def on_mount(self) -> None:
         self.post_message(
@@ -96,7 +102,6 @@ class SearchScreen(Screen):
 
         second_col_width = max(self.title_col_minimum, available_width)
         table.columns[ColumnKey("title_col")].width = second_col_width
-        table.refresh()
 
     def key_s(self) -> None:
         self.query_one("#search", Input).focus()
@@ -143,6 +148,7 @@ class SearchScreen(Screen):
         row_key = event.row_key
         magnet_uri = row_key.value
 
+        self.query_one("#bar-and-actions", Horizontal).remove_class("hidden")
         self.query_one("#search", Input).disabled = True
         event.control.disabled = True
         self._download_torrent(magnet_uri)
