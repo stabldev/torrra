@@ -59,6 +59,7 @@ class SearchScreen(Screen):
             yield results_table
             with Container(id="downloads_container") as c:
                 c.border_title = "[$secondary]d[/]ownloads"
+                c.can_focus = True
                 yield Static("No active downloads")
                 yield ProgressBar(total=100)
 
@@ -102,11 +103,11 @@ class SearchScreen(Screen):
 
     @on(Input.Submitted, "#search")
     async def handle_search(self, event: Input.Submitted) -> None:
-        self.query_one("#search", Input).blur()
         table = self.query_one("#results_table", DataTable)
         loader = self.query_one("#loader", Vertical)
         loader_text = self.query_one("#loader Static", Static)
 
+        table.focus()
         query = event.value
         if not query:
             return
@@ -124,9 +125,7 @@ class SearchScreen(Screen):
 
         loader.add_class("hidden")
         table.remove_class("hidden")
-
         table.clear()
-        table.focus()
 
         for idx, torrent in enumerate(results):
             table.add_row(
@@ -144,6 +143,8 @@ class SearchScreen(Screen):
         row_key = event.row_key
         magnet_uri = row_key.value
 
+        self.query_one("#search", Input).disabled = True
+        event.control.disabled = True
         self._download_torrent(magnet_uri)
 
     @work(exclusive=True, thread=True)

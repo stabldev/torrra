@@ -30,6 +30,10 @@ SearchScreen #results_table:focus {
     border: solid $secondary;
 }
 
+SearchScreen #results_table:disabled {
+    border: solid $secondary-muted;
+}
+
 SearchScreen #results_table > .datatable--header,
 SearchScreen #results_table > .datatable--header-hover {
     background: transparent;
@@ -53,4 +57,8 @@ SearchScreen #downloads_container {
     height: auto;
     border: solid $secondary-muted;
     padding: 0 1;
+}
+
+SearchScreen #downloads_container:focus {
+    border: solid $secondary;
 }
