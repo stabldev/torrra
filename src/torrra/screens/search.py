@@ -36,6 +36,7 @@ class SearchScreen(Screen):
         # libtorrent
         self.lt_session = None
         self.lt_handle = None
+        self.lt_paused = False
 
     def compose(self) -> ComposeResult:
         search_input = Input(
@@ -107,7 +108,24 @@ class SearchScreen(Screen):
         self.query_one("#search", Input).focus()
 
     def key_p(self) -> None:
-        pass
+        downloads_container = self.query_one("#downloads_container", Container)
+        if not downloads_container.has_focus or not self.lt_handle or self.lt_paused:
+            return
+
+        self.lt_handle.pause()
+        self.lt_paused = True
+
+    def key_r(self) -> None:
+        downloads_container = self.query_one("#downloads_container", Container)
+        if (
+            not downloads_container.has_focus
+            or not self.lt_handle
+            or not self.lt_paused
+        ):
+            return
+
+        self.lt_handle.resume()
+        self.lt_paused = False
 
     @on(Input.Submitted, "#search")
     async def handle_search(self, event: Input.Submitted) -> None:
@@ -183,19 +201,27 @@ class SearchScreen(Screen):
         title = torrent_info.name()
         total_size = human_readable_size(torrent_info.total_size())
 
+        status_text_template = (
+            f"[b $secondary]Title: [$primary]{title}[/$primary] - "
+            "Mode: [$success]{status}[/$success] - "
+            "Seeds: {seeds} - "
+            "Peers: {peers} - "
+        )
+
         while not self.lt_handle.is_seed():
             s = self.lt_handle.status()
-            download_status = (
-                f"[b $secondary]Title: [$primary]{title}[/$primary] - "
-                f"Mode: [$success]Download[/$success] - "
-                f"Seeds: {s.num_seeds} - "
-                f"Peers: {s.num_peers} - "
-                f"Size: {total_size}[/]"
+            seed_status = (
+                status_text_template.format(
+                    status="Paused" if self.lt_paused else "Download",
+                    seeds=s.num_seeds,
+                    peers=s.num_peers,
+                )
+                + f"Size: {total_size}[/]"
             )
 
             self.app.call_from_thread(
                 self._update_download_ui,
-                download_status,
+                seed_status,
                 s.progress * 100,
             )
 
@@ -204,12 +230,14 @@ class SearchScreen(Screen):
         while True:
             s = self.lt_handle.status()
             seed_status = (
-                f"[b $secondary]Title: [$primary]{title}[/$primary] - "
-                f"Mode: [$success]Seed[/$success] - "
-                f"Seeds: {s.num_seeds} - "
-                f"Peers: {s.num_peers} - "
-                f"Uploaded: {human_readable_size(s.total_upload)}[/]"
+                status_text_template.format(
+                    status="Paused" if self.lt_paused else "Seed",
+                    seeds=s.num_seeds,
+                    peers=s.num_peers,
+                )
+                + f"Uploaded: {human_readable_size(s.total_upload)}[/]"
             )
+
             self.app.call_from_thread(self._update_download_ui, seed_status, 100)
             time.sleep(5)
 
