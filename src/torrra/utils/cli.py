@@ -1,10 +1,19 @@
 import argparse
 
+from torrra._version import __version__
+
 
 def parse_cli_args():
     parser = argparse.ArgumentParser(prog="torrra")
     subparsers = parser.add_subparsers(dest="command")
 
+    parser.add_argument(
+        "-v",
+        "--version",
+        action="version",
+        version=f"%(prog)s v{__version__}",
+        help="show torrra version and exit",
+    )
     parser.add_argument(
         "-j", "--jackett", action="store_true", help="use Jackett provider"
     )
