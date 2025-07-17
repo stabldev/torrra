@@ -1,3 +1,4 @@
+import sys
 from typing import Optional
 
 from textual import work
@@ -34,6 +35,11 @@ def main():
 
     if args.jackett:
         provider = load_provider("jackett")
+
+    if not provider:
+        print("error: no provider specified!")
+        print("run torrra --help for more information")
+        sys.exit(1)
 
     app = TorrraApp(provider=provider)
     app.run()
