@@ -1,4 +1,5 @@
 SearchScreen #search {
+    dock: top;
     padding: 0 1;
     margin: 0;
     background: transparent;
@@ -25,6 +26,10 @@ SearchScreen #results_table {
     height: 1fr;
 }
 
+SearchScreen #results_table:focus {
+    border: solid $secondary;
+}
+
 SearchScreen #results_table > .datatable--header,
 SearchScreen #results_table > .datatable--header-hover {
     background: transparent;
@@ -41,4 +46,11 @@ SearchScreen #loader LoadingIndicator {
 
 SearchScreen #loader Static {
     content-align-horizontal: center;
+}
+
+SearchScreen #downloads_container {
+    dock: bottom;
+    height: auto;
+    border: solid $secondary-muted;
+    padding: 0 1;
 }

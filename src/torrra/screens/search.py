@@ -1,10 +1,10 @@
 from typing import Optional
 
-from textual import events, on
+from textual import on, work
 from textual.app import ComposeResult
-from textual.containers import Vertical
+from textual.containers import Container, Vertical
 from textual.screen import Screen
-from textual.widgets import DataTable, Input, LoadingIndicator, Static
+from textual.widgets import DataTable, Input, LoadingIndicator, ProgressBar, Static
 from textual.widgets.data_table import ColumnKey
 
 from torrra._types import Provider
@@ -33,12 +33,15 @@ class SearchScreen(Screen):
         super().__init__()
         self.provider = provider
         self.initial_query = initial_query
+        # libtorrent
+        self.lt_session = None
+        self.lt_handle = None
 
     def compose(self) -> ComposeResult:
         search_input = Input(
             placeholder="Search...", id="search", value=self.initial_query
         )
-        search_input.border_title = "s"
+        search_input.border_title = "[$secondary]s[/]earch"
         results_table = DataTable(
             id="results_table",
             cursor_type="row",
@@ -46,7 +49,7 @@ class SearchScreen(Screen):
             cell_padding=2,
             classes="hidden",
         )
-        results_table.border_title = "Results"
+        results_table.border_title = "[$secondary]r[/]esults"
 
         with Vertical():
             yield search_input
@@ -54,6 +57,10 @@ class SearchScreen(Screen):
                 yield Static()
                 yield LoadingIndicator()
             yield results_table
+            with Container(id="downloads_container") as c:
+                c.border_title = "[$secondary]d[/]ownloads"
+                yield Static("No active downloads")
+                yield ProgressBar(total=100)
 
     def on_mount(self) -> None:
         self.post_message(
@@ -67,6 +74,11 @@ class SearchScreen(Screen):
         table.add_column("Seeders", width=self.seeders_col_width, key="seeders_col")
         table.add_column("Peers", width=self.leechers_col_width, key="leechers_col")
         table.add_column("Tracker", width=self.tracker_col_width, key="tracker_col")
+
+    def on_unmount(self) -> None:
+        # clean libtorrent session
+        if self.lt_session and self.lt_handle:
+            self.lt_session.remove_torrent(self.lt_handle)
 
     def on_resize(self) -> None:
         table = self.query_one("#results_table", DataTable)
@@ -85,9 +97,8 @@ class SearchScreen(Screen):
         table.columns[ColumnKey("title_col")].width = second_col_width
         table.refresh()
 
-    def on_key(self, event: events.Key) -> None:
-        if event.key == "s":
-            self.query_one("#search", Input).focus()
+    def key_s(self) -> None:
+        self.query_one("#search", Input).focus()
 
     @on(Input.Submitted, "#search")
     async def handle_search(self, event: Input.Submitted) -> None:
@@ -132,7 +143,76 @@ class SearchScreen(Screen):
     def handle_select(self, event: DataTable.RowSelected) -> None:
         row_key = event.row_key
         magnet_uri = row_key.value
-        self.log(f"MagnetUri: {magnet_uri}")
+
+        self._download_torrent(magnet_uri)
+
+    @work(exclusive=True, thread=True)
+    async def _download_torrent(self, magnet_uri: str) -> None:
+        import time
+
+        import libtorrent as lt
+
+        self.lt_session = lt.session()
+        self.lt_session.listen_on(6881, 6891)
+
+        params = {
+            "save_path": "./downloads",
+            "storage_mode": lt.storage_mode_t.storage_mode_sparse,
+        }
+
+        self.lt_handle = lt.add_magnet_uri(self.lt_session, magnet_uri, params)
+
+        self.app.call_from_thread(
+            self._update_download_ui, "[b $success]Fetching Metadata...[/]", 0
+        )
+
+        while not self.lt_handle.has_metadata():
+            time.sleep(0.5)
+
+        torrent_info = self.lt_handle.get_torrent_info()
+        title = torrent_info.name()
+        total_size = human_readable_size(torrent_info.total_size())
+
+        status_text = (
+            f"[b $secondary]Title: [$primary]{title}[/$primary] - "
+            "Mode: [$success]{status}[/$success] - "
+            f"Size: {total_size}[/]"
+        )
+
+        self.app.call_from_thread(
+            self._update_download_ui, status_text.format(status="Download"), 0
+        )
+
+        while not self.lt_handle.is_seed():
+            s = self.lt_handle.status()
+            self.app.call_from_thread(
+                self._update_download_ui,
+                status_text.format(status="Download"),
+                s.progress * 100,
+            )
+
+            time.sleep(1)
+
+        self.app.call_from_thread(
+            self._update_download_ui, status_text.format(status="Seed"), 100
+        )
+        while True:
+            s = self.lt_handle.status()
+            seed_status = (
+                f"[b $secondary]Title: [$primary]{title}[/$primary] - "
+                f"Mode: [$success]Seed[/$success] - "
+                f"Seeds: {s.num_seeds} - "
+                f"Peers: {s.num_peers} - "
+                f"Uploaded: {human_readable_size(s.total_upload)}[/]"
+            )
+            self.app.call_from_thread(self._update_download_ui, seed_status, 100)
+            time.sleep(5)
+
+    def _update_download_ui(self, status: str, progress: float) -> None:
+        self.query_one("#downloads_container Static", Static).update(status)
+        self.query_one("#downloads_container ProgressBar", ProgressBar).update(
+            progress=progress
+        )
 
     def _get_client(self) -> Optional[JackettClient]:
         if not self.provider:
