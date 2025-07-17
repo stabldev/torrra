@@ -106,6 +106,9 @@ class SearchScreen(Screen):
     def key_s(self) -> None:
         self.query_one("#search", Input).focus()
 
+    def key_p(self) -> None:
+        pass
+
     @on(Input.Submitted, "#search")
     async def handle_search(self, event: Input.Submitted) -> None:
         table = self.query_one("#results_table", DataTable)
@@ -180,29 +183,24 @@ class SearchScreen(Screen):
         title = torrent_info.name()
         total_size = human_readable_size(torrent_info.total_size())
 
-        status_text = (
-            f"[b $secondary]Title: [$primary]{title}[/$primary] - "
-            "Mode: [$success]{status}[/$success] - "
-            f"Size: {total_size}[/]"
-        )
-
-        self.app.call_from_thread(
-            self._update_download_ui, status_text.format(status="Download"), 0
-        )
-
         while not self.lt_handle.is_seed():
             s = self.lt_handle.status()
+            download_status = (
+                f"[b $secondary]Title: [$primary]{title}[/$primary] - "
+                f"Mode: [$success]Download[/$success] - "
+                f"Seeds: {s.num_seeds} - "
+                f"Peers: {s.num_peers} - "
+                f"Size: {total_size}[/]"
+            )
+
             self.app.call_from_thread(
                 self._update_download_ui,
-                status_text.format(status="Download"),
+                download_status,
                 s.progress * 100,
             )
 
             time.sleep(1)
 
-        self.app.call_from_thread(
-            self._update_download_ui, status_text.format(status="Seed"), 100
-        )
         while True:
             s = self.lt_handle.status()
             seed_status = (
