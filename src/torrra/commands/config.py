@@ -1,7 +1,7 @@
 from typing import Any
 
 from torrra.core.config import Config
-from torrra.exceptions import ConfigError
+from torrra.core.exceptions import ConfigError
 
 
 def handle_config_command(args: Any):

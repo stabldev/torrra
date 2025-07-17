@@ -5,6 +5,7 @@ from textual import work
 from textual.app import App
 
 from torrra._types import Provider
+from torrra.commands.config import handle_config_command
 from torrra.screens.search import SearchScreen
 from torrra.screens.welcome import WelcomeScreen
 from torrra.utils.cli import parse_cli_args
@@ -35,6 +36,9 @@ def main():
 
     if args.jackett:
         provider = load_provider("jackett")
+    elif args.command == "config":
+        handle_config_command(args)
+        sys.exit()
 
     if not provider:
         print("error: no provider specified!")
