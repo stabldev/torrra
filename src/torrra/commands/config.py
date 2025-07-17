@@ -1,12 +1,10 @@
 from typing import Any
 
-from torrra.core.config import Config
+from torrra.core.context import config
 from torrra.core.exceptions import ConfigError
 
 
 def handle_config_command(args: Any):
-    config = Config()
-
     if args.get:
         try:
             get_res = config.get(args.get)
