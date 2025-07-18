@@ -1,4 +1,4 @@
-# torrra
+# `torrra`
 
 > A Python tool that lets you find and download torrents without leaving your CLI.
 
@@ -10,135 +10,197 @@
 
 ![demo](./docs/demo.gif)
 
+## Overview
+
+`torrra` provides a streamlined command-line interface for your torrent needs. It allows you to search for and download torrents, and manage active downloads without leaving your terminal, offering a fast and efficient solution for command-line users.
+
+## Table of Contents
+
+* [Features](#features)
+* [Installation](#installation)
+    * [Cross-Platform](#cross-platform-recommended)
+    * [Arch Linux](#arch-linux)
+    * [Standalone Binaries](#standalone-binaries-no-python-required)
+    * [Local Development](#local-development)
+* [Usage](#usage)
+    * [CLI Commands & Flags](#cli-commands--flags)
+    * [TUI Controls](#tui-controls)
+* [Configuration](#configuration)
+    * [Managing Your Configuration](#managing-your-configuration)
+    * [Config Options](#config-options)
+* [Indexer Support](#indexer-support)
+* [Roadmap](#roadmap)
+* [Contributing](#contributing)
+* [License](#license)
+
 ## Features
 
-- Search torrents from multiple indexers
-- Fetch magnet links directly
-- Download torrents via libtorrent
-- Pretty CLI with Rich-powered progress bars
-- Modular and easily extensible indexer architecture
+* Integrate with services like [`Jackett`](https://github.com/Jackett/Jackett).
+* Fetch and download magnet links directly, powered by [`Libtorrent`](https://libtorrent.org/).
+* A responsive download manager built with [`Textual`](https://textual.textualize.io/).
+* Pause and resume torrent downloads using keyboard shortcuts.
+* Operates as both a `CLI` tool and a full-screen terminal `UI`.
+* Toggle between dark and light themes.
 
 ## Installation
 
-> Requires **Python 3.13+**. For torrent support, [libtorrent](https://libtorrent.org/) is needed (see options below).
+`torrra` offers several installation methods to suit your environment.
 
-### Recommended (cross-platform)
+### Cross-Platform (recommended)
+
+Using `pipx` ensures `torrra` is installed in an isolated environment, preventing conflicts with your system's Python packages.
 
 ```bash
 pipx install torrra
-```
+````
 
-- Works on **Linux**, **macOS**, and **Windows**
-- Uses `libtorrent` installed via pip
+> This method supports **Linux**, **macOS**, and **Windows**. `libtorrent` is installed automatically via pip.
 
 ### Arch Linux
 
-#### 1. From AUR (builds from source)
-
+1. **From AUR (builds from source):**
 ```bash
 yay -S torrra
 ```
-
-#### 2. From AUR binary package (faster install, no Python deps)
-
+2. **From AUR Binary Package (faster installation):**
 ```bash
 yay -S torrra-bin
 ```
+> `torrra-bin` includes a precompiled standalone binary for x86\_64 Linux, requiring no Python dependencies.
 
-> `torrra-bin` includes a precompiled standalone binary for x86_64 Linux.
+### Standalone Binaries (No Python Required)
 
-### Standalone Binaries (no Python needed)
+Download pre-built executables directly from [GitHub Releases](https://github.com/stabldev/torrra/releases):
 
-Download from the [GitHub Releases](https://github.com/stabldev/torrra/releases):
+| OS      | File                                |
+| :------ | :---------------------------------- |
+| Linux   | `torrra-vX.Y.Z-linux-x86_64`        |
+| Windows | `torrra-vX.Y.Z-windows.exe`         |
+| macOS   | `torrra-vX.Y.Z-macos-x86_64`        |
 
-| OS       | File                          |
-|----------|-------------------------------|
-| Linux    | `torrra-vX.Y.Z-linux-x86_64`  |
-| Windows  | `torrra-vX.Y.Z-windows.exe`   |
-| macOS    | `torrra-vX.Y.Z-macos-x86_64`  |
-
-Make sure to `chmod +x` the binary if needed.
+> On Linux/macOS, ensure the binary is executable: `chmod +x torrra-vX.Y.Z-*-x86_64`.
 
 ### Local Development
 
+To set up `torrra` for development:
+
 ```bash
-git clone https://github.com/stabldev/torrra
+git clone [https://github.com/stabldev/torrra](https://github.com/stabldev/torrra)
 cd torrra
-uv sync  # or `pip install -e .`
+uv sync # or `pip install -e .`
 uv run torrra
 ```
 
+## Usage
+
+To start `torrra`, you must specify a provider. For example, to use [Jackett](https://github.com/Jackett/Jackett):
+
+```bash
+torrra --jackett
+```
+
+> Omitting a provider flag will result in an error.
+
+### CLI Commands & Flags
+
+#### Top-level commands
+
+| Command         | Description                                     |
+| :-------------- | :---------------------------------------------- |
+| `torrra`        | Launches the interactive TUI                    |
+| `torrra config` | Manages configuration settings                  |
+| `torrra --help` | Displays help for the top-level CLI commands    |
+
+#### Provider flags (used with `torrra`)
+
+| Flag              | Description                               |
+| :---------------- | :---------------------------------------- |
+| `-j`, `--jackett` | Uses Jackett as the torrent indexer       |
+| `-v`, `--version` | Shows the current `torrra` version        |
+| `-h`, `--help`    | Displays help for the main application    |
+
+### TUI Controls
+
+| Key     | Action                          |
+| :------ | :------------------------------ |
+| `↑↓`    | Navigate through results        |
+| `Tab`   | Focus the next widget           |
+| `Enter` | Start download for selection    |
+| `p`     | Pause the current download      |
+| `r`     | Resume a paused download        |
+| `q`     | Quit `torrra`                   |
+
+
 ## Configuration
 
-`torrra` lets you customize its behavior using a simple config file stored in the **user config directory** specific to your OS:
+`torrra`'s behavior can be customized via a `config.toml` file located in your OS-specific user config directory:
 
-- **Linux/macOS:** `~/.config/torrra/config.toml`
-- **Windows:** `%APPDATA%\torrra\config.toml`
+  * **Linux/macOS:** `~/.config/torrra/config.toml`
+  * **Windows:** `%APPDATA%\torrra\config.toml`
 
-> The actual path is resolved automatically using [platformdirs](https://pypi.org/project/platformdirs/), so you don’t need to worry about it.
+> The actual path is automatically resolved using [platformdirs](https://pypi.org/project/platformdirs/).
 
-Example:
+Example `config.toml`:
 
 ```toml
 [general]
-download_path = "/home/username/Downloads"     # default folder to save torrents
-remember_last_path = true                      # reuse last used path as default
-max_results = 5                                # max number of results to show after search
+download_path = "/home/username/Downloads"   # Default folder for saving torrents
+remember_last_path = true                    # Reuse the last used path as default
 ```
 
-> **Note:** Some indexers (like YTS) may return multiple magnet links per result (e.g., different qualities for the same movie).  
-So if `max_results` is set to `2`, you might still see more than 2 magnet options depending on the indexer's structure.
+### Managing Your Configuration
 
-### Usage
-
-Use the built-in `torrra config` command to get or set configuration values:
+Use the built-in `torrra config` command to manage settings:
 
 ```bash
-torrra config -g general.download_path         # get a specific value
-torrra config -s general.max_results 10        # set a value
-torrra config -l                               # list all current config values
+torrra config -g general.download_path             # Get a specific config value
+torrra config -s general.remember_last_path False  # Set a key-value pair
+torrra config -l                                   # List all config settings
 ```
 
-### Options
+#### Config Options
 
-| Flag                  | Description                                |
-|-----------------------|--------------------------------------------|
-| `-g`, `--get KEY`     | get a config value (e.g., `general.max_results`) |
-| `-s`, `--set KEY VALUE` | set a key-value pair                       |
-| `-l`, `--list`        | list all config settings                   |
-| `-h`, `--help`        | show help for the config command           |
+| Flag              | Description                                   |
+| :---------------- | :-------------------------------------------- |
+| `-g`, `--get KEY` | Retrieves a config value (e.g., `general.download_path`) |
+| `-s`, `--set KEY VALUE` | Sets a key-value pair                     |
+| `-l`, `--list`    | Lists all configuration settings              |
+| `-h`, `--help`    | Displays help for the config command          |
+
 
 ## Indexer Support
 
 Currently supported:
 
-- YTS (movies)
-- MagnetDL
-- Movierulz (movies)
+  * [**Jackett**](https://github.com/Jackett/Jackett) (via `--jackett` or `-j`)
 
 Planned:
 
-- 1337x
-- GLodls
-- Nyaa (anime-only, optional)
-- Community-driven additions
+  * [Prowlarr](https://github.com/Prowlarr/Prowlarr)
+  * Support for custom indexers
 
-## Dev Notes
+## Roadmap
 
-- Modular indexer structure (`torrra/indexers`)
-- Extend `BaseIndexer` to add new sources
-- Built using:
-  - `httpx` + `selectolax` for scraping
-  - `libtorrent` for torrenting
-  - `rich` for CLI visuals
-  - `questionary` for input prompts
+Ongoing development focuses on enhancing `torrra`'s capabilities:
 
-## Contributing & Notes
+  * [x] Jackett integration
+  * [x] Torrent download `UI` with pause/resume
+  * [x] Config file support
+  * [x] Standalone binary & AUR packaging
+  * [X] Magnet info preview (seeders/leechers before download)
+  * [ ] Prowlarr support
+  * [ ] Advanced filtering/sorting
+  * [ ] Nyaa & anime-specific indexers
+  * [ ] Keyboard shortcuts overlay / help screen
 
-This project is a weekend-hacker side project- built for fun and learning. It's not a polished product (yet), but it works well enough for daily use!
+## Contributing
 
-If you run into any bugs, have suggestions, or want to help improve it, feel free to [open an issue](https://github.com/stabldev/torrra/issues) or even send a pull request. All contributions are welcome.
+`torrra` is an open-source project, and contributions are highly valued.
+
+  * If you find an issue, please [open an issue](https://github.com/stabldev/torrra/issues) with detailed steps to reproduce.
+  * We welcome new features or indexer integrations. Fork the repository and submit a Pull Request.
+  * General feedback and feature requests are always appreciated.
 
 ## License
 
-MIT. Copyright (c) [stabldev](https://github.com/stabldev)
+**MIT License.** Copyright (c) [stabldev](https://github.com/stabldev)
