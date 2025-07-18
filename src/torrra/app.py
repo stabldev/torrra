@@ -16,6 +16,7 @@ class TorrraApp(App):
     TITLE = "torrra"
     CSS_PATH = "app.css"
     BINDINGS = [("q", "quit", "Quit")]
+    ENABLE_COMMAND_PALETTE = False
 
     def __init__(self, provider: Optional[Provider]) -> None:
         super().__init__()

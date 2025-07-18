@@ -18,3 +18,31 @@ WelcomeScreen #subtitle {
 WelcomeScreen #version {
     color: $foreground-muted;
 }
+
+WelcomeScreen #commands_container {
+    margin-top: 1;
+    align-horizontal: center;
+}
+
+WelcomeScreen #commands_container Grid {
+    width: 75%;
+    height: 3;
+    grid-size: 2;
+    grid-columns: 1fr auto;
+}
+
+WelcomeScreen #commands_container Grid Static {
+    text-align: left;
+    color: $foreground-muted;
+}
+
+WelcomeScreen #commands_container Grid Static#title {
+    text-align: center;
+    column-span: 2;
+    color: $text-secondary;
+}
+
+WelcomeScreen #commands_container Grid Static.key {
+    text-align: right;
+    color: $text-secondary;
+}
