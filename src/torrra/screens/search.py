@@ -1,8 +1,11 @@
-from typing import Optional
+import time
+from typing import List, Optional
 
+import libtorrent as lt
 from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Container, Horizontal, Vertical
+from textual.message import Message
 from textual.screen import Screen
 from textual.widgets import DataTable, Input, LoadingIndicator, ProgressBar, Static
 from textual.widgets.data_table import ColumnKey
@@ -29,6 +32,12 @@ class SearchScreen(Screen):
         + leechers_col_width
         + tracker_col_width
     )
+
+    class SearchResults(Message):
+        def __init__(self, results: List, query: str) -> None:
+            self.results = results
+            self.query = query
+            super().__init__()
 
     def __init__(self, provider: Optional[Provider], initial_query: str):
         super().__init__()
@@ -130,40 +139,20 @@ class SearchScreen(Screen):
 
     @on(Input.Submitted, "#search")
     async def handle_search(self, event: Input.Submitted) -> None:
-        table = self.query_one("#results_table", DataTable)
-        loader = self.query_one("#loader", Vertical)
-        loader_text = self.query_one("#loader Static", Static)
-
-        table.focus()
         query = event.value
         if not query:
             return
 
-        loader_text.update(f'[b]Searching for:[/] "{query}"')
-        client = self._get_client()
+        table = self.query_one("#results_table", DataTable)
+        loader = self.query_one("#loader", Vertical)
+        loader_text = self.query_one("#loader Static", Static)
 
-        if not client:
-            # TODO: fallback build-in scrapers
-            return
-
-        results = await client.search(query)
-        if not results:
-            return
-
-        loader.add_class("hidden")
-        table.remove_class("hidden")
+        table.add_class("hidden")
         table.clear()
+        loader.remove_class("hidden")
+        loader_text.update(f'Searching for: "[b]{query}[/]"')
 
-        for idx, torrent in enumerate(results):
-            table.add_row(
-                idx + 1,
-                torrent["Title"],
-                human_readable_size(torrent["Size"]),
-                torrent["Seeders"],
-                torrent["Peers"],
-                torrent["Tracker"],
-                key=torrent["MagnetUri"],
-            )
+        self._perform_search(query)
 
     @on(DataTable.RowSelected, "#results_table")
     def handle_select(self, event: DataTable.RowSelected) -> None:
@@ -176,11 +165,45 @@ class SearchScreen(Screen):
         self._download_torrent(magnet_uri)
 
     @work(exclusive=True, thread=True)
+    async def _perform_search(self, query: str) -> None:
+        client = self._get_client()
+        results = []
+        if client:
+            try:
+                results = await client.search(query)
+            except Exception as e:
+                self.log.error(f"error during search: {e}")
+
+        self.post_message(self.SearchResults(results, query))
+
+    @on(SearchResults)
+    def _show_search_results(self, message: SearchResults) -> None:
+        table = self.query_one("#results_table", DataTable)
+        loader = self.query_one("#loader", Vertical)
+        loader_text = loader.query_one(Static)
+
+        if not message.results:
+            loader_text.update(f'Nothing found for "[b]{message.query}[/b]"')
+            return
+
+        loader.add_class("hidden")
+        table.remove_class("hidden")
+
+        for idx, torrent in enumerate(message.results):
+            table.add_row(
+                idx + 1,
+                torrent["Title"],
+                human_readable_size(torrent["Size"]),
+                torrent["Seeders"],
+                torrent["Peers"],
+                torrent["Tracker"],
+                key=torrent["MagnetUri"],
+            )
+
+        table.focus()
+
+    @work(exclusive=True, thread=True)
     async def _download_torrent(self, magnet_uri: str) -> None:
-        import time
-
-        import libtorrent as lt
-
         self.lt_session = lt.session()  # pyright: ignore
         self.lt_session.listen_on(6881, 6891)
 
