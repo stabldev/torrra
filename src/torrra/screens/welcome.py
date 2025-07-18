@@ -2,7 +2,7 @@ from typing import Optional
 
 from textual import on
 from textual.app import ComposeResult
-from textual.containers import Container
+from textual.containers import Container, Grid
 from textual.screen import Screen
 from textual.widgets import Input, Static
 
@@ -38,6 +38,15 @@ class WelcomeScreen(Screen[str]):
             yield Input(placeholder="Search...", id="search")
             provider_name = f" - {self.provider.name}" if self.provider else ""
             yield Static(f"v{__version__}{provider_name}", id="version")
+            with Container(id="commands_container"):
+                with Grid(id="commands"):
+                    yield Static("[commands]", id="title", markup=False)
+                    yield Static("[esc]ape focus", markup=False)
+                    yield Static("esc", classes="key")
+                    yield Static("toggle [d]ark mode", markup=False)
+                    yield Static("d", classes="key")
+                    yield Static("[q]uit", markup=False)
+                    yield Static("q", classes="key")
 
     @on(Input.Submitted, "#search")
     async def handle_search(self, event: Input.Submitted) -> None:
