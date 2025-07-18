@@ -8,6 +8,7 @@ from textual.widgets import Input, Static
 
 from torrra._types import Provider
 from torrra._version import __version__
+from torrra.utils.fs import get_resource_path
 
 BANNER = """
 ▀█▀ █▀█ █▀▄ █▀▄ █▀▄ █▀█
@@ -17,7 +18,7 @@ BANNER = """
 
 
 class WelcomeScreen(Screen[str]):
-    CSS_PATH = "welcome.css"
+    CSS_PATH = get_resource_path("screens/welcome.css")
 
     def __init__(self, provider: Optional[Provider]) -> None:
         super().__init__()
