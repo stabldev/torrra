@@ -1,4 +1,4 @@
-# torrra
+# `torrra`
 
 > A Python tool that lets you find and download torrents without leaving your CLI.
 
@@ -81,8 +81,8 @@ torrra --jackett
 
 | Command          | Description                                        |
 |------------------|----------------------------------------------------|
-| `torrra`         | Launch the interactive TUI (requires a provider)   |
-| `torrra config`  | Manage configuration (get/set/list)                |
+| `torrra`         | Launch the interactive TUI                         |
+| `torrra config`  | Manage configuration ([more info](#configuration)) |
 | `torrra --help`  | Show help for the top-level CLI                    |
 
 #### Provider flags (used with `torrra`)
@@ -90,18 +90,19 @@ torrra --jackett
 | Flag                  | Description                                |
 |-----------------------|--------------------------------------------|
 | `-j`, `--jackett`     | Use Jackett as the torrent indexer         |
-| `-v`, `--version`     | Show current version of Torrra             |
+| `-v`, `--version`     | Show current version of `torrra`           |
 | `-h`, `--help`        | Show help for the main app                 |
 
 ### TUI Controls
 
-| Key  | Action                        |
-|------|-------------------------------|
-| `↑↓` | Navigate results               |
-| `Enter` | Start download for selection     |
-| `p`  | Pause current download        |
-| `r`  | Resume paused download        |
-| `q`  | Quit Torrra                   |
+| Key  | Action                          |
+|------|---------------------------------|
+| `↑↓` | Navigate results                |
+| `Tab` | Focus next widget              |
+| `Enter` | Start download for selection |
+| `p`  | Pause current download          |
+| `r`  | Resume paused download          |
+| `q`  | Quit `torrra`                   |
 
 ## Configuration
 
