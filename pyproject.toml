@@ -1,6 +1,6 @@
 [project]
 name = "torrra"
-version = "0.2.3"
+version = "1.0.0"
 description = "A Python tool that lets you find and download torrents without leaving your CLI."
 readme = "README.md"
 authors = [{ name = "stabldev" }]
