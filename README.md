@@ -38,7 +38,7 @@
 * Integrate with services like [`Jackett`](https://github.com/Jackett/Jackett).
 * Fetch and download magnet links directly, powered by [`Libtorrent`](https://libtorrent.org/).
 * A responsive download manager built with [`Textual`](https://textual.textualize.io/).
-* Pause ⏸️ and resume ▶️ torrent downloads using keyboard shortcuts.
+* Pause and resume torrent downloads using keyboard shortcuts.
 * Operates as both a `CLI` tool and a full-screen terminal `UI`.
 * Toggle between dark and light themes.
 
@@ -126,8 +126,8 @@ torrra --jackett
 | `↑↓`    | Navigate through results        |
 | `Tab`   | Focus the next widget           |
 | `Enter` | Start download for selection    |
-| `p`     | Pause the current download ⏸️   |
-| `r`     | Resume a paused download ▶️     |
+| `p`     | Pause the current download      |
+| `r`     | Resume a paused download        |
 | `q`     | Quit `torrra`                   |
 
 
