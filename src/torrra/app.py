@@ -15,7 +15,11 @@ from torrra.utils.provider import load_provider
 class TorrraApp(App):
     TITLE = "torrra"
     CSS_PATH = "app.css"
-    BINDINGS = [("q", "quit", "Quit")]
+    BINDINGS = [
+        ("q", "quit", "Quit"),
+        ("d", "toggle_dark_mode", "Toggle dark mode"),
+        ("escape", "clear_focus", "Clear focus"),
+    ]
     ENABLE_COMMAND_PALETTE = False
 
     def __init__(self, provider: Optional[Provider]) -> None:
@@ -29,6 +33,16 @@ class TorrraApp(App):
         if query := await self.push_screen_wait(WelcomeScreen(provider=self.provider)):
             search_screen = SearchScreen(provider=self.provider, initial_query=query)
             await self.push_screen(search_screen)
+
+    def action_toggle_dark_mode(self) -> None:
+        self.theme = (
+            "catppuccin-mocha"
+            if self.theme == "catppuccin-latte"
+            else "catppuccin-latte"
+        )
+
+    def action_clear_focus(self) -> None:
+        self.set_focus(None)
 
 
 def main():

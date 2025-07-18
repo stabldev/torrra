@@ -41,10 +41,12 @@ class WelcomeScreen(Screen[str]):
             with Container(id="commands_container"):
                 with Grid(id="commands"):
                     yield Static("[commands]", id="title", markup=False)
-                    yield Static("[q]uit", markup=False)
-                    yield Static("q", classes="key")
+                    yield Static("[esc]ape focus", markup=False)
+                    yield Static("esc", classes="key")
                     yield Static("toggle [d]ark mode", markup=False)
                     yield Static("d", classes="key")
+                    yield Static("[q]uit", markup=False)
+                    yield Static("q", classes="key")
 
     @on(Input.Submitted, "#search")
     async def handle_search(self, event: Input.Submitted) -> None:
