@@ -9,12 +9,13 @@ from torrra.commands.config import handle_config_command
 from torrra.screens.search import SearchScreen
 from torrra.screens.welcome import WelcomeScreen
 from torrra.utils.cli import parse_cli_args
+from torrra.utils.fs import get_resource_path
 from torrra.utils.provider import load_provider
 
 
 class TorrraApp(App):
     TITLE = "torrra"
-    CSS_PATH = "app.css"
+    CSS_PATH = get_resource_path("app.css")
     BINDINGS = [
         ("q", "quit", "Quit"),
         ("d", "toggle_dark_mode", "Toggle dark mode"),

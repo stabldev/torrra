@@ -1,11 +1,18 @@
 # -*- mode: python ; coding: utf-8 -*-
+import os
+from glob import glob
 
+
+css_files = glob('src/torrra/**/*.css', recursive=True)
+additional_datas = [
+    (f, os.path.dirname(f).replace('src/', '')) for f in css_files
+]
 
 a = Analysis(
     ['src/torrra/__main__.py'],
     pathex=[],
     binaries=[],
-    datas=[],
+    datas=additional_datas,
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},

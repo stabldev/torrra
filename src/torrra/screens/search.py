@@ -13,11 +13,12 @@ from textual.widgets.data_table import ColumnKey
 from torrra._types import Provider
 from torrra.core.context import config
 from torrra.providers.jackett import JackettClient
+from torrra.utils.fs import get_resource_path
 from torrra.utils.helpers import human_readable_size
 
 
 class SearchScreen(Screen):
-    CSS_PATH = "search.css"
+    CSS_PATH = get_resource_path("screens/search.css")
     # https://github.com/edward-jazzhands/eds-sandbox/blob/main/python/textual/examples/datatable_expandcol.py
     no_col_width = 3
     title_col_minimum = 25  # dynamic
