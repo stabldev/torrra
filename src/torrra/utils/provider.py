@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from typing import Dict, Literal
 
-from platformdirs import user_config_dir, site_config_dir
+from platformdirs import site_config_dir, user_config_dir
 
 from torrra._types import Provider
 
@@ -12,7 +12,23 @@ def load_provider(provider: Literal["jackett"]) -> Provider:
         return load_jackett_config()
 
 
-def find_jackett_config() -> Path:
+def load_jackett_config() -> Provider:
+    config_path = _find_jackett_config_path()
+    config = _load_json_config(config_path)
+
+    port = config.get("Port", 9117)
+    host = config.get("LocalBindAddress", "127.0.0.1")
+    url = f"http://{host}:{port}"
+
+    try:
+        api_key = config["APIKey"]
+    except KeyError:
+        raise RuntimeError(f"[error] 'APIKey' not found in config: {config_path}")
+
+    return Provider(name="Jackett", url=url, api_key=api_key)
+
+
+def _find_jackett_config_path() -> Path:
     possible_paths = [
         Path(user_config_dir(None)) / "Jackett" / "ServerConfig.json",
         Path(site_config_dir(None)) / "Jackett" / "ServerConfig.json",
@@ -22,29 +38,19 @@ def find_jackett_config() -> Path:
         if path.exists():
             return path
 
-    raise RuntimeError(
-        "[ERROR] Jackett config file not found in known locations.\n"
-        "Checked:\n  " +
-        "\n  ".join(str(p) for p in possible_paths) +
-        "\nPlease ensure Jackett is installed and has run at least once."
+    raise FileNotFoundError(
+        "[error] jackett config file not found in known locations.\n"
+        "checked:\n "
+        + "\n ".join(str(p) for p in possible_paths)
+        + "\nplease ensure jackett is installed and has run at least once."
     )
-
-
-
-def load_jackett_config() -> Provider:
-    config_path = find_jackett_config()
-    config = _load_json_config(config_path)
-
-    port = config.get("Port", 9117)
-    host = config.get("LocalBindAddress", "127.0.0.1")
-    url = f"http://{host}:{port}"
-
-    return Provider(name="Jackett", url=url, api_key=config["APIKey"])
 
 
 def _load_json_config(path: Path) -> Dict:
     try:
-        with open(path, "r") as f:
+        with path.open("r", encoding="utf-8") as f:
             return json.load(f)
+    except json.JSONDecodeError as e:
+        raise RuntimeError(f"[error] invalid json in config file: {path}\n{e}")
     except Exception as e:
-        raise RuntimeError(f"error: loading {path} config: {e}")
+        raise RuntimeError(f"[error] failed to load config file: {path}\n{e}")

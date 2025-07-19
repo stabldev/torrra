@@ -50,19 +50,30 @@ def main():
     args = parse_cli_args()
     provider = None
 
-    if args.jackett:
-        provider = load_provider("jackett")
-    elif args.command == "config":
-        handle_config_command(args)
-        sys.exit()
+    try:
+        if args.jackett:
+            provider = load_provider("jackett")
+        elif args.command == "config":
+            handle_config_command(args)
+            sys.exit()
 
-    if not provider:
-        print("error: no provider specified!")
-        print("run torrra --help for more information")
+        if not provider:
+            print(
+                "\n".join(
+                    [
+                        "[error] no provider specified",
+                        "run torrra --help for more information",
+                    ]
+                )
+            )
+            sys.exit(1)
+
+        app = TorrraApp(provider=provider)
+        app.run()
+
+    except Exception as e:
+        print(str(e))
         sys.exit(1)
-
-    app = TorrraApp(provider=provider)
-    app.run()
 
 
 if __name__ == "__main__":
