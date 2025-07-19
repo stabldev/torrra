@@ -6,6 +6,7 @@ from textual.app import App
 
 from torrra._types import Provider
 from torrra.commands.config import handle_config_command
+from torrra.core.exceptions import ConfigError
 from torrra.screens.search import SearchScreen
 from torrra.screens.welcome import WelcomeScreen
 from torrra.utils.cli import parse_cli_args
@@ -50,19 +51,26 @@ def main():
     args = parse_cli_args()
     provider = None
 
-    if args.jackett:
-        provider = load_provider("jackett")
-    elif args.command == "config":
-        handle_config_command(args)
-        sys.exit()
+    try:
+        if args.jackett:
+            provider = load_provider("jackett")
+        elif args.command == "config":
+            handle_config_command(args)
+            sys.exit()
 
-    if not provider:
-        print("error: no provider specified!")
-        print("run torrra --help for more information")
+        if not provider:
+            print(
+                "[error] no provider specified\n"
+                "run torrra --help for more information",
+            )
+            sys.exit(1)
+
+        app = TorrraApp(provider=provider)
+        app.run()
+
+    except (FileNotFoundError, RuntimeError, ConfigError) as e:
+        print(str(e))
         sys.exit(1)
-
-    app = TorrraApp(provider=provider)
-    app.run()
 
 
 if __name__ == "__main__":
