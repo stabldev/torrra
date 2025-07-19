@@ -26,13 +26,13 @@ class Config:
                 current = current[key]
         except (KeyError, TypeError):
             if len(keys) > 1:
-                raise ConfigError(f"error: key does not contain a section: {key_path}")
+                raise ConfigError(f"[error] key does not contain a section: {key_path}")
             else:
-                raise ConfigError(f"error: key not found: {key_path}")
+                raise ConfigError(f"[error] key not found: {key_path}")
 
         if isinstance(current, dict):
             raise ConfigError(
-                f"error: key does not contain a value (it's a section): {key_path}"
+                f"[error] key does not contain a value (it's a section): {key_path}"
             )
 
         return current
@@ -47,7 +47,7 @@ class Config:
                     current[key] = {}
                 elif not isinstance(current[key], dict):
                     raise ConfigError(
-                        f"error: cannot set '{key_path}': '{key}' is not a section"
+                        f"[error] cannot set '{key_path}': '{key}' is not a section"
                     )
                 current = current[key]
 
@@ -60,7 +60,7 @@ class Config:
             self._save_config()
 
         except (KeyError, TypeError) as e:
-            raise ConfigError(f"error: failed to set '{key_path}': {str(e)}")
+            raise ConfigError(f"[error] failed to set '{key_path}': {str(e)}")
 
     def list(self) -> List[str]:
         results = []
@@ -81,7 +81,7 @@ class Config:
             with open(CONFIG_FILE, "rb") as f:
                 self.config = tomllib.load(f)
         except Exception as e:
-            print(f"error: loading config: {e}")
+            print(f"[error] loading config: {e}")
 
     def _create_default_config(self) -> None:
         self.config = {

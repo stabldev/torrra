@@ -6,6 +6,7 @@ from textual.app import App
 
 from torrra._types import Provider
 from torrra.commands.config import handle_config_command
+from torrra.core.exceptions import ConfigError
 from torrra.screens.search import SearchScreen
 from torrra.screens.welcome import WelcomeScreen
 from torrra.utils.cli import parse_cli_args
@@ -67,7 +68,7 @@ def main():
         app = TorrraApp(provider=provider)
         app.run()
 
-    except Exception as e:
+    except (FileNotFoundError, RuntimeError, ConfigError) as e:
         print(str(e))
         sys.exit(1)
 
