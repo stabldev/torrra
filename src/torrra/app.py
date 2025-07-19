@@ -59,12 +59,8 @@ def main():
 
         if not provider:
             print(
-                "\n".join(
-                    [
-                        "[error] no provider specified",
-                        "run torrra --help for more information",
-                    ]
-                )
+                "[error] no provider specified\n"
+                "run torrra --help for more information",
             )
             sys.exit(1)
 
