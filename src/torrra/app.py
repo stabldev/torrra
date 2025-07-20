@@ -52,12 +52,17 @@ def main():
     provider = None
 
     try:
-        if args.jackett:
-            provider = load_provider("jackett")
-        elif args.jackett_url and args.jackett_api_key:
-            provider = load_provider_from_args(
-                "jackett", args.jackett_url, args.jackett_api_key
-            )
+        if args.jackett is not None:
+            if len(args.jackett) == 0:
+                provider = load_provider("jackett")
+            elif len(args.jackett) == 2:
+                url, api_key = args.jackett
+                provider = load_provider_from_args("jackett", url, api_key)
+            else:
+                print(
+                    "[error] --jackett expects either no args or exactly 2: URL API_KEY"
+                )
+                sys.exit(1)
         elif args.command == "config":
             handle_config_command(args)
             sys.exit()

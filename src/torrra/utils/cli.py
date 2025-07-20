@@ -15,11 +15,11 @@ def parse_cli_args():
         help="show torrra version and exit",
     )
     parser.add_argument(
-        "-j", "--jackett", action="store_true", help="use Jackett provider"
-    )
-    parser.add_argument("--jackett-url", metavar="URL", help="provide your Jackett URL")
-    parser.add_argument(
-        "--jackett-api-key", metavar="API_KEY", help="provide your Jackett API key"
+        "-j",
+        "--jackett",
+        nargs="*",
+        metavar=("URL", "API_KEY"),
+        help="use Jackett provider and/or provide URL and API key",
     )
 
     # "config" sub-command
