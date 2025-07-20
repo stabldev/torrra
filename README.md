@@ -97,7 +97,7 @@ The official image is hosted on Docker Hub: [stabldev/torrra](https://hub.docker
 docker run --rm -it stabldev/torrra:latest --jackett
 ```
 
-> Replace `--jackett` with your preferred provider flag.
+> Replace `--jackett` with your preferred provider flag. You can also pass URL and API key directly: `--jackett http://localhost:9117 your_api_key`.
 > You must mount any required config or download directories if needed.
 
 #### With Config and Downloads Folder Mounted
@@ -135,6 +135,12 @@ To start `torrra`, you must specify a provider. For example, to use [Jackett](ht
 torrra --jackett
 ```
 
+Or pass your own Jackett URL and API key directly:
+
+```bash
+torrra --jackett http://localhost:9117 your_api_key
+```
+
 > Omitting a provider flag will result in an error.
 
 ### CLI Commands & Flags
@@ -151,7 +157,7 @@ torrra --jackett
 
 | Flag              | Description                            |
 | :---------------- | :------------------------------------- |
-| `-j`, `--jackett` | Uses Jackett as the torrent indexer    |
+| `-j`, `--jackett` | Uses Jackett as the torrent indexer. Optionally accepts `URL` and `API_KEY`.    |
 | `-v`, `--version` | Shows the current `torrra` version     |
 | `-h`, `--help`    | Displays help for the main application |
 
@@ -206,7 +212,7 @@ torrra config -l                                   # List all config settings
 
 Currently supported:
 
-- [**Jackett**](https://github.com/Jackett/Jackett) (via `--jackett` or `-j`)
+- [Jackett](https://github.com/Jackett/Jackett) (via `--jackett` or `-j`)
 
 Planned:
 
