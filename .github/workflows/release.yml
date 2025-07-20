@@ -15,7 +15,8 @@ jobs:
     permissions:
       id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Install uv and setup the python version
         uses: astral-sh/setup-uv@v5
@@ -30,8 +31,11 @@ jobs:
         run: uv publish
 
   publish_docker:
-    name: Publish Docker Image
+    name: Publish to Docker Hub
     runs-on: ubuntu-latest
+    environment:
+      name: dockerhub
+      url: https://hub.docker.com/r/stabldev/torrra
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -60,8 +64,8 @@ jobs:
             ${{ vars.DOCKERHUB_USERNAME }}/torrra:latest
             ${{ vars.DOCKERHUB_USERNAME }}/torrra:${{ env.VERSION }}
 
-  build_and_attach_binaries:
-    name: Build ${{ matrix.os }} Binary
+  build_and_release_binaries:
+    name: ${{ matrix.os }} binary
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -72,6 +76,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Set env vars
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -94,11 +101,11 @@ jobs:
           ARCH=$(uname -m)
 
           if [[ "$RUNNER_OS" == "Linux" ]]; then
-            cp dist/torrra "dist-out/torrra-${GITHUB_REF_NAME}-linux-${ARCH}"
+            cp dist/torrra "dist-out/torrra-${{ env.VERSION }}-linux-${ARCH}"
           elif [[ "$RUNNER_OS" == "Windows" ]]; then
-            cp dist/torrra.exe "dist-out/torrra-${GITHUB_REF_NAME}-windows-${ARCH}.exe"
+            cp dist/torrra.exe "dist-out/torrra-${{ env.VERSION }}-windows-${ARCH}.exe"
           elif [[ "$RUNNER_OS" == "macOS" ]]; then
-            cp dist/torrra "dist-out/torrra-${GITHUB_REF_NAME}-macos-${ARCH}"
+            cp dist/torrra "dist-out/torrra-${{ env.VERSION }}-macos-${ARCH}"
           fi
 
       - name: Upload binary to release
@@ -106,89 +113,3 @@ jobs:
         with:
           files: dist-out/*
           token: ${{ secrets.GITHUB_TOKEN }}
-
-  aur_torrra_source:
-    name: Update AUR torrra
-    needs: publish_pypi
-    runs-on: ubuntu-latest
-    container:
-      image: archlinux:latest
-    steps:
-      - name: Install dependencies
-        run: pacman -Sy --noconfirm git base-devel pacman-contrib openssh
-
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set env vars
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
-
-      - name: Set up SSH
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
-
-      - name: Add AUR to known_hosts
-        run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan aur.archlinux.org >> ~/.ssh/known_hosts
-          chmod 600 ~/.ssh/known_hosts
-
-      - name: Update & Push torrra (source)
-        run: |
-          git clone ssh://aur@aur.archlinux.org/torrra.git
-          cd torrra
-
-          sed -i "s/^pkgver=.*/pkgver=${{ env.VERSION }}/" PKGBUILD
-          sed -i "s/^pkgrel=.*/pkgrel=1/" PKGBUILD
-          updpkgsums
-          makepkg --printsrcinfo > .SRCINFO
-
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add PKGBUILD .SRCINFO
-          git diff --staged --quiet || git commit -m "chore: release v${{ env.VERSION }}"
-          git push
-
-  aur_torrra_bin:
-    name: Update AUR torrra-bin
-    needs: build_and_attach_binaries
-    runs-on: ubuntu-latest
-    container:
-      image: archlinux:latest
-    steps:
-      - name: Install dependencies
-        run: pacman -Sy --noconfirm git base-devel pacman-contrib openssh
-
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set env vars
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
-
-      - name: Set up SSH
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
-
-      - name: Add AUR to known_hosts
-        run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan aur.archlinux.org >> ~/.ssh/known_hosts
-          chmod 600 ~/.ssh/known_hosts
-
-      - name: Update & Push torrra-bin (binary)
-        run: |
-          git clone ssh://aur@aur.archlinux.org/torrra-bin.git
-          cd torrra-bin
-
-          sed -i "s/^pkgver=.*/pkgver=${{ env.VERSION }}/" PKGBUILD
-          sed -i "s/^pkgrel=.*/pkgrel=1/" PKGBUILD
-          updpkgsums
-          makepkg --printsrcinfo > .SRCINFO
-
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add PKGBUILD .SRCINFO
-          git diff --staged --quiet || git commit -m "chore: release v${{ env.VERSION }}"
-          git push
