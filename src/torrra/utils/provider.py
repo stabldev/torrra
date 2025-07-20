@@ -1,3 +1,4 @@
+import asyncio
 import json
 from pathlib import Path
 from typing import Dict, Literal
@@ -5,11 +6,23 @@ from typing import Dict, Literal
 from platformdirs import site_config_dir, user_config_dir
 
 from torrra._types import Provider
+from torrra.providers.jackett import JackettClient
 
 
 def load_provider(provider: Literal["jackett"]) -> Provider:
     if provider == "jackett":
         return load_jackett_config()
+
+
+def load_provider_from_args(
+    name: Literal["jackett"], url: str, api_key: str
+) -> Provider:
+    if name == "jackett":
+        jc = JackettClient(url=url, api_key=api_key)
+        if asyncio.run(jc.validate()):
+            return Provider(name="Jackett", url=url, api_key=api_key)
+        else:
+            raise SystemExit(1)
 
 
 def load_jackett_config() -> Provider:

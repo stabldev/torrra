@@ -11,7 +11,7 @@ from torrra.screens.search import SearchScreen
 from torrra.screens.welcome import WelcomeScreen
 from torrra.utils.cli import parse_cli_args
 from torrra.utils.fs import get_resource_path
-from torrra.utils.provider import load_provider
+from torrra.utils.provider import load_provider, load_provider_from_args
 
 
 class TorrraApp(App):
@@ -54,6 +54,10 @@ def main():
     try:
         if args.jackett:
             provider = load_provider("jackett")
+        elif args.jackett_url and args.jackett_api_key:
+            provider = load_provider_from_args(
+                "jackett", args.jackett_url, args.jackett_api_key
+            )
         elif args.command == "config":
             handle_config_command(args)
             sys.exit()
