@@ -16,31 +16,31 @@
 
 ## Table of Contents
 
-* [Features](#features)
-* [Installation](#installation)
-    * [Cross-Platform](#cross-platform-recommended)
-    * [Arch Linux](#arch-linux)
-    * [Standalone Binaries](#standalone-binaries-no-python-required)
-    * [Local Development](#local-development)
-* [Usage](#usage)
-    * [CLI Commands & Flags](#cli-commands--flags)
-    * [TUI Controls](#tui-controls)
-* [Configuration](#configuration)
-    * [Managing Your Configuration](#managing-your-configuration)
-    * [Config Options](#config-options)
-* [Indexer Support](#indexer-support)
-* [Roadmap](#roadmap)
-* [Contributing](#contributing)
-* [License](#license)
+- [Features](#features)
+- [Installation](#installation)
+  - [Cross-Platform](#cross-platform-recommended)
+  - [Arch Linux](#arch-linux)
+  - [Standalone Binaries](#standalone-binaries-no-python-required)
+  - [Local Development](#local-development)
+- [Usage](#usage)
+  - [CLI Commands & Flags](#cli-commands--flags)
+  - [TUI Controls](#tui-controls)
+- [Configuration](#configuration)
+  - [Managing Your Configuration](#managing-your-configuration)
+  - [Config Options](#config-options)
+- [Indexer Support](#indexer-support)
+- [Roadmap](#roadmap)
+- [Contributing](#contributing)
+- [License](#license)
 
 ## Features
 
-* Integrate with services like [`Jackett`](https://github.com/Jackett/Jackett).
-* Fetch and download magnet links directly, powered by [`Libtorrent`](https://libtorrent.org/).
-* A responsive download manager built with [`Textual`](https://textual.textualize.io/).
-* Pause and resume torrent downloads using keyboard shortcuts.
-* Operates as both a `CLI` tool and a full-screen terminal `UI`.
-* Toggle between dark and light themes.
+- Integrate with services like [`Jackett`](https://github.com/Jackett/Jackett).
+- Fetch and download magnet links directly, powered by [`Libtorrent`](https://libtorrent.org/).
+- A responsive download manager built with [`Textual`](https://textual.textualize.io/).
+- Pause and resume torrent downloads using keyboard shortcuts.
+- Operates as both a `CLI` tool and a full-screen terminal `UI`.
+- Toggle between dark and light themes.
 
 ## Installation
 
@@ -52,33 +52,68 @@ Using `pipx` ensures `torrra` is installed in an isolated environment, preventin
 
 ```bash
 pipx install torrra
-````
+```
 
 > This method supports **Linux**, **macOS**, and **Windows**. `libtorrent` is installed automatically via pip.
 
 ### Arch Linux
 
 1. **From AUR (builds from source):**
+
 ```bash
 yay -S torrra
 ```
+
 2. **From AUR Binary Package (faster installation):**
+
 ```bash
 yay -S torrra-bin
 ```
-> `torrra-bin` includes a precompiled standalone binary for x86\_64 Linux, requiring no Python dependencies.
+
+> `torrra-bin` includes a precompiled standalone binary for x86_64 Linux, requiring no Python dependencies.
 
 ### Standalone Binaries (No Python Required)
 
 Download pre-built executables directly from [GitHub Releases](https://github.com/stabldev/torrra/releases):
 
-| OS      | File                                |
-| :------ | :---------------------------------- |
-| Linux   | `torrra-vX.Y.Z-linux-x86_64`        |
-| Windows | `torrra-vX.Y.Z-windows.exe`         |
-| macOS   | `torrra-vX.Y.Z-macos-x86_64`        |
+| OS      | File                         |
+| :------ | :--------------------------- |
+| Linux   | `torrra-vX.Y.Z-linux-x86_64` |
+| Windows | `torrra-vX.Y.Z-windows.exe`  |
+| macOS   | `torrra-vX.Y.Z-macos-x86_64` |
 
 > On Linux/macOS, ensure the binary is executable: `chmod +x torrra-vX.Y.Z-*-x86_64`.
+
+### Docker
+
+`torrra` is also available as a Docker image:
+
+**Docker Hub**: [`stabldev/torrra`](https://hub.docker.com/r/stabldev/torrra)
+
+#### Quick Usage
+
+```bash
+docker run --rm -it stabldev/torrra:latest --jackett
+```
+
+> Replace `--jackett` with your preferred provider flag.
+> You must mount any required config or download directories if needed.
+
+#### With Config and Downloads Folder Mounted
+
+```bash
+docker run --rm -it \
+  -v ~/.config/torrra:/root/.config/torrra \
+  -v ~/Downloads:/downloads \
+  stabldev/torrra:latest --jackett
+```
+
+> Ensure your `config.toml` inside `~/.config/torrra` is set up correctly.
+
+#### Image Tags
+
+- `stabldev/torrra:latest` - always points to the latest release
+- `stabldev/torrra:<version>` - for a specific release (e.g., `x.y.z`)
 
 ### Local Development
 
@@ -105,38 +140,37 @@ torrra --jackett
 
 #### Top-level commands
 
-| Command         | Description                                     |
-| :-------------- | :---------------------------------------------- |
-| `torrra`        | Launches the interactive TUI                    |
-| `torrra config` | Manages configuration settings                  |
-| `torrra --help` | Displays help for the top-level CLI commands    |
+| Command         | Description                                  |
+| :-------------- | :------------------------------------------- |
+| `torrra`        | Launches the interactive TUI                 |
+| `torrra config` | Manages configuration settings               |
+| `torrra --help` | Displays help for the top-level CLI commands |
 
 #### Provider flags (used with `torrra`)
 
-| Flag              | Description                               |
-| :---------------- | :---------------------------------------- |
-| `-j`, `--jackett` | Uses Jackett as the torrent indexer       |
-| `-v`, `--version` | Shows the current `torrra` version        |
-| `-h`, `--help`    | Displays help for the main application    |
+| Flag              | Description                            |
+| :---------------- | :------------------------------------- |
+| `-j`, `--jackett` | Uses Jackett as the torrent indexer    |
+| `-v`, `--version` | Shows the current `torrra` version     |
+| `-h`, `--help`    | Displays help for the main application |
 
 ### TUI Controls
 
-| Key     | Action                          |
-| :------ | :------------------------------ |
-| `↑↓`    | Navigate through results        |
-| `Tab`   | Focus the next widget           |
-| `Enter` | Start download for selection    |
-| `p`     | Pause the current download      |
-| `r`     | Resume a paused download        |
-| `q`     | Quit `torrra`                   |
-
+| Key     | Action                       |
+| :------ | :--------------------------- |
+| `↑↓`    | Navigate through results     |
+| `Tab`   | Focus the next widget        |
+| `Enter` | Start download for selection |
+| `p`     | Pause the current download   |
+| `r`     | Resume a paused download     |
+| `q`     | Quit `torrra`                |
 
 ## Configuration
 
 `torrra`'s behavior can be customized via a `config.toml` file located in your OS-specific user config directory:
 
-  * **Linux/macOS:** `~/.config/torrra/config.toml`
-  * **Windows:** `%APPDATA%\torrra\config.toml`
+- **Linux/macOS:** `~/.config/torrra/config.toml`
+- **Windows:** `%APPDATA%\torrra\config.toml`
 
 > The actual path is automatically resolved using [platformdirs](https://pypi.org/project/platformdirs/).
 
@@ -160,46 +194,45 @@ torrra config -l                                   # List all config settings
 
 #### Config Options
 
-| Flag              | Description                                   |
-| :---------------- | :-------------------------------------------- |
-| `-g`, `--get KEY` | Retrieves a config value (e.g., `general.download_path`) |
-| `-s`, `--set KEY VALUE` | Sets a key-value pair                     |
-| `-l`, `--list`    | Lists all configuration settings              |
-| `-h`, `--help`    | Displays help for the config command          |
-
+| Flag                    | Description                                              |
+| :---------------------- | :------------------------------------------------------- |
+| `-g`, `--get KEY`       | Retrieves a config value (e.g., `general.download_path`) |
+| `-s`, `--set KEY VALUE` | Sets a key-value pair                                    |
+| `-l`, `--list`          | Lists all configuration settings                         |
+| `-h`, `--help`          | Displays help for the config command                     |
 
 ## Indexer Support
 
 Currently supported:
 
-  * [**Jackett**](https://github.com/Jackett/Jackett) (via `--jackett` or `-j`)
+- [**Jackett**](https://github.com/Jackett/Jackett) (via `--jackett` or `-j`)
 
 Planned:
 
-  * [Prowlarr](https://github.com/Prowlarr/Prowlarr)
-  * Support for custom indexers
+- [Prowlarr](https://github.com/Prowlarr/Prowlarr)
+- Support for custom indexers
 
 ## Roadmap
 
 Ongoing development focuses on enhancing `torrra`'s capabilities:
 
-  * [x] Jackett integration
-  * [x] Torrent download `UI` with pause/resume
-  * [x] Config file support
-  * [x] Standalone binary & AUR packaging
-  * [X] Magnet info preview (seeders/leechers before download)
-  * [ ] Prowlarr support
-  * [ ] Advanced filtering/sorting
-  * [ ] Nyaa & anime-specific indexers
-  * [ ] Keyboard shortcuts overlay / help screen
+- [x] Jackett integration
+- [x] Torrent download `UI` with pause/resume
+- [x] Config file support
+- [x] Standalone binary & AUR packaging
+- [x] Magnet info preview (seeders/leechers before download)
+- [ ] Prowlarr support
+- [ ] Advanced filtering/sorting
+- [ ] Nyaa & anime-specific indexers
+- [ ] Keyboard shortcuts overlay / help screen
 
 ## Contributing
 
 `torrra` is an open-source project, and contributions are highly valued.
 
-  * If you find an issue, please [open an issue](https://github.com/stabldev/torrra/issues) with detailed steps to reproduce.
-  * We welcome new features or indexer integrations. Fork the repository and submit a Pull Request.
-  * General feedback and feature requests are always appreciated.
+- If you find an issue, please [open an issue](https://github.com/stabldev/torrra/issues) with detailed steps to reproduce.
+- We welcome new features or indexer integrations. Fork the repository and submit a Pull Request.
+- General feedback and feature requests are always appreciated.
 
 ## License
 
