@@ -162,7 +162,7 @@ jobs:
     name: Publish Docker Image
     runs-on: ubuntu-latest
     environment:
-      name: docker
+      name: dockerhub
       url: https://hub.docker.com/r/stabldev/torrra
     steps:
       - name: Checkout
