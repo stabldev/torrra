@@ -1,6 +1,6 @@
 [project]
 name = "torrra"
-version = "1.0.4"
+version = "1.0.5"
 description = "A Python tool that lets you find and download torrents without leaving your CLI."
 readme = "README.md"
 authors = [{ name = "stabldev", email = "thestabldev@gmail.com" }]
@@ -27,9 +27,8 @@ classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Environment :: Console",
     "Environment :: Console :: Curses",
-    "Framework :: Textual",
-    "Intended Audience :: End Users/Desktop",
     "Intended Audience :: Developers",
+    "Intended Audience :: End Users/Desktop",
     "License :: OSI Approved :: MIT License",
     "Natural Language :: English",
     "Operating System :: OS Independent",
@@ -37,7 +36,7 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
     "Topic :: Communications :: File Sharing",
     "Topic :: Internet",
-    "Topic :: Utilities",
+    "Topic :: Terminals",
     "Topic :: Terminals :: Terminal Emulators/X Terminals",
 ]
 
