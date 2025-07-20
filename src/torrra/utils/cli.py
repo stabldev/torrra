@@ -17,9 +17,9 @@ def parse_cli_args():
     parser.add_argument(
         "-j", "--jackett", action="store_true", help="use Jackett provider"
     )
-    parser.add_argument("--jackett-url", metavar="URL", help="override the Jackett URL")
+    parser.add_argument("--jackett-url", metavar="URL", help="provide your Jackett URL")
     parser.add_argument(
-        "--jackett-api-key", metavar="API_KEY", help="override the Jackett API key"
+        "--jackett-api-key", metavar="API_KEY", help="provide your Jackett API key"
     )
 
     # "config" sub-command
