@@ -3,8 +3,44 @@ name = "torrra"
 version = "1.0.4"
 description = "A Python tool that lets you find and download torrents without leaving your CLI."
 readme = "README.md"
-authors = [{ name = "stabldev" }]
+authors = [{ name = "stabldev", email = "thestabldev@gmail.com" }]
+license = { text = "MIT" }
 requires-python = ">=3.13"
+
+keywords = [
+    "torrent",
+    "cli",
+    "download",
+    "p2p",
+    "libtorrent",
+    "jackett",
+    "magnet",
+    "terminal",
+    "filesharing",
+    "torrent-client",
+    "textual",
+    "tui",
+    "torrent-search",
+]
+
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Environment :: Console :: Curses",
+    "Framework :: Textual",
+    "Intended Audience :: End Users/Desktop",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Communications :: File Sharing",
+    "Topic :: Internet",
+    "Topic :: Utilities",
+    "Topic :: Terminals :: Terminal Emulators/X Terminals",
+]
+
 dependencies = [
     "httpx>=0.28.1",
     "libtorrent>=2.0.11",
@@ -13,6 +49,11 @@ dependencies = [
     "textual>=4.0.0",
     "tomli-w>=1.2.0",
 ]
+
+[project.urls]
+homepage = "https://github.com/stabldev/torrra"
+repository = "https://github.com/stabldev/torrra"
+"Bug Tracker" = "https://github.com/stabldev/torrra/issues"
 
 [project.scripts]
 torrra = "torrra.app:main"
