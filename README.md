@@ -21,6 +21,7 @@
   - [Cross-Platform](#cross-platform-recommended)
   - [Arch Linux](#arch-linux)
   - [Standalone Binaries](#standalone-binaries-no-python-required)
+  - [Docker](#docker)
   - [Local Development](#local-development)
 - [Usage](#usage)
   - [CLI Commands & Flags](#cli-commands--flags)
@@ -86,9 +87,9 @@ Download pre-built executables directly from [GitHub Releases](https://github.co
 
 ### Docker
 
-`torrra` is also available as a Docker image:
+`torrra` is also available as a Docker image, allowing you to run it in an isolated environment without installing Python dependencies directly on your host system.
 
-**Docker Hub**: [`stabldev/torrra`](https://hub.docker.com/r/stabldev/torrra)
+The official image is hosted on Docker Hub: [stabldev/torrra](https://hub.docker.com/r/stabldev/torrra).
 
 #### Quick Usage
 
