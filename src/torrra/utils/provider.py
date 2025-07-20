@@ -38,7 +38,11 @@ def load_jackett_config() -> Provider:
     except KeyError:
         raise RuntimeError(f"[error] 'APIKey' not found in config: {config_path}")
 
-    return Provider(name="Jackett", url=url, api_key=api_key)
+    jc = JackettClient(url=url, api_key=api_key)
+    if asyncio.run(jc.validate()):
+        return Provider(name="Jackett", url=url, api_key=api_key)
+    else:
+        raise SystemExit(1)
 
 
 def _find_jackett_config_path() -> Path:
