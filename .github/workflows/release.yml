@@ -1,4 +1,4 @@
-name: Release & Publish
+name: Release
 
 on:
   push:
@@ -29,8 +29,39 @@ jobs:
       - name: Publish package
         run: uv publish
 
+  publish_docker:
+    name: Publish Docker Image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set env vars
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ vars.DOCKERHUB_USERNAME }}/torrra:latest
+            ${{ vars.DOCKERHUB_USERNAME }}/torrra:${{ env.VERSION }}
+
   build_and_attach_binaries:
-    name: Build & Attach ${{ matrix.os }} Binary
+    name: Build ${{ matrix.os }} Binary
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -77,13 +108,15 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
   aur_torrra_source:
-    name: Update AUR torrra (Source)
+    name: Update AUR torrra
     needs: publish_pypi
     runs-on: ubuntu-latest
-    environment:
-      name: aur
-      url: https://aur.archlinux.org/packages/torrra
+    container:
+      image: archlinux:latest
     steps:
+      - name: Install dependencies
+        run: pacman -Sy --noconfirm git base-devel pacman-contrib openssh
+
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -118,13 +151,15 @@ jobs:
           git push
 
   aur_torrra_bin:
-    name: Update AUR torrra-bin (Binary)
+    name: Update AUR torrra-bin
     needs: build_and_attach_binaries
     runs-on: ubuntu-latest
-    environment:
-      name: aur
-      url: https://aur.archlinux.org/packages/torrra-bin
+    container:
+      image: archlinux:latest
     steps:
+      - name: Install dependencies
+        run: pacman -Sy --noconfirm git base-devel pacman-contrib openssh
+
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -157,37 +192,3 @@ jobs:
           git add PKGBUILD .SRCINFO
           git diff --staged --quiet || git commit -m "chore: release v${{ env.VERSION }}"
           git push
-
-  publish_docker:
-    name: Publish Docker Image
-    runs-on: ubuntu-latest
-    environment:
-      name: dockerhub
-      url: https://hub.docker.com/r/stabldev/torrra
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set env vars
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ vars.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: true
-          tags: |
-            ${{ vars.DOCKERHUB_USERNAME }}/torrra:latest
-            ${{ vars.DOCKERHUB_USERNAME }}/torrra:${{ env.VERSION }}
