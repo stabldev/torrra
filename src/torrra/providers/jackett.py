@@ -2,6 +2,7 @@ from typing import Dict, List, cast
 
 import httpx
 
+from torrra._types import Torrent
 from torrra.core.cache import CACHE_TTL, cache, make_cache_key
 
 
@@ -11,12 +12,12 @@ class JackettClient:
         self.api_key = api_key
         self.timeout = timeout
 
-    async def search(self, query: str, use_cache: bool = False) -> List[Dict]:
+    async def search(self, query: str, use_cache: bool = False) -> List[Torrent]:
         # jackett has build-in cache mechanism
         key = make_cache_key("jackett", query)
 
         if use_cache and key in cache:
-            return cast(List[Dict], cache[key])
+            return cast(List[Torrent], cache[key])
 
         endpoint = f"{self.url}/api/v2.0/indexers/all/results"
         params = {"apikey": self.api_key, "query": query}
@@ -24,7 +25,8 @@ class JackettClient:
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             resp = await client.get(endpoint, params=params)
             resp.raise_for_status()
-            results = resp.json().get("Results", [])
+            raw_results = resp.json().get("Results", [])
+            results = [self._normalize_result(r) for r in raw_results]
 
         if use_cache:
             cache.set(key, results, expire=CACHE_TTL)
@@ -58,3 +60,13 @@ class JackettClient:
                     print("unexpected response from jackett. please verify your setup.")
 
             return False
+
+    def _normalize_result(self, r: Dict) -> Torrent:
+        return Torrent(
+            title=r.get("Title", ""),
+            size=r.get("Size", 0),
+            seeders=r.get("Seeders", 0),
+            leechers=r.get("Peers", 0),
+            source=r.get("Tracker", "unknown"),
+            magnet_uri=r.get("MagnetUri", None),
+        )
