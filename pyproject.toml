@@ -41,6 +41,7 @@ classifiers = [
 ]
 
 dependencies = [
+    "diskcache>=5.6.3",
     "httpx>=0.28.1",
     "libtorrent>=2.0.11",
     "libtorrent-windows-dll>=0.0.2; sys_platform == 'win32'",

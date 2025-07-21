@@ -1,5 +1,5 @@
 import time
-from typing import List, Optional
+from typing import List, Optional, Union
 
 import libtorrent as lt
 from textual import on, work
@@ -10,9 +10,10 @@ from textual.screen import Screen
 from textual.widgets import DataTable, Input, LoadingIndicator, ProgressBar, Static
 from textual.widgets.data_table import ColumnKey
 
-from torrra._types import Provider
+from torrra._types import Provider, Torrent
 from torrra.core.context import config
 from torrra.providers.jackett import JackettClient
+from torrra.providers.prowlarr import ProwlarrClient
 from torrra.utils.fs import get_resource_path
 from torrra.utils.helpers import human_readable_size
 
@@ -23,19 +24,19 @@ class SearchScreen(Screen):
     no_col_width = 3
     title_col_minimum = 25  # dynamic
     size_col_width = 10
-    seeders_col_width = 7
+    seeders_col_width = 4
     leechers_col_width = 5
-    tracker_col_width = 10
+    source_col_width = 6
     other_cols_total = (
         no_col_width
         + size_col_width
         + seeders_col_width
         + leechers_col_width
-        + tracker_col_width
+        + source_col_width
     )
 
     class SearchResults(Message):
-        def __init__(self, results: List, query: str) -> None:
+        def __init__(self, results: List[Torrent], query: str) -> None:
             self.results = results
             self.query = query
             super().__init__()
@@ -90,9 +91,9 @@ class SearchScreen(Screen):
         table.add_column("No.", width=self.no_col_width, key="no_col")
         table.add_column("Title", width=self.title_col_minimum, key="title_col")
         table.add_column("Size", width=self.size_col_width, key="size_col")
-        table.add_column("Seeders", width=self.seeders_col_width, key="seeders_col")
-        table.add_column("Peers", width=self.leechers_col_width, key="leechers_col")
-        table.add_column("Tracker", width=self.tracker_col_width, key="tracker_col")
+        table.add_column("Seed", width=self.seeders_col_width, key="seeders_col")
+        table.add_column("Leech", width=self.leechers_col_width, key="leechers_col")
+        table.add_column("Source", width=self.source_col_width, key="source_col")
 
     def on_unmount(self) -> None:
         # clean libtorrent session
@@ -193,12 +194,12 @@ class SearchScreen(Screen):
         for idx, torrent in enumerate(message.results):
             table.add_row(
                 idx + 1,
-                torrent["Title"],
-                human_readable_size(torrent["Size"]),
-                torrent["Seeders"],
-                torrent["Peers"],
-                torrent["Tracker"],
-                key=torrent["MagnetUri"],
+                torrent.title,
+                human_readable_size(torrent.size),
+                torrent.seeders,
+                torrent.leechers,
+                torrent.source,
+                key=torrent.magnet_uri,
             )
 
         table.focus()
@@ -274,9 +275,11 @@ class SearchScreen(Screen):
             progress=progress
         )
 
-    def _get_client(self) -> Optional[JackettClient]:
+    def _get_client(self) -> Optional[Union[JackettClient, ProwlarrClient]]:
         if not self.provider:
             return
 
         if self.provider.name == "Jackett":
             return JackettClient(url=self.provider.url, api_key=self.provider.api_key)
+        elif self.provider.name == "Prowlarr":
+            return ProwlarrClient(url=self.provider.url, api_key=self.provider.api_key)

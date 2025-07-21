@@ -36,7 +36,7 @@
 
 ## Features
 
-- Integrate with services like [`Jackett`](https://github.com/Jackett/Jackett).
+- Integrate with services like [`Jackett`](https://github.com/Jackett/Jackett) and [`Prowlarr`](https://github.com/Prowlarr/Prowlarr).
 - Fetch and download magnet links directly, powered by [`Libtorrent`](https://libtorrent.org/).
 - A responsive download manager built with [`Textual`](https://textual.textualize.io/).
 - Pause and resume torrent downloads using keyboard shortcuts.
@@ -89,7 +89,7 @@ Download pre-built executables directly from [GitHub Releases](https://github.co
 
 `torrra` is also available as a Docker image, allowing you to run it in an isolated environment without installing Python dependencies directly on your host system.
 
-The official image is hosted on Docker Hub: [stabldev/torrra](https://hub.docker.com/r/stabldev/torrra).
+The official image is hosted on Docker Hub: [`stabldev/torrra`](https://hub.docker.com/r/stabldev/torrra).
 
 #### Quick Usage
 
@@ -121,7 +121,7 @@ docker run --rm -it \
 To set up `torrra` for development:
 
 ```bash
-git clone [https://github.com/stabldev/torrra](https://github.com/stabldev/torrra)
+git clone https://github.com/stabldev/torrra
 cd torrra
 uv sync # or `pip install -e .`
 uv run torrra
@@ -129,16 +129,18 @@ uv run torrra
 
 ## Usage
 
-To start `torrra`, you must specify a provider. For example, to use [Jackett](https://github.com/Jackett/Jackett):
+To start `torrra`, you must specify a provider. For example, to use [`Jackett`](https://github.com/Jackett/Jackett):
 
 ```bash
 torrra --jackett
 ```
 
-Or pass your own Jackett URL and API key directly:
+> Uses Jackett with credentials from your saved configuration.
+
+Or pass your own `URL` and `API_KEY` directly. For example, to use [`Prowlarr`](https://github.com/Prowlarr/Prowlarr):
 
 ```bash
-torrra --jackett http://localhost:9117 your_api_key
+torrra --prowlarr http://localhost:9696 your_api_key
 ```
 
 > Omitting a provider flag will result in an error.
@@ -155,11 +157,12 @@ torrra --jackett http://localhost:9117 your_api_key
 
 #### Provider flags (used with `torrra`)
 
-| Flag              | Description                            |
-| :---------------- | :------------------------------------- |
-| `-j`, `--jackett` | Uses Jackett as the torrent indexer. Optionally accepts `URL` and `API_KEY`.    |
-| `-v`, `--version` | Shows the current `torrra` version     |
-| `-h`, `--help`    | Displays help for the main application |
+| Flag               | Description                                                                   |
+| :----------------- | :---------------------------------------------------------------------------- |
+| `-h`, `--help`     | Displays help for the main application                                        |
+| `-v`, `--version`  | Shows the current `torrra` version                                            |
+| `-j`, `--jackett`  | Uses Jackett as the torrent indexer. Optionally accepts `URL` and `API_KEY`.  |
+| `-p`, `--prowlarr` | Uses Prowlarr as the torrent indexer. Optionally accepts `URL` and `API_KEY`. |
 
 ### TUI Controls
 
@@ -179,7 +182,7 @@ torrra --jackett http://localhost:9117 your_api_key
 - **Linux/macOS:** `~/.config/torrra/config.toml`
 - **Windows:** `%APPDATA%\torrra\config.toml`
 
-> The actual path is automatically resolved using [platformdirs](https://pypi.org/project/platformdirs/).
+> The actual path is automatically resolved using [`platformdirs`](https://pypi.org/project/platformdirs/).
 
 Example `config.toml`:
 
@@ -212,11 +215,11 @@ torrra config -l                                   # List all config settings
 
 Currently supported:
 
-- [Jackett](https://github.com/Jackett/Jackett) (via `--jackett` or `-j`)
+- [`Jackett`](https://github.com/Jackett/Jackett) (via `--jackett` or `-j`)
+- [`Prowlarr`](https://github.com/Prowlarr/Prowlarr) (via `--prowlarr` or `-p`)
 
 Planned:
 
-- [Prowlarr](https://github.com/Prowlarr/Prowlarr)
 - Support for custom indexers
 
 ## Roadmap
@@ -224,11 +227,11 @@ Planned:
 Ongoing development focuses on enhancing `torrra`'s capabilities:
 
 - [x] Jackett integration
+- [x] Prowlarr support
 - [x] Torrent download `UI` with pause/resume
 - [x] Config file support
 - [x] Standalone binary & AUR packaging
 - [x] Magnet info preview (seeders/leechers before download)
-- [ ] Prowlarr support
 - [ ] Advanced filtering/sorting
 - [ ] Nyaa & anime-specific indexers
 - [ ] Keyboard shortcuts overlay / help screen
