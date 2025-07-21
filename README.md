@@ -89,7 +89,7 @@ Download pre-built executables directly from [GitHub Releases](https://github.co
 
 `torrra` is also available as a Docker image, allowing you to run it in an isolated environment without installing Python dependencies directly on your host system.
 
-The official image is hosted on Docker Hub: [stabldev/torrra](https://hub.docker.com/r/stabldev/torrra).
+The official image is hosted on Docker Hub: [`stabldev/torrra`](https://hub.docker.com/r/stabldev/torrra).
 
 #### Quick Usage
 
@@ -129,14 +129,15 @@ uv run torrra
 
 ## Usage
 
-To start `torrra`, you must specify a provider. For example, to use [Jackett](https://github.com/Jackett/Jackett):
+To start `torrra`, you must specify a provider. For example, to use [`Jackett`](https://github.com/Jackett/Jackett):
 
 ```bash
 torrra --jackett
 ```
 
-This uses configuration from your system.
-Or pass your own URL and API key directly. For example, to use [Prowlarr](https://github.com/Prowlarr/Prowlarr):
+> Uses Jackett with credentials from your saved configuration.
+
+Or pass your own `URL` and `API_KEY` directly. For example, to use [`Prowlarr`](https://github.com/Prowlarr/Prowlarr):
 
 ```bash
 torrra --prowlarr http://localhost:9696 your_api_key
@@ -181,7 +182,7 @@ torrra --prowlarr http://localhost:9696 your_api_key
 - **Linux/macOS:** `~/.config/torrra/config.toml`
 - **Windows:** `%APPDATA%\torrra\config.toml`
 
-> The actual path is automatically resolved using [platformdirs](https://pypi.org/project/platformdirs/).
+> The actual path is automatically resolved using [`platformdirs`](https://pypi.org/project/platformdirs/).
 
 Example `config.toml`:
 
@@ -214,11 +215,11 @@ torrra config -l                                   # List all config settings
 
 Currently supported:
 
-- [Jackett](https://github.com/Jackett/Jackett) (via `--jackett` or `-j`)
+- [`Jackett`](https://github.com/Jackett/Jackett) (via `--jackett` or `-j`)
+- [`Prowlarr`](https://github.com/Prowlarr/Prowlarr) (via `--prowlarr` or `-p`)
 
 Planned:
 
-- [Prowlarr](https://github.com/Prowlarr/Prowlarr)
 - Support for custom indexers
 
 ## Roadmap
