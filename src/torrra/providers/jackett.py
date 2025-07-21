@@ -1,6 +1,8 @@
-from typing import Dict, List
+from typing import Dict, List, cast
 
 import httpx
+
+from torrra.core.cache import CACHE_TTL, cache, make_cache_key
 
 
 class JackettClient:
@@ -9,14 +11,25 @@ class JackettClient:
         self.api_key = api_key
         self.timeout = timeout
 
-    async def search(self, query: str) -> List[Dict]:
+    async def search(self, query: str, use_cache: bool = False) -> List[Dict]:
+        # jackett has build-in cache mechanism
+        key = make_cache_key("jackett", query)
+
+        if use_cache and key in cache:
+            return cast(List[Dict], cache[key])
+
         endpoint = f"{self.url}/api/v2.0/indexers/all/results"
         params = {"apikey": self.api_key, "query": query}
 
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             resp = await client.get(endpoint, params=params)
             resp.raise_for_status()
-            return resp.json().get("Results", [])
+            results = resp.json().get("Results", [])
+
+        if use_cache:
+            cache.set(key, results, expire=CACHE_TTL)
+
+        return results
 
     async def validate(self) -> bool:
         url = f"{self.url}/api/v2.0/indexers/nonexistent_indexer/results"
