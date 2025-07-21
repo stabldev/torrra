@@ -21,6 +21,13 @@ def parse_cli_args():
         metavar=("URL", "API_KEY"),
         help="use Jackett provider and/or provide URL and API key",
     )
+    parser.add_argument(
+        "-p",
+        "--prowlarr",
+        nargs="*",
+        metavar=("URL", "API_KEY"),
+        help="use Prowlarr provider and/or provide URL and API key",
+    )
 
     # "config" sub-command
     config_parser = subparsers.add_parser("config", help="configure torrra")

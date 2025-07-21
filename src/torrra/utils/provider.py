@@ -1,5 +1,6 @@
 import asyncio
 import json
+import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Dict, Literal
 
@@ -9,9 +10,11 @@ from torrra._types import Provider
 from torrra.providers.jackett import JackettClient
 
 
-def load_provider(provider: Literal["jackett"]) -> Provider:
+def load_provider(provider: Literal["jackett", "prowlarr"]) -> Provider:
     if provider == "jackett":
         return load_jackett_config()
+    elif provider == "prowlarr":
+        return load_prowlarr_config()
 
 
 def load_provider_from_args(
@@ -26,17 +29,13 @@ def load_provider_from_args(
 
 
 def load_jackett_config() -> Provider:
-    config_path = _find_jackett_config_path()
+    config_path = _find_config_path("Jackett", "ServerConfig.json")
     config = _load_json_config(config_path)
 
     port = config.get("Port", 9117)
     host = config.get("LocalBindAddress", "127.0.0.1")
+    api_key = config["APIKey"]
     url = f"http://{host}:{port}"
-
-    try:
-        api_key = config["APIKey"]
-    except KeyError:
-        raise RuntimeError(f"[error] 'APIKey' not found in config: {config_path}")
 
     jc = JackettClient(url=url, api_key=api_key)
     if asyncio.run(jc.validate()):
@@ -45,10 +44,23 @@ def load_jackett_config() -> Provider:
         raise SystemExit(1)
 
 
-def _find_jackett_config_path() -> Path:
+def load_prowlarr_config() -> Provider:
+    config_path = _find_config_path("Prowlarr", "config.xml")
+    config = _load_xml_config(config_path)
+
+    port = config.get("Port", 9696)
+    bind_address = config.get("BindAddress")
+    host = "127.0.0.1" if bind_address in ["*", "0.0.0.0"] else bind_address
+    api_key = config["ApiKey"]
+    url = f"http://{host}:{port}"
+
+    return Provider(name="Prowlarr", url=url, api_key=api_key)
+
+
+def _find_config_path(appname: str, config_file: str) -> Path:
     possible_paths = [
-        Path(user_config_dir(None)) / "Jackett" / "ServerConfig.json",
-        Path(site_config_dir(None)) / "Jackett" / "ServerConfig.json",
+        Path(user_config_dir(appname)) / config_file,
+        Path(site_config_dir(appname)) / config_file,
     ]
 
     for path in possible_paths:
@@ -56,10 +68,10 @@ def _find_jackett_config_path() -> Path:
             return path
 
     raise FileNotFoundError(
-        "[error] jackett config file not found in known locations.\n"
+        f"[error] {appname.lower()} config file not found in known locations.\n"
         "checked:\n "
         + "\n ".join(str(p) for p in possible_paths)
-        + "\nplease ensure jackett is installed and has run at least once."
+        + f"\nplease ensure {appname.lower()} is installed and has run at least once."
     )
 
 
@@ -69,5 +81,19 @@ def _load_json_config(path: Path) -> Dict:
             return json.load(f)
     except json.JSONDecodeError as e:
         raise RuntimeError(f"[error] invalid json in config file: {path}\n{e}")
+    except Exception as e:
+        raise RuntimeError(f"[error] failed to load config file: {path}\n{e}")
+
+
+def _load_xml_config(path: Path) -> Dict:
+    try:
+        tree = ET.parse(path)
+        root = tree.getroot()
+
+        config = {}
+        for child in root:
+            config[child.tag] = child.text
+
+        return config
     except Exception as e:
         raise RuntimeError(f"[error] failed to load config file: {path}\n{e}")

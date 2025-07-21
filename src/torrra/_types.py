@@ -14,6 +14,6 @@ class Torrent:
 
 @dataclass
 class Provider:
-    name: Literal["Jackett"]
+    name: Literal["Jackett", "Prowlarr"]
     url: str
     api_key: str

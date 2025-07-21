@@ -1,5 +1,5 @@
 import time
-from typing import List, Optional
+from typing import List, Optional, Union
 
 import libtorrent as lt
 from textual import on, work
@@ -13,6 +13,7 @@ from textual.widgets.data_table import ColumnKey
 from torrra._types import Provider, Torrent
 from torrra.core.context import config
 from torrra.providers.jackett import JackettClient
+from torrra.providers.prowlarr import ProwlarrClient
 from torrra.utils.fs import get_resource_path
 from torrra.utils.helpers import human_readable_size
 
@@ -274,9 +275,11 @@ class SearchScreen(Screen):
             progress=progress
         )
 
-    def _get_client(self) -> Optional[JackettClient]:
+    def _get_client(self) -> Optional[Union[JackettClient, ProwlarrClient]]:
         if not self.provider:
             return
 
         if self.provider.name == "Jackett":
             return JackettClient(url=self.provider.url, api_key=self.provider.api_key)
+        elif self.provider.name == "Prowlarr":
+            return ProwlarrClient(url=self.provider.url, api_key=self.provider.api_key)

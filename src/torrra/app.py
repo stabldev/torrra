@@ -63,6 +63,8 @@ def main():
                     "[error] --jackett expects either no args or exactly 2: URL API_KEY"
                 )
                 sys.exit(1)
+        elif args.prowlarr is not None:
+            provider = load_provider("prowlarr")
         elif args.command == "config":
             handle_config_command(args)
             sys.exit()
