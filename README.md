@@ -36,7 +36,7 @@
 
 ## Features
 
-- Integrate with services like [`Jackett`](https://github.com/Jackett/Jackett).
+- Integrate with services like [`Jackett`](https://github.com/Jackett/Jackett) and [`Prowlarr`](https://github.com/Prowlarr/Prowlarr).
 - Fetch and download magnet links directly, powered by [`Libtorrent`](https://libtorrent.org/).
 - A responsive download manager built with [`Textual`](https://textual.textualize.io/).
 - Pause and resume torrent downloads using keyboard shortcuts.
@@ -135,10 +135,11 @@ To start `torrra`, you must specify a provider. For example, to use [Jackett](ht
 torrra --jackett
 ```
 
-Or pass your own Jackett URL and API key directly:
+This uses configuration from your system.
+Or pass your own URL and API key directly. For example, to use [Prowlarr](https://github.com/Prowlarr/Prowlarr):
 
 ```bash
-torrra --jackett http://localhost:9117 your_api_key
+torrra --prowlarr http://localhost:9696 your_api_key
 ```
 
 > Omitting a provider flag will result in an error.
@@ -155,11 +156,12 @@ torrra --jackett http://localhost:9117 your_api_key
 
 #### Provider flags (used with `torrra`)
 
-| Flag              | Description                            |
-| :---------------- | :------------------------------------- |
-| `-j`, `--jackett` | Uses Jackett as the torrent indexer. Optionally accepts `URL` and `API_KEY`.    |
-| `-v`, `--version` | Shows the current `torrra` version     |
-| `-h`, `--help`    | Displays help for the main application |
+| Flag               | Description                                                                   |
+| :----------------- | :---------------------------------------------------------------------------- |
+| `-h`, `--help`     | Displays help for the main application                                        |
+| `-v`, `--version`  | Shows the current `torrra` version                                            |
+| `-j`, `--jackett`  | Uses Jackett as the torrent indexer. Optionally accepts `URL` and `API_KEY`.  |
+| `-p`, `--prowlarr` | Uses Prowlarr as the torrent indexer. Optionally accepts `URL` and `API_KEY`. |
 
 ### TUI Controls
 
@@ -224,11 +226,11 @@ Planned:
 Ongoing development focuses on enhancing `torrra`'s capabilities:
 
 - [x] Jackett integration
+- [x] Prowlarr support
 - [x] Torrent download `UI` with pause/resume
 - [x] Config file support
 - [x] Standalone binary & AUR packaging
 - [x] Magnet info preview (seeders/leechers before download)
-- [ ] Prowlarr support
 - [ ] Advanced filtering/sorting
 - [ ] Nyaa & anime-specific indexers
 - [ ] Keyboard shortcuts overlay / help screen
