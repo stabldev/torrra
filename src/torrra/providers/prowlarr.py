@@ -31,6 +31,33 @@ class ProwlarrClient:
 
         return results
 
+    async def validate(self) -> bool:
+        url = f"{self.url}/api/v1/health"
+        params = {"apikey": self.api_key}
+
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            try:
+                resp = await client.get(url, params=params)
+                resp.raise_for_status()
+                return True
+
+            except httpx.RequestError:
+                print(f"[error] could not connect to prowlarr at {self.url}.")
+                print("please make sure prowlarr is running and the url is correct.")
+
+            except httpx.HTTPStatusError as e:
+                status_code = e.response.status_code
+                if status_code == 401:
+                    print("[error] invalid prowlarr api key.")
+                    print("double-check the api key you provided.")
+                else:
+                    print(f"[error] prowlarr returned http {status_code}.")
+                    print(
+                        "unexpected response from prowlarr. please verify your setup."
+                    )
+
+            return False
+
     def _normalize_result(self, r: Dict) -> Torrent:
         return Torrent(
             title=r.get("title", ""),

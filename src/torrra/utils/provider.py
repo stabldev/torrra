@@ -8,6 +8,7 @@ from platformdirs import site_config_dir, user_config_dir
 
 from torrra._types import Provider
 from torrra.providers.jackett import JackettClient
+from torrra.providers.prowlarr import ProwlarrClient
 
 
 def load_provider(provider: Literal["jackett", "prowlarr"]) -> Provider:
@@ -18,12 +19,18 @@ def load_provider(provider: Literal["jackett", "prowlarr"]) -> Provider:
 
 
 def load_provider_from_args(
-    name: Literal["jackett"], url: str, api_key: str
+    name: Literal["jackett", "prowlarr"], url: str, api_key: str
 ) -> Provider:
     if name == "jackett":
-        jc = JackettClient(url=url, api_key=api_key)
-        if asyncio.run(jc.validate()):
+        pc = JackettClient(url=url, api_key=api_key)
+        if asyncio.run(pc.validate()):
             return Provider(name="Jackett", url=url, api_key=api_key)
+        else:
+            raise SystemExit(1)
+    elif name == "prowlarr":
+        pc = ProwlarrClient(url=url, api_key=api_key)
+        if asyncio.run(pc.validate()):
+            return Provider(name="Prowlarr", url=url, api_key=api_key)
         else:
             raise SystemExit(1)
 
@@ -54,7 +61,11 @@ def load_prowlarr_config() -> Provider:
     api_key = config["ApiKey"]
     url = f"http://{host}:{port}"
 
-    return Provider(name="Prowlarr", url=url, api_key=api_key)
+    pc = ProwlarrClient(url=url, api_key=api_key)
+    if asyncio.run(pc.validate()):
+        return Provider(name="Prowlarr", url=url, api_key=api_key)
+    else:
+        raise SystemExit(1)
 
 
 def _find_config_path(appname: str, config_file: str) -> Path:
