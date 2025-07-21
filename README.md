@@ -121,7 +121,7 @@ docker run --rm -it \
 To set up `torrra` for development:
 
 ```bash
-git clone [https://github.com/stabldev/torrra](https://github.com/stabldev/torrra)
+git clone https://github.com/stabldev/torrra
 cd torrra
 uv sync # or `pip install -e .`
 uv run torrra
