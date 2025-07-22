@@ -1,12 +1,15 @@
 import time
-from typing import List, Optional, Union
+from pathlib import Path
+from typing import ClassVar, cast
 
+import httpx
 import libtorrent as lt
 from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Container, Horizontal, Vertical
 from textual.message import Message
 from textual.screen import Screen
+from textual.types import CSSPathType
 from textual.widgets import DataTable, Input, LoadingIndicator, ProgressBar, Static
 from textual.widgets.data_table import ColumnKey
 
@@ -18,16 +21,16 @@ from torrra.utils.fs import get_resource_path
 from torrra.utils.helpers import human_readable_size
 
 
-class SearchScreen(Screen):
-    CSS_PATH = get_resource_path("screens/search.css")
+class SearchScreen(Screen[None]):
+    CSS_PATH: ClassVar[CSSPathType | None] = get_resource_path("screens/search.css")
     # https://github.com/edward-jazzhands/eds-sandbox/blob/main/python/textual/examples/datatable_expandcol.py
-    no_col_width = 3
-    title_col_minimum = 25  # dynamic
-    size_col_width = 10
-    seeders_col_width = 4
-    leechers_col_width = 5
-    source_col_width = 6
-    other_cols_total = (
+    no_col_width: int = 3
+    title_col_minimum: int = 25  # dynamic
+    size_col_width: int = 10
+    seeders_col_width: int = 4
+    leechers_col_width: int = 5
+    source_col_width: int = 6
+    other_cols_total: int = (
         no_col_width
         + size_col_width
         + seeders_col_width
@@ -36,12 +39,12 @@ class SearchScreen(Screen):
     )
 
     class SearchResults(Message):
-        def __init__(self, results: List[Torrent], query: str) -> None:
+        def __init__(self, results: list[Torrent], query: str) -> None:
             self.results = results
             self.query = query
             super().__init__()
 
-    def __init__(self, provider: Optional[Provider], initial_query: str):
+    def __init__(self, provider: Provider | None, initial_query: str):
         super().__init__()
         self.provider = provider
         self.initial_query = initial_query
@@ -206,6 +209,8 @@ class SearchScreen(Screen):
 
     @work(exclusive=True, thread=True)
     async def _download_torrent(self, magnet_uri: str) -> None:
+        magnet_uri = await self._resolve_magnet_uri_if_redirect(magnet_uri)
+
         self.lt_session = lt.session()  # pyright: ignore
         self.lt_session.listen_on(6881, 6891)
 
@@ -275,7 +280,7 @@ class SearchScreen(Screen):
             progress=progress
         )
 
-    def _get_client(self) -> Optional[Union[JackettClient, ProwlarrClient]]:
+    def _get_client(self) -> JackettClient | ProwlarrClient | None:
         if not self.provider:
             return
 
@@ -283,3 +288,16 @@ class SearchScreen(Screen):
             return JackettClient(url=self.provider.url, api_key=self.provider.api_key)
         elif self.provider.name == "Prowlarr":
             return ProwlarrClient(url=self.provider.url, api_key=self.provider.api_key)
+
+    async def _resolve_magnet_uri_if_redirect(self, url: str) -> str:
+        if url.startswith("magnet:"):
+            return url
+        try:
+            async with httpx.AsyncClient() as client:
+                resp = await client.get(url, follow_redirects=False)
+                if resp.status_code in (301, 302):
+                    return cast(str, resp.headers.get("Location", url))
+                return url
+        except Exception as e:
+            print(f"[error] resolving magnet uri: {e}")
+            return url
