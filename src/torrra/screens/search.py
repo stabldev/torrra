@@ -90,7 +90,7 @@ class SearchScreen(Screen[None]):
             Input.Submitted(self.query_one("#search", Input), self.initial_query)
         )
 
-        table = self.query_one("#results_table", DataTable[None])
+        table = cast(DataTable[None], self.query_one("#results_table", DataTable))
         table.add_column("No.", width=self.no_col_width, key="no_col")
         table.add_column("Title", width=self.title_col_minimum, key="title_col")
         table.add_column("Size", width=self.size_col_width, key="size_col")
@@ -104,7 +104,7 @@ class SearchScreen(Screen[None]):
             self.lt_session.remove_torrent(self.lt_handle)
 
     def on_resize(self) -> None:
-        table = self.query_one("#results_table", DataTable[None])
+        table = cast(DataTable[None], self.query_one("#results_table", DataTable))
 
         total_cell_padding = table.cell_padding * 2 * len(table.columns)
         # space taken for border and padding
@@ -148,7 +148,7 @@ class SearchScreen(Screen[None]):
         if not query:
             return
 
-        table = self.query_one("#results_table", DataTable[None])
+        table = cast(DataTable[None], self.query_one("#results_table", DataTable))
         loader = self.query_one("#loader", Vertical)
         loader_text = self.query_one("#loader Static", Static)
 
@@ -183,7 +183,7 @@ class SearchScreen(Screen[None]):
 
     @on(SearchResults)
     def _show_search_results(self, message: SearchResults) -> None:
-        table = self.query_one("#results_table", DataTable[None])
+        table = cast(DataTable[None], self.query_one("#results_table", DataTable))
         loader = self.query_one("#loader", Vertical)
         loader_text = loader.query_one(Static)
 
@@ -205,8 +205,8 @@ class SearchScreen(Screen[None]):
             ]
 
             table.add_row(
-                *row, key=torrent.magnet_uri
-            )  # pyright: ignore[reportArgumentType]
+                *row, key=torrent.magnet_uri  # pyright: ignore[reportArgumentType]
+            )
         table.focus()
 
     @work(exclusive=True, thread=True)
