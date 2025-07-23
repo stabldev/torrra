@@ -1,8 +1,10 @@
 import sys
-from typing import Optional
+from typing import ClassVar
 
 from textual import work
 from textual.app import App
+from textual.binding import BindingType
+from textual.types import CSSPathType
 
 from torrra._types import Provider
 from torrra.commands.config import handle_config_command
@@ -14,23 +16,25 @@ from torrra.utils.fs import get_resource_path
 from torrra.utils.provider import load_provider, load_provider_from_args
 
 
-class TorrraApp(App):
-    TITLE = "torrra"
-    CSS_PATH = get_resource_path("app.css")
-    BINDINGS = [
+class TorrraApp(App[None]):
+    TITLE: str | None = "torrra"
+    CSS_PATH: ClassVar[CSSPathType | None] = get_resource_path("app.css")
+    BINDINGS: ClassVar[list[BindingType]] = [
         ("q", "quit", "Quit"),
         ("d", "toggle_dark_mode", "Toggle dark mode"),
         ("escape", "clear_focus", "Clear focus"),
     ]
-    ENABLE_COMMAND_PALETTE = False
+    ENABLE_COMMAND_PALETTE: ClassVar[bool] = False
 
-    def __init__(self, provider: Optional[Provider]) -> None:
+    def __init__(self, provider: Provider | None) -> None:
         super().__init__()
-        self.provider = provider
+        self.provider: Provider | None = provider
 
     @work
     async def on_mount(self) -> None:
-        self.theme = "catppuccin-mocha"
+        self.theme = (
+            "catppuccin-mocha"  # pyright: ignore[reportUnannotatedClassAttribute]
+        )
 
         if query := await self.push_screen_wait(WelcomeScreen(provider=self.provider)):
             search_screen = SearchScreen(provider=self.provider, initial_query=query)

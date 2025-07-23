@@ -1,38 +1,29 @@
 import asyncio
 import json
+import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
-from typing import Dict, Literal
 
+import click
 from platformdirs import site_config_dir, user_config_dir
 
-from torrra._types import Provider
+from torrra._types import Indexers, Provider
 from torrra.providers.jackett import JackettClient
 from torrra.providers.prowlarr import ProwlarrClient
 
 
-def load_provider(provider: Literal["jackett", "prowlarr"]) -> Provider:
+def load_provider(provider: Indexers) -> Provider:
     if provider == "jackett":
         return load_jackett_config()
     elif provider == "prowlarr":
         return load_prowlarr_config()
 
 
-def load_provider_from_args(
-    name: Literal["jackett", "prowlarr"], url: str, api_key: str
-) -> Provider:
+def load_provider_from_args(name: Indexers, url: str, api_key: str) -> Provider:
     if name == "jackett":
-        pc = JackettClient(url=url, api_key=api_key)
-        if asyncio.run(pc.validate()):
-            return Provider(name="Jackett", url=url, api_key=api_key)
-        else:
-            raise SystemExit(1)
+        return Provider(name="jackett", url=url, api_key=api_key)
     elif name == "prowlarr":
-        pc = ProwlarrClient(url=url, api_key=api_key)
-        if asyncio.run(pc.validate()):
-            return Provider(name="Prowlarr", url=url, api_key=api_key)
-        else:
-            raise SystemExit(1)
+        return Provider(name="prowlarr", url=url, api_key=api_key)
 
 
 def load_jackett_config() -> Provider:
@@ -86,7 +77,7 @@ def _find_config_path(appname: str, config_file: str) -> Path:
     )
 
 
-def _load_json_config(path: Path) -> Dict:
+def _load_json_config(path: Path) -> dict:
     try:
         with path.open("r", encoding="utf-8") as f:
             return json.load(f)
@@ -96,7 +87,7 @@ def _load_json_config(path: Path) -> Dict:
         raise RuntimeError(f"[error] failed to load config file: {path}\n{e}")
 
 
-def _load_xml_config(path: Path) -> Dict:
+def _load_xml_config(path: Path) -> dict:
     try:
         tree = ET.parse(path)
         root = tree.getroot()
