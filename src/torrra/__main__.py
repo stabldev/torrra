@@ -27,18 +27,18 @@ def config_get(path: str):
 @click.option("--url", required=True, help="Jackett server URL.")
 @click.option("--api-key", required=True, help="Jackett API key.")
 def jackett(url: str, api_key: str):
-    from torrra.utils.indexer import run_from_indexer
+    from torrra.utils.indexer import run_with_indexer
 
-    run_from_indexer("jackett", url, api_key)
+    run_with_indexer("jackett", url, api_key)
 
 
 @cli.command(help="Use Prowlarr as the indexer.")
 @click.option("--url", required=True, help="Prowlarr server URL.")
 @click.option("--api-key", required=True, help="Prowlarr API key.")
 def prowlarr(url: str, api_key: str):
-    from torrra.utils.indexer import run_from_indexer
+    from torrra.utils.indexer import run_with_indexer
 
-    run_from_indexer("prowlarr", url, api_key)
+    run_with_indexer("prowlarr", url, api_key)
 
 
 if __name__ == "__main__":
