@@ -1,0 +1,36 @@
+name: "🐛 Bug Report"
+description: Report an issue with this tool
+title: "[Bug] "
+labels: [bug]
+body:
+  - type: textarea
+    attributes:
+      label: What happened?
+      description: A clear description of the bug. What were you trying to do?
+      placeholder: "e.g. I ran `torrra` and searched for XYZ, but it crashed with..."
+    validations:
+      required: true
+
+  - type: input
+    attributes:
+      label: Version
+      description: Run `torrra --version` and paste the result here.
+      placeholder: "torrra vX.Y.Z"
+    validations:
+      required: true
+
+  - type: input
+    attributes:
+      label: OS and architecture
+      placeholder: "e.g. Arch Linux x86_64"
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Terminal Output or Logs
+      description: Paste any errors, logs, or stack traces you see in the terminal.
+      placeholder: "Copy-paste the output or error messages here..."
+      render: shell
+    validations:
+      required: false
