@@ -1,6 +1,5 @@
 import time
-from pathlib import Path
-from typing import ClassVar, cast
+from typing import ClassVar, cast, override
 
 import httpx
 import libtorrent as lt
@@ -40,25 +39,26 @@ class SearchScreen(Screen[None]):
 
     class SearchResults(Message):
         def __init__(self, results: list[Torrent], query: str) -> None:
-            self.results = results
-            self.query = query
+            self.results: list[Torrent] = results
+            self.query: str = query
             super().__init__()
 
     def __init__(self, provider: Provider | None, initial_query: str):
         super().__init__()
-        self.provider = provider
-        self.initial_query = initial_query
+        self.provider: Provider | None = provider
+        self.initial_query: str = initial_query
         # libtorrent
-        self.lt_session = None
-        self.lt_handle = None
-        self.lt_paused = False
+        self.lt_session: lt.session | None = None
+        self.lt_handle: lt.torrent_handle | None = None
+        self.lt_paused: bool = False
 
+    @override
     def compose(self) -> ComposeResult:
         search_input = Input(
             placeholder="Search...", id="search", value=self.initial_query
         )
         search_input.border_title = "[$secondary]s[/]earch"
-        results_table = DataTable(
+        results_table: DataTable[None] = DataTable(
             id="results_table",
             cursor_type="row",
             show_cursor=True,
@@ -90,7 +90,7 @@ class SearchScreen(Screen[None]):
             Input.Submitted(self.query_one("#search", Input), self.initial_query)
         )
 
-        table = self.query_one("#results_table", DataTable)
+        table = self.query_one("#results_table", DataTable[None])
         table.add_column("No.", width=self.no_col_width, key="no_col")
         table.add_column("Title", width=self.title_col_minimum, key="title_col")
         table.add_column("Size", width=self.size_col_width, key="size_col")
@@ -104,7 +104,7 @@ class SearchScreen(Screen[None]):
             self.lt_session.remove_torrent(self.lt_handle)
 
     def on_resize(self) -> None:
-        table = self.query_one("#results_table", DataTable)
+        table = self.query_one("#results_table", DataTable[None])
 
         total_cell_padding = table.cell_padding * 2 * len(table.columns)
         # space taken for border and padding
@@ -148,7 +148,7 @@ class SearchScreen(Screen[None]):
         if not query:
             return
 
-        table = self.query_one("#results_table", DataTable)
+        table = self.query_one("#results_table", DataTable[None])
         loader = self.query_one("#loader", Vertical)
         loader_text = self.query_one("#loader Static", Static)
 
@@ -166,7 +166,7 @@ class SearchScreen(Screen[None]):
 
         self.query_one("#bar-and-actions", Horizontal).remove_class("hidden")
         self.query_one("#search", Input).disabled = True
-        event.control.disabled = True
+        cast(DataTable[None], event.control).disabled = True
         self._download_torrent(magnet_uri)
 
     @work(exclusive=True, thread=True)
@@ -183,7 +183,7 @@ class SearchScreen(Screen[None]):
 
     @on(SearchResults)
     def _show_search_results(self, message: SearchResults) -> None:
-        table = self.query_one("#results_table", DataTable)
+        table = self.query_one("#results_table", DataTable[None])
         loader = self.query_one("#loader", Vertical)
         loader_text = loader.query_one(Static)
 
@@ -195,33 +195,33 @@ class SearchScreen(Screen[None]):
         table.remove_class("hidden")
 
         for idx, torrent in enumerate(message.results):
-            table.add_row(
-                idx + 1,
+            row = [
+                str(idx + 1),
                 torrent.title,
                 human_readable_size(torrent.size),
-                torrent.seeders,
-                torrent.leechers,
+                str(torrent.seeders),
+                str(torrent.leechers),
                 torrent.source,
-                key=torrent.magnet_uri,
-            )
+            ]
 
+            table.add_row(
+                *row, key=torrent.magnet_uri
+            )  # pyright: ignore[reportArgumentType]
         table.focus()
 
     @work(exclusive=True, thread=True)
     async def _download_torrent(self, magnet_uri: str) -> None:
         magnet_uri = await self._resolve_magnet_uri_if_redirect(magnet_uri)
 
-        self.lt_session = lt.session()  # pyright: ignore
+        self.lt_session = lt.session()
         self.lt_session.listen_on(6881, 6891)
 
         params = {
             "save_path": config.get("general.download_path"),
-            "storage_mode": lt.storage_mode_t.storage_mode_sparse,  # pyright: ignore
+            "storage_mode": lt.storage_mode_t.storage_mode_sparse,
         }
 
-        self.lt_handle = lt.add_magnet_uri(  # pyright: ignore
-            self.lt_session, magnet_uri, params
-        )
+        self.lt_handle = lt.add_magnet_uri(self.lt_session, magnet_uri, params)
 
         self.app.call_from_thread(
             self._update_download_ui, "[b $success]Fetching Metadata...[/]", 0

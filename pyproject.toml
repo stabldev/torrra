@@ -58,9 +58,12 @@ repository = "https://github.com/stabldev/torrra"
 [project.scripts]
 torrra = "torrra.app:main"
 
+[dependency-groups]
+dev = ["libtorrent-stubs>=0.0.1", "textual-dev>=1.7.0"]
+
+[tool.pyright]
+reportUnusedCallResult = "none"
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
-
-[dependency-groups]
-dev = ["textual-dev>=1.7.0"]

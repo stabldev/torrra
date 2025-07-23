@@ -249,6 +249,18 @@ wheels = [
 ]
 
 [[package]]
+name = "libtorrent-stubs"
+version = "0.0.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "libtorrent" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/56/a2/9132b06461b7fdb0a283df03ff6dcbe5bc21dcccc84b722600ae0011afe6/libtorrent_stubs-0.0.1.tar.gz", hash = "sha256:1fe701c23b4fb1f68e6abd7118e5f2fae10a3ce13d5ad22d277d1b425351afa4", size = 13468, upload-time = "2025-07-23T06:31:30.711Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f6/e6/964ecb0531e2d375e4bf4654c009f5f85702cd4dabcbe647c320188729b6/libtorrent_stubs-0.0.1-py3-none-any.whl", hash = "sha256:43fd9ce83959d1aeb2b592e25a9ae5ed0d15b488223e37b7cd4c53b6f2fceaf1", size = 14310, upload-time = "2025-07-23T06:31:29.811Z" },
+]
+
+[[package]]
 name = "libtorrent-windows-dll"
 version = "0.0.2"
 source = { registry = "https://pypi.org/simple" }
@@ -558,6 +570,7 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "libtorrent-stubs" },
     { name = "textual-dev" },
 ]
 
@@ -573,7 +586,10 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-dev = [{ name = "textual-dev", specifier = ">=1.7.0" }]
+dev = [
+    { name = "libtorrent-stubs", specifier = ">=0.0.1" },
+    { name = "textual-dev", specifier = ">=1.7.0" },
+]
 
 [[package]]
 name = "typing-extensions"
