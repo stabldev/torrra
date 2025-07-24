@@ -13,7 +13,7 @@ def cli(ctx: click.Context):
         pass
 
 
-# ==================== INDEXERS ====================
+# ========== INDEXERS ==========
 
 
 @cli.command(help="Use Jackett as the indexer.")
@@ -34,10 +34,10 @@ def prowlarr(url: str, api_key: str):
     run_with_indexer("prowlarr", url, api_key)
 
 
-# ==================== CONFIG ====================
+# ========== CONFIG ==========
 
 
-@cli.group()
+@cli.group(help="Manage configuration.")
 def config():
     pass
 

@@ -6,7 +6,6 @@ from textual.binding import BindingType
 from textual.types import CSSPathType
 
 from torrra._types import Provider
-from torrra.screens.search import SearchScreen
 from torrra.screens.welcome import WelcomeScreen
 from torrra.utils.fs import get_resource_path
 
@@ -27,11 +26,13 @@ class TorrraApp(App[None]):
 
     @work
     async def on_mount(self) -> None:
-        self.theme = (
-            "catppuccin-mocha"  # pyright: ignore[reportUnannotatedClassAttribute]
+        self.theme = (  # pyright: ignore[reportUnannotatedClassAttribute]
+            "catppuccin-mocha"
         )
 
         if query := await self.push_screen_wait(WelcomeScreen(provider=self.provider)):
+            from torrra.screens.search import SearchScreen
+
             search_screen = SearchScreen(provider=self.provider, initial_query=query)
             await self.push_screen(search_screen)
 
