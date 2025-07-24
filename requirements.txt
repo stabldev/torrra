@@ -44,16 +44,18 @@ attrs==25.3.0 \
     --hash=sha256:427318ce031701fea540783410126f03899a97ffc6f61596ad581ac2e40e3bc3 \
     --hash=sha256:75d7cefc7fb576747b2c81b4442d4d4a1ce0900973527c011d1030fd3bf4af1b
     # via aiohttp
-certifi==2025.7.14 \
-    --hash=sha256:6b31f564a415d79ee77df69d757bb49a5bb53bd9f756cbbe24394ffd6fc1f4b2 \
-    --hash=sha256:8ea99dbdfaaf2ba2f9bac77b9249ef62ec5218e7c2b2e903378ed5fccf765995
+certifi==2025.6.15 \
+    --hash=sha256:2e0c7ce7cb5d8f8634ca55d2ba7e6ec2689a2fd6537d8dec1296a477a4910057 \
+    --hash=sha256:d747aa5a8b9bbbb1bb8c22bb13e22bd1f18e9796defa16bab421f7f7a317323b
     # via
     #   httpcore
     #   httpx
 click==8.2.1 \
     --hash=sha256:27c491cc05d968d271d5a1db13e3b5a184636d9d930f148c50b038f0d0646202 \
     --hash=sha256:61a3265b914e850b85317d0b3109c7f8cd35a670f963866005d6ef1d5175a12b
-    # via textual-dev
+    # via
+    #   textual-dev
+    #   torrra
 colorama==0.4.6 ; sys_platform == 'win32' \
     --hash=sha256:08695f5cb7ed6e0531a20572697297273c47b8cae5a63ffc6d6ed5c201be6e44 \
     --hash=sha256:4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6
@@ -144,9 +146,9 @@ libtorrent==2.0.11 \
 libtorrent-stubs==0.0.1 \
     --hash=sha256:1fe701c23b4fb1f68e6abd7118e5f2fae10a3ce13d5ad22d277d1b425351afa4 \
     --hash=sha256:43fd9ce83959d1aeb2b592e25a9ae5ed0d15b488223e37b7cd4c53b6f2fceaf1
-libtorrent-windows-dll==0.0.3 ; sys_platform == 'win32' \
-    --hash=sha256:84f0f4f8d80f36a8769eeed8b85aa03ed1a961fd44ff597d60771f63f77135d8 \
-    --hash=sha256:eac387522f70286fcad688c78c3f8e428c43fef3bd48f493bc4fb480d68ed366
+libtorrent-windows-dll==0.0.2 ; sys_platform == 'win32' \
+    --hash=sha256:c179e9d33c2b7aa6f8022c458b72663cd1d3d8ec7bebd8b7510598d5ff68f110 \
+    --hash=sha256:eaf841e52503e3c1160b220611ffad241a37bbfe0d5a10d76692ad18a0317a09
     # via torrra
 linkify-it-py==2.0.3 \
     --hash=sha256:68cda27e162e9215c17d786649d1da0021a451bdc436ef9e0fa0ba5234b9b048 \

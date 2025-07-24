@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Literal, Optional
+from typing import Literal
 
 
 @dataclass
@@ -9,11 +9,14 @@ class Torrent:
     seeders: int
     leechers: int
     source: str
-    magnet_uri: Optional[str]
+    magnet_uri: str | None
+
+
+Indexers = Literal["jackett", "prowlarr"]
 
 
 @dataclass
 class Provider:
-    name: Literal["Jackett", "Prowlarr"]
+    name: Indexers
     url: str
     api_key: str

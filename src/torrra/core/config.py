@@ -1,7 +1,7 @@
 import ast
 import tomllib
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 import tomli_w
 from platformdirs import user_config_dir, user_downloads_dir
@@ -14,30 +14,29 @@ CONFIG_FILE = CONFIG_DIR / "config.toml"
 
 class Config:
     def __init__(self) -> None:
-        self.config: Dict[str, Any] = {}
+        self.config: dict[str, Any] = {}
         self._load_config()
 
-    def get(self, key_path: str) -> Any:
+    def get(self, key_path: str) -> str:
         keys = key_path.split(".")
         current = self.config
 
         try:
             for key in keys:
                 current = current[key]
+
+            if isinstance(current, dict):
+                raise ConfigError(
+                    f"[error] key does not contain a value (it's a section): {key_path}"
+                )
+            return current
+
         except (KeyError, TypeError):
             if len(keys) > 1:
                 raise ConfigError(f"[error] key does not contain a section: {key_path}")
-            else:
-                raise ConfigError(f"[error] key not found: {key_path}")
+            raise ConfigError(f"[error] key not found: {key_path}")
 
-        if isinstance(current, dict):
-            raise ConfigError(
-                f"[error] key does not contain a value (it's a section): {key_path}"
-            )
-
-        return current
-
-    def set(self, key_path: str, value: Any) -> None:
+    def set(self, key_path: str, value: str) -> None:
         current = self.config
         keys = key_path.split(".")
 
@@ -62,8 +61,8 @@ class Config:
         except (KeyError, TypeError) as e:
             raise ConfigError(f"[error] failed to set '{key_path}': {str(e)}")
 
-    def list(self) -> List[str]:
-        results = []
+    def list(self) -> list[str]:
+        results: list[str] = []
         for section in self.config:
             for key, value in self.config[section].items():
                 if isinstance(value, bool):
