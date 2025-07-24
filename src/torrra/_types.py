@@ -1,5 +1,7 @@
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, TypedDict
+
+# ========== TORRENTS ==========
 
 
 @dataclass
@@ -12,11 +14,23 @@ class Torrent:
     magnet_uri: str | None
 
 
-Indexers = Literal["jackett", "prowlarr"]
+class TorrentDict(TypedDict):
+    title: str
+    size: float
+    seeders: int
+    leechers: int
+    source: str
+    magnet_uri: str
+
+
+# ========== INDEXERS ==========
+
+
+IndexerName = Literal["jackett", "prowlarr"]
 
 
 @dataclass
-class Provider:
-    name: Indexers
+class Indexer:
+    name: IndexerName
     url: str
     api_key: str

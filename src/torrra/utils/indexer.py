@@ -2,15 +2,15 @@ import sys
 
 import click
 
-from torrra._types import Indexers, Provider
+from torrra._types import Indexer, IndexerName
 from torrra.core.exceptions import ConfigError
 
 
-def run_with_indexer(indexer: Indexers, url: str, api_key: str):
+def run_with_indexer(indexer: IndexerName, url: str, api_key: str):
     from torrra.app import TorrraApp
 
     try:
-        provider = Provider(indexer, url, api_key)
+        provider = Indexer(indexer, url, api_key)
         app = TorrraApp(provider=provider)
         app.run()
     except (FileNotFoundError, RuntimeError, ConfigError) as e:

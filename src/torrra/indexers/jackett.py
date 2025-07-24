@@ -1,8 +1,9 @@
+from dataclasses import asdict
 from typing import Any, cast
 
 import httpx
 
-from torrra._types import Torrent
+from torrra._types import Torrent, TorrentDict
 from torrra.core.cache import CACHE_TTL, cache, make_cache_key
 from torrra.core.exceptions import JackettConnectionError
 
@@ -18,7 +19,8 @@ class JackettIndexer:
         key = make_cache_key("jackett", query)
 
         if use_cache and key in cache:
-            return cast(list[Torrent], cache[key])
+            raw_data = cast(list[TorrentDict], cache[key])
+            return [Torrent(**item) for item in raw_data]
 
         endpoint = f"{self.url}/api/v2.0/indexers/all/results"
         params = {"apikey": self.api_key, "query": query}
@@ -30,9 +32,8 @@ class JackettIndexer:
             results = [self._normalize_result(r) for r in raw_results]
 
         if use_cache:
-            # cache.set might be missing type hints on set()
             cache.set(  # pyright: ignore[reportUnknownMemberType]
-                key, results, expire=CACHE_TTL
+                key, [asdict(t) for t in results], expire=CACHE_TTL
             )
 
         return results
