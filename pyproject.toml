@@ -64,6 +64,8 @@ dev = ["libtorrent-stubs>=0.0.1", "textual-dev>=1.7.0"]
 
 [tool.pyright]
 reportUnusedCallResult = "none"
+reportExplicitAny = "none"
+reportAny = "none"
 
 [build-system]
 requires = ["hatchling"]

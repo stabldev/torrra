@@ -1,6 +1,7 @@
 import click
 
 from torrra._version import __version__
+from torrra.core.exceptions import ConfigError
 
 
 @click.group(invoke_without_command=True)
@@ -12,15 +13,7 @@ def cli(ctx: click.Context):
         pass
 
 
-@cli.group(help="Manage configuration.")
-def config():
-    pass
-
-
-@config.command(help="Get a config value.")
-@click.argument("path")
-def config_get(path: str):
-    click.echo(f"getting config value at: {path}")
+# ==================== INDEXERS ====================
 
 
 @cli.command(help="Use Jackett as the indexer.")
@@ -39,6 +32,50 @@ def prowlarr(url: str, api_key: str):
     from torrra.utils.indexer import run_with_indexer
 
     run_with_indexer("prowlarr", url, api_key)
+
+
+# ==================== CONFIG ====================
+
+
+@cli.group()
+def config():
+    pass
+
+
+@config.command(name="get", help="Get a config value.")
+@click.argument("key")
+def config_get(key: str):
+    from torrra.core.config import Config
+
+    config = Config()
+    try:
+        click.echo(config.get(key))
+    except ConfigError as e:
+        click.secho(e, fg="red", err=True)
+
+
+@config.command(name="set", help="Set a config value to path.")
+@click.argument("key")
+@click.argument("value")
+def config_set(key: str, value: str):
+    from torrra.core.config import Config
+
+    config = Config()
+    try:
+        config.set(key, value)
+    except ConfigError as e:
+        click.secho(e, fg="red", err=True)
+
+
+@config.command(name="list", help="List all configurations.")
+def config_list():
+    from torrra.core.config import Config
+
+    config = Config()
+    try:
+        click.echo("\n".join(config.list()))
+    except ConfigError as e:
+        click.secho(e, fg="red", err=True)
 
 
 if __name__ == "__main__":
