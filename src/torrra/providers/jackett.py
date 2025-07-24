@@ -1,4 +1,4 @@
-from typing import Dict, List, cast
+from typing import Any, cast
 
 import httpx
 
@@ -8,16 +8,16 @@ from torrra.core.cache import CACHE_TTL, cache, make_cache_key
 
 class JackettClient:
     def __init__(self, url: str, api_key: str, timeout: int = 10):
-        self.url = url.rstrip("/")
-        self.api_key = api_key
-        self.timeout = timeout
+        self.url: str = url.rstrip("/")
+        self.api_key: str = api_key
+        self.timeout: int = timeout
 
-    async def search(self, query: str, use_cache: bool = False) -> List[Torrent]:
+    async def search(self, query: str, use_cache: bool = True) -> list[Torrent]:
         # jackett has build-in cache mechanism
         key = make_cache_key("jackett", query)
 
         if use_cache and key in cache:
-            return cast(List[Torrent], cache[key])
+            return cast(list[Torrent], cache[key])
 
         endpoint = f"{self.url}/api/v2.0/indexers/all/results"
         params = {"apikey": self.api_key, "query": query}
@@ -29,7 +29,10 @@ class JackettClient:
             results = [self._normalize_result(r) for r in raw_results]
 
         if use_cache:
-            cache.set(key, results, expire=CACHE_TTL)
+            # cache.set might be missing type hints on set()
+            cache.set(
+                key, results, expire=CACHE_TTL
+            )  # pyright: ignore[reportUnknownMemberType]
 
         return results
 
@@ -61,7 +64,7 @@ class JackettClient:
 
             return False
 
-    def _normalize_result(self, r: Dict) -> Torrent:
+    def _normalize_result(self, r: dict[str, Any]) -> Torrent:
         return Torrent(
             title=r.get("Title", ""),
             size=r.get("Size", 0),

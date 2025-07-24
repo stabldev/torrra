@@ -1,7 +1,8 @@
 import atexit
 import hashlib
 
-from diskcache import Cache
+# no official stubs for diskcache
+from diskcache import Cache  # pyright: ignore[reportMissingTypeStubs]
 from platformdirs import user_cache_dir
 
 CACHE_DIR = user_cache_dir("torrra")
