@@ -1,6 +1,6 @@
 FROM python:3.13-alpine
 
-WORKDIR /app
+WORKDIR /code
 
 RUN apk add --no-cache curl
 
@@ -11,7 +11,7 @@ ENV PIP_ROOT_USER_ACTION=ignore
 
 RUN curl -L https://github.com/stabldev/torrra/archive/refs/tags/v${TORRRA_VERSION}.tar.gz | tar -xz
 
-WORKDIR /app/torrra-${TORRRA_VERSION}
+WORKDIR /code/torrra-${TORRRA_VERSION}
 
 RUN pip install .
 
