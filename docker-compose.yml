@@ -1,0 +1,22 @@
+services:
+  torrra:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    stdin_open: true
+    tty: true
+    # volumes:
+    #   - .:/app
+
+  # ========== INDEXERS ==========
+  jackett:
+    image: linuxserver/jackett
+    container_name: jackett
+    ports:
+      - "9118:9117"
+    volumes:
+      - jackett-config:/config
+    restart: unless-stopped
+
+volumes:
+  jackett-config:
