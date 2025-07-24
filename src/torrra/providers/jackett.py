@@ -30,9 +30,9 @@ class JackettClient:
 
         if use_cache:
             # cache.set might be missing type hints on set()
-            cache.set(
+            cache.set(  # pyright: ignore[reportUnknownMemberType]
                 key, results, expire=CACHE_TTL
-            )  # pyright: ignore[reportUnknownMemberType]
+            )
 
         return results
 
