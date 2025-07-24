@@ -18,7 +18,8 @@ def cli(ctx: click.Context) -> None:
 @cli.command(help="Use Jackett as the indexer.")
 @click.option("--url", required=True, help="Jackett server URL.")
 @click.option("--api-key", required=True, help="Jackett API key.")
-def jackett(url: str, api_key: str) -> None:
+@click.option("--no-cache", is_flag=True, help="Disable caching mechanism.")
+def jackett(url: str, api_key: str, no_cache: bool) -> None:
     click.secho(f"connecting to jackett server at: {url}", fg="cyan")
 
     import asyncio
@@ -36,13 +37,14 @@ def jackett(url: str, api_key: str) -> None:
 
     valid = asyncio.run(validate_indexer())
     if valid:
-        run_with_indexer("jackett", url, api_key)
+        run_with_indexer("jackett", url, api_key, use_cache=not no_cache)
 
 
 @cli.command(help="Use Prowlarr as the indexer.")
 @click.option("--url", required=True, help="Prowlarr server URL.")
 @click.option("--api-key", required=True, help="Prowlarr API key.")
-def prowlarr(url: str, api_key: str):
+@click.option("--no-cache", is_flag=True, help="Disable caching mechanism.")
+def prowlarr(url: str, api_key: str, no_cache: bool):
     click.secho(f"connecting to prowlarr server at: {url}", fg="cyan")
 
     import asyncio
@@ -60,7 +62,7 @@ def prowlarr(url: str, api_key: str):
 
     valid = asyncio.run(validate_indexer())
     if valid:
-        run_with_indexer("prowlarr", url, api_key)
+        run_with_indexer("prowlarr", url, api_key, use_cache=not no_cache)
 
 
 # ========== CONFIG ==========

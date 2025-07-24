@@ -43,10 +43,11 @@ class SearchScreen(Screen[None]):
             self.query: str = query
             super().__init__()
 
-    def __init__(self, indexer: Indexer | None, initial_query: str):
+    def __init__(self, indexer: Indexer | None, initial_query: str, use_cache: bool):
         super().__init__()
         self.indexer: Indexer | None = indexer
         self.initial_query: str = initial_query
+        self.use_cache: bool = use_cache
         # libtorrent
         self.lt_session: lt.session | None = None
         self.lt_handle: lt.torrent_handle | None = None
@@ -175,7 +176,7 @@ class SearchScreen(Screen[None]):
         results = []
         if client:
             try:
-                results = await client.search(query)
+                results = await client.search(query, use_cache=self.use_cache)
             except Exception as e:
                 self.log.error(f"error during search: {e}")
 
