@@ -1,7 +1,15 @@
-from dataclasses import dataclass
-from typing import Literal, TypedDict
+from dataclasses import asdict, dataclass
+from typing import Any, Literal, TypedDict, cast
 
-# ========== TORRENTS ==========
+
+# TORRENT TYPES
+class TorrentDict(TypedDict):
+    title: str
+    size: float
+    seeders: int
+    leechers: int
+    source: str
+    magnet_uri: str | None
 
 
 @dataclass
@@ -13,19 +21,15 @@ class Torrent:
     source: str
     magnet_uri: str | None
 
+    @classmethod
+    def from_dict(cls, d: TorrentDict) -> "Torrent":
+        return cls(**d)
 
-class TorrentDict(TypedDict):
-    title: str
-    size: float
-    seeders: int
-    leechers: int
-    source: str
-    magnet_uri: str
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
 
 
-# ========== INDEXERS ==========
-
-
+# INDEXER TYPES
 IndexerName = Literal["jackett", "prowlarr"]
 
 

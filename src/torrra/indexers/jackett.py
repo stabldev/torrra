@@ -1,10 +1,9 @@
-from dataclasses import asdict
 from typing import Any, cast
 
 import httpx
 
 from torrra._types import Torrent, TorrentDict
-from torrra.core.cache import CACHE_TTL, cache, make_cache_key
+from torrra.core.cache import get_cache, has_cache, make_cache_key, set_cache
 from torrra.core.exceptions import JackettConnectionError
 
 
@@ -15,12 +14,11 @@ class JackettIndexer:
         self.timeout: int = timeout
 
     async def search(self, query: str, use_cache: bool = True) -> list[Torrent]:
-        # jackett has build-in cache mechanism
         key = make_cache_key("jackett", query)
 
-        if use_cache and key in cache:
-            raw_data = cast(list[TorrentDict], cache[key])
-            return [Torrent(**item) for item in raw_data]
+        if use_cache and has_cache(key):
+            raw_data = cast(list[TorrentDict], get_cache(key))
+            return [Torrent.from_dict(d) for d in raw_data]
 
         endpoint = f"{self.url}/api/v2.0/indexers/all/results"
         params = {"apikey": self.api_key, "query": query}
@@ -28,15 +26,13 @@ class JackettIndexer:
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             resp = await client.get(endpoint, params=params)
             resp.raise_for_status()
-            raw_results = resp.json().get("Results", [])
-            results = [self._normalize_result(r) for r in raw_results]
+            res = resp.json().get("Results", [])
+            torrents = [self._normalize_result(r) for r in res]
 
         if use_cache:
-            cache.set(  # pyright: ignore[reportUnknownMemberType]
-                key, [asdict(t) for t in results], expire=CACHE_TTL
-            )
+            set_cache(key, [t.to_dict() for t in torrents])
 
-        return results
+        return torrents
 
     async def validate(self) -> bool:
         url = f"{self.url}/api/v2.0/indexers/nonexistent_indexer/results"

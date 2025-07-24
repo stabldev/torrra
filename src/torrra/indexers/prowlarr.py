@@ -2,8 +2,8 @@ from typing import Any, cast
 
 import httpx
 
-from torrra._types import Torrent
-from torrra.core.cache import CACHE_TTL, cache, make_cache_key
+from torrra._types import Torrent, TorrentDict
+from torrra.core.cache import get_cache, has_cache, make_cache_key, set_cache
 from torrra.core.exceptions import ProwlarrConnectionError
 
 
@@ -16,8 +16,9 @@ class ProwlarrIndexer:
     async def search(self, query: str, use_cache: bool = True) -> list[Torrent]:
         key = make_cache_key("prowlarr", query)
 
-        if use_cache and key in cache:
-            return cast(list[Torrent], cache[key])
+        if use_cache and has_cache(key):
+            raw_data = cast(list[TorrentDict], get_cache(key))
+            return [Torrent.from_dict(d) for d in raw_data]
 
         endpoint = f"{self.url}/api/v1/search"
         params = {"apikey": self.api_key, "query": query}
@@ -25,15 +26,12 @@ class ProwlarrIndexer:
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             resp = await client.get(endpoint, params=params)
             resp.raise_for_status()
-            results = [self._normalize_result(r) for r in resp.json()]
+            torrents = [self._normalize_result(r) for r in resp.json()]
 
         if use_cache:
-            # cache.set might be missing type hints on set()
-            cache.set(  # pyright: ignore[reportUnknownMemberType]
-                key, results, expire=CACHE_TTL
-            )
+            set_cache(key, [t.to_dict() for t in torrents])
 
-        return results
+        return torrents
 
     async def validate(self) -> bool:
         url = f"{self.url}/api/v1/health"
