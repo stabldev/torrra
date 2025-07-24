@@ -7,7 +7,7 @@ from textual.screen import Screen
 from textual.types import CSSPathType
 from textual.widgets import Input, Static
 
-from torrra._types import Provider
+from torrra._types import Indexer
 from torrra._version import __version__
 from torrra.utils.fs import get_resource_path
 
@@ -21,9 +21,9 @@ BANNER = """
 class WelcomeScreen(Screen[str]):
     CSS_PATH: ClassVar[CSSPathType | None] = get_resource_path("screens/welcome.css")
 
-    def __init__(self, provider: Provider | None) -> None:
+    def __init__(self, provider: Indexer | None) -> None:
         super().__init__()
-        self.provider: Provider | None = provider
+        self.provider: Indexer | None = provider
 
     @override
     def compose(self) -> ComposeResult:

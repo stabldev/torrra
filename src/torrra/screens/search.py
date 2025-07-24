@@ -12,10 +12,10 @@ from textual.types import CSSPathType
 from textual.widgets import DataTable, Input, LoadingIndicator, ProgressBar, Static
 from textual.widgets.data_table import ColumnKey
 
-from torrra._types import Provider, Torrent
+from torrra._types import Indexer, Torrent
 from torrra.core.config import Config
-from torrra.providers.jackett import JackettClient
-from torrra.providers.prowlarr import ProwlarrClient
+from torrra.indexers.jackett import JackettIndexer
+from torrra.indexers.prowlarr import ProwlarrIndexer
 from torrra.utils.fs import get_resource_path
 from torrra.utils.helpers import human_readable_size
 
@@ -43,9 +43,9 @@ class SearchScreen(Screen[None]):
             self.query: str = query
             super().__init__()
 
-    def __init__(self, provider: Provider | None, initial_query: str):
+    def __init__(self, indexer: Indexer | None, initial_query: str):
         super().__init__()
-        self.provider: Provider | None = provider
+        self.indexer: Indexer | None = indexer
         self.initial_query: str = initial_query
         # libtorrent
         self.lt_session: lt.session | None = None
@@ -171,7 +171,7 @@ class SearchScreen(Screen[None]):
 
     @work(exclusive=True, thread=True)
     async def _perform_search(self, query: str) -> None:
-        client = self._get_client()
+        client = self._get_indexer()
         results = []
         if client:
             try:
@@ -281,14 +281,14 @@ class SearchScreen(Screen[None]):
             progress=progress
         )
 
-    def _get_client(self) -> JackettClient | ProwlarrClient | None:
-        if not self.provider:
+    def _get_indexer(self) -> JackettIndexer | ProwlarrIndexer | None:
+        if not self.indexer:
             return
 
-        if self.provider.name == "jackett":
-            return JackettClient(url=self.provider.url, api_key=self.provider.api_key)
-        elif self.provider.name == "prowlarr":
-            return ProwlarrClient(url=self.provider.url, api_key=self.provider.api_key)
+        if self.indexer.name == "jackett":
+            return JackettIndexer(url=self.indexer.url, api_key=self.indexer.api_key)
+        elif self.indexer.name == "prowlarr":
+            return ProwlarrIndexer(url=self.indexer.url, api_key=self.indexer.api_key)
 
     async def _resolve_magnet_uri_if_redirect(self, url: str) -> str:
         if url.startswith("magnet:"):

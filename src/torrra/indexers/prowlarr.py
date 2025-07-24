@@ -2,11 +2,12 @@ from typing import Any, cast
 
 import httpx
 
-from torrra._types import Torrent
-from torrra.core.cache import CACHE_TTL, cache, make_cache_key
+from torrra._types import Torrent, TorrentDict
+from torrra.core.cache import get_cache, has_cache, make_cache_key, set_cache
+from torrra.core.exceptions import ProwlarrConnectionError
 
 
-class ProwlarrClient:
+class ProwlarrIndexer:
     def __init__(self, url: str, api_key: str, timeout: int = 10):
         self.url: str = url.rstrip("/")
         self.api_key: str = api_key
@@ -15,8 +16,9 @@ class ProwlarrClient:
     async def search(self, query: str, use_cache: bool = True) -> list[Torrent]:
         key = make_cache_key("prowlarr", query)
 
-        if use_cache and key in cache:
-            return cast(list[Torrent], cache[key])
+        if use_cache and has_cache(key):
+            raw_data = cast(list[TorrentDict], get_cache(key))
+            return [Torrent.from_dict(d) for d in raw_data]
 
         endpoint = f"{self.url}/api/v1/search"
         params = {"apikey": self.api_key, "query": query}
@@ -24,15 +26,12 @@ class ProwlarrClient:
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             resp = await client.get(endpoint, params=params)
             resp.raise_for_status()
-            results = [self._normalize_result(r) for r in resp.json()]
+            torrents = [self._normalize_result(r) for r in resp.json()]
 
         if use_cache:
-            # cache.set might be missing type hints on set()
-            cache.set(  # pyright: ignore[reportUnknownMemberType]
-                key, results, expire=CACHE_TTL
-            )
+            set_cache(key, [t.to_dict() for t in torrents])
 
-        return results
+        return torrents
 
     async def validate(self) -> bool:
         url = f"{self.url}/api/v1/health"
@@ -45,21 +44,24 @@ class ProwlarrClient:
                 return True
 
             except httpx.RequestError:
-                print(f"[error] could not connect to prowlarr at {self.url}.")
-                print("please make sure prowlarr is running and the url is correct.")
+                raise ProwlarrConnectionError(
+                    f"could not connect to prowlarr at {self.url}\n"
+                    + "please make sure prowlarr is running and the url is correct"
+                )
 
             except httpx.HTTPStatusError as e:
                 status_code = e.response.status_code
-                if status_code == 401:
-                    print("[error] invalid prowlarr api key.")
-                    print("double-check the api key you provided.")
-                else:
-                    print(f"[error] prowlarr returned http {status_code}.")
-                    print(
-                        "unexpected response from prowlarr. please verify your setup."
-                    )
 
-            return False
+                if status_code == 401:
+                    raise ProwlarrConnectionError(
+                        "invalid prowlarr api key\n"
+                        + "double-check the api key you provided"
+                    )
+                else:
+                    raise ProwlarrConnectionError(
+                        f"prowlarr returned http {status_code}\n"
+                        + "unexpected response from prowlarr. please verify your setup"
+                    )
 
     def _normalize_result(self, r: dict[str, Any]) -> Torrent:
         return Torrent(
