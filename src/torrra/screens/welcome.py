@@ -1,9 +1,10 @@
-from typing import Optional
+from typing import ClassVar, override
 
 from textual import on
 from textual.app import ComposeResult
 from textual.containers import Container, Grid
 from textual.screen import Screen
+from textual.types import CSSPathType
 from textual.widgets import Input, Static
 
 from torrra._types import Provider
@@ -18,12 +19,13 @@ BANNER = """
 
 
 class WelcomeScreen(Screen[str]):
-    CSS_PATH = get_resource_path("screens/welcome.css")
+    CSS_PATH: ClassVar[CSSPathType | None] = get_resource_path("screens/welcome.css")
 
-    def __init__(self, provider: Optional[Provider]) -> None:
+    def __init__(self, provider: Provider | None) -> None:
         super().__init__()
-        self.provider = provider
+        self.provider: Provider | None = provider
 
+    @override
     def compose(self) -> ComposeResult:
         with Container():
             yield Static(BANNER, id="banner")
