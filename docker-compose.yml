@@ -3,10 +3,16 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dev
+    container_name: torrra
     stdin_open: true
     tty: true
     # volumes:
     #   - .:/app
+    develop:
+      watch:
+        - action: sync
+          path: ./src
+          target: /code/src
 
   # ========== INDEXERS ==========
   jackett:
