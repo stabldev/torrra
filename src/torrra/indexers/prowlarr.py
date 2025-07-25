@@ -45,8 +45,8 @@ class ProwlarrIndexer:
 
             except httpx.RequestError:
                 raise ProwlarrConnectionError(
-                    f"could not connect to prowlarr at {self.url}\n"
-                    + "please make sure prowlarr is running and the url is correct"
+                    f"could not connect to prowlarr server\n"
+                    + "please make sure prowlarr server is running and the url is correct"
                 )
 
             except httpx.HTTPStatusError as e:
@@ -54,13 +54,13 @@ class ProwlarrIndexer:
 
                 if status_code == 401:
                     raise ProwlarrConnectionError(
-                        "invalid prowlarr api key\n"
+                        "invalid prowlarr server api key\n"
                         + "double-check the api key you provided"
                     )
                 else:
                     raise ProwlarrConnectionError(
-                        f"prowlarr returned http {status_code}\n"
-                        + "unexpected response from prowlarr. please verify your setup"
+                        f"prowlarr server returned http {status_code}\n"
+                        + "unexpected response from prowlarr server. please verify your setup"
                     )
 
     def _normalize_result(self, r: dict[str, Any]) -> Torrent:

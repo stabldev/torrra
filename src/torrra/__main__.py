@@ -20,44 +20,16 @@ def cli(ctx: click.Context) -> None:
 @click.option("--api-key", required=False, help="Jackett API key.")
 @click.option("--no-cache", is_flag=True, help="Disable caching mechanism.")
 def jackett(url: str | None, api_key: str | None, no_cache: bool) -> None:
-    if url is None and api_key is None:
-        from torrra.core.config import Config
-        from torrra.core.exceptions import ConfigError
+    from torrra.utils.indexer import handle_indexer_command
 
-        config = Config()
-
-        try:
-            url = config.get("indexers.jackett.url")
-            api_key = config.get("indexers.jackett.api_key")
-        except ConfigError as e:
-            click.secho(f"{e}\ncheck your configuration file.", fg="red", err=True)
-            return
-    elif url is None or api_key is None:
-        click.secho(
-            "both --url and --api-key must be provided together, or neither to use config.",
-            fg="red",
-            err=True,
-        )
-        return
-
-    click.secho(f"connecting to jackett server at: {url}", fg="cyan")
-
-    import asyncio
-
-    from torrra.core.exceptions import JackettConnectionError
-    from torrra.indexers.jackett import JackettIndexer
-    from torrra.utils.indexer import run_with_indexer
-
-    async def validate_indexer() -> bool:
-        try:
-            return await JackettIndexer(url, api_key).validate()
-        except JackettConnectionError as e:
-            click.secho(e, fg="red", err=True)
-            return False
-
-    valid = asyncio.run(validate_indexer())
-    if valid:
-        run_with_indexer("jackett", url, api_key, use_cache=not no_cache)
+    handle_indexer_command(
+        name="jackett",
+        indexer_cls_str="torrra.indexers.jackett.JackettIndexer",
+        connection_error_cls_str="torrra.core.exceptions.JackettConnectionError",
+        url=url,
+        api_key=api_key,
+        no_cache=no_cache,
+    )
 
 
 @cli.command(help="Use Prowlarr as the indexer.")
@@ -65,24 +37,16 @@ def jackett(url: str | None, api_key: str | None, no_cache: bool) -> None:
 @click.option("--api-key", required=True, help="Prowlarr API key.")
 @click.option("--no-cache", is_flag=True, help="Disable caching mechanism.")
 def prowlarr(url: str, api_key: str, no_cache: bool):
-    click.secho(f"connecting to prowlarr server at: {url}", fg="cyan")
+    from torrra.utils.indexer import handle_indexer_command
 
-    import asyncio
-
-    from torrra.core.exceptions import ProwlarrConnectionError
-    from torrra.indexers.prowlarr import ProwlarrIndexer
-    from torrra.utils.indexer import run_with_indexer
-
-    async def validate_indexer() -> bool:
-        try:
-            return await ProwlarrIndexer(url, api_key).validate()
-        except ProwlarrConnectionError as e:
-            click.secho(e, fg="red", err=True)
-            return False
-
-    valid = asyncio.run(validate_indexer())
-    if valid:
-        run_with_indexer("prowlarr", url, api_key, use_cache=not no_cache)
+    handle_indexer_command(
+        name="prowlarr",
+        indexer_cls_str="torrra.indexers.prowlarr.ProwlarrIndexer",
+        connection_error_cls_str="torrra.core.exceptions.JackettConnectionError",
+        url=url,
+        api_key=api_key,
+        no_cache=no_cache,
+    )
 
 
 # ========== CONFIG ==========

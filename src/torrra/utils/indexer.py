@@ -1,18 +1,64 @@
-import sys
-
 import click
 
 from torrra._types import Indexer, IndexerName
-from torrra.core.exceptions import ConfigError
 
 
-def run_with_indexer(indexer: IndexerName, url: str, api_key: str, use_cache: bool):
-    from torrra.app import TorrraApp
+def handle_indexer_command(
+    name: IndexerName,
+    indexer_cls_str: str,
+    connection_error_cls_str: str,
+    url: str | None,
+    api_key: str | None,
+    no_cache: bool,
+):
+    if url is None and api_key is None:
+        from torrra.core.config import Config
+        from torrra.core.exceptions import ConfigError
+
+        config = Config()
+
+        try:
+            url = config.get(f"indexers.{name}.url")
+            api_key = config.get(f"indexers.{name}.api_key")
+        except ConfigError as e:
+            click.secho(f"{e}\ncheck your configuration file.", fg="red", err=True)
+            return
+    elif url is None or api_key is None:
+        click.secho(
+            "both --url and --api-key must be provided together, or neither to use config.",
+            fg="red",
+            err=True,
+        )
+        return
+
+    click.secho(f"connecting to {name} server at {url}", fg="cyan")
+    import asyncio
+
+    indexer_cls = _lazy_import(indexer_cls_str)
+    connection_error_cls = _lazy_import(connection_error_cls_str)
+
+    async def validate_indexer() -> bool:
+        try:
+            return await indexer_cls(url, api_key).validate()
+        except connection_error_cls as e:
+            click.secho(str(e), fg="red", err=True)
+            return False
+
+    if asyncio.run(validate_indexer()):
+        from torrra.app import TorrraApp
+
+        provider = Indexer(name, url, api_key)
+        app = TorrraApp(provider, use_cache=not no_cache)
+        app.run()
+
+
+def _lazy_import(dotted_path: str):
+    import importlib
 
     try:
-        provider = Indexer(indexer, url, api_key)
-        app = TorrraApp(provider, use_cache)
-        app.run()
-    except (FileNotFoundError, RuntimeError, ConfigError) as e:
-        click.secho(f"error: {e}", fg="red", err=True)
-        sys.exit(1)
+        module_path, obj_name = dotted_path.rsplit(".", 1)
+        module = importlib.import_module(module_path)
+        return getattr(module, obj_name)
+    except (ModuleNotFoundError, AttributeError) as e:
+        click.secho(f"failed to load: {dotted_path}\n{e}", fg="red", err=True)
+        raise
