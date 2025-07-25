@@ -33,8 +33,8 @@ def jackett(url: str | None, api_key: str | None, no_cache: bool) -> None:
 
 
 @cli.command(help="Use Prowlarr as the indexer.")
-@click.option("--url", required=True, help="Prowlarr server URL.")
-@click.option("--api-key", required=True, help="Prowlarr API key.")
+@click.option("--url", required=False, help="Prowlarr server URL.")
+@click.option("--api-key", required=False, help="Prowlarr API key.")
 @click.option("--no-cache", is_flag=True, help="Disable caching mechanism.")
 def prowlarr(url: str, api_key: str, no_cache: bool):
     from torrra.utils.indexer import handle_indexer_command
@@ -42,7 +42,7 @@ def prowlarr(url: str, api_key: str, no_cache: bool):
     handle_indexer_command(
         name="prowlarr",
         indexer_cls_str="torrra.indexers.prowlarr.ProwlarrIndexer",
-        connection_error_cls_str="torrra.core.exceptions.JackettConnectionError",
+        connection_error_cls_str="torrra.core.exceptions.ProwlarrConnectionError",
         url=url,
         api_key=api_key,
         no_cache=no_cache,
