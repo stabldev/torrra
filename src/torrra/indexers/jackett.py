@@ -46,8 +46,8 @@ class JackettIndexer:
 
             except httpx.RequestError:
                 raise JackettConnectionError(
-                    f"could not connect to jackett at {self.url}\n"
-                    + "please make sure jackett is running and the url is correct"
+                    f"could not connect to jackett server\n"
+                    + "please make sure jackett server is running and the url is correct"
                 )
 
             except httpx.HTTPStatusError as e:
@@ -55,15 +55,15 @@ class JackettIndexer:
 
                 if status_code == 401:
                     raise JackettConnectionError(
-                        "invalid jackett api key\n"
+                        "invalid jackett server api key\n"
                         + "double-check the api key you provided"
                     )
                 elif status_code == 500 and "nonexistent_indexer" in e.response.text:
                     return True
                 else:
                     raise JackettConnectionError(
-                        f"jackett returned http {status_code}\n"
-                        + "unexpected response from jackett. please verify your setup"
+                        f"jackett server returned http {status_code}\n"
+                        + "unexpected response from jackett server. please verify your setup"
                     )
 
     def _normalize_result(self, r: dict[str, Any]) -> Torrent:

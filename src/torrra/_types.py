@@ -1,5 +1,5 @@
 from dataclasses import asdict, dataclass
-from typing import Any, Literal, TypedDict, cast
+from typing import Any, Literal, TypedDict
 
 
 # TORRENT TYPES
