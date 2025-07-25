@@ -134,7 +134,7 @@ Specify an indexer and provide its connection details. For instance, to use [`Ja
 
 ```bash
 torrra jackett --url http://localhost:9117 --api-key <your_jackett_api_key>
-````
+```
 
 > Replace `<your_jackett_api_key>` with your actual `Jackett` API key.
 
@@ -150,22 +150,22 @@ torrra prowlarr --url http://localhost:9696 --api-key <your_prowlarr_api_key>
 
 `torrra` offers a comprehensive CLI for managing configurations and launching the application with specific indexers.
 
-| Command               | Description                                                             |
-| :--------------------- | :------------------------------------------------------------------------- |
-| `torrra`               | Displays the help message if no subcommand is provided  |
-| `torrra --help`        | Shows the general help message  |
-| `torrra --version`     | Displays the current installed version of `torrra`  |
-| `torrra config`        | Accesses the configuration subcommands  |
-| `torrra jackett`       | Initializes `torrra` using [`Jackett`](https://github.com/Jackett/Jackett) as the torrent indexer  |
-| `torrra prowlarr`      | Initializes `torrra` using [`Prowlarr`](https://github.com/Prowlarr/Prowlarr) as the torrent indexer  |
+| Command                 | Description                                                                                          |
+| :---------------------- | :--------------------------------------------------------------------------------------------------- |
+| `torrra`                | Displays the help message if no subcommand is provided                                               |
+| `torrra --help`         | Shows the general help message                                                                       |
+| `torrra --version`      | Displays the current installed version of `torrra`                                                   |
+| `torrra config`         | Accesses the configuration subcommands                                                               |
+| `torrra jackett`        | Initializes `torrra` using [`Jackett`](https://github.com/Jackett/Jackett) as the torrent indexer    |
+| `torrra prowlarr`       | Initializes `torrra` using [`Prowlarr`](https://github.com/Prowlarr/Prowlarr) as the torrent indexer |
 
 #### `torrra config` Subcommands
 
-| Subcommand              | Description                                                            |
-| :---------------------- | :------------------------------------------------------------------------ |
-| `torrra config get <key>`| Retrieves the value associated with a specific key |
-| `torrra config set <key> <value>`| Sets a configuration key to a specified value  |
-| `torrra config list`    | Lists all currently set configuration values  |
+| Subcommand                        | Description                                                            |
+| :-------------------------------- | :--------------------------------------------------------------------- |
+| `torrra config get <key>`         | Retrieves the value associated with a specific key                     |
+| `torrra config set <key> <value>` | Sets a configuration key to a specified value                          |
+| `torrra config list`              | Lists all currently set configuration values                           |
 
 #### Indexer Options
 
@@ -180,14 +180,14 @@ Both `jackett` and `prowlarr` support:
 
 Once `torrra` is running, you'll interact with it through its intuitive TUI. Here are the keyboard controls:
 
-| Key     | Action                                                                       |
-| :------ | :-------------------------------------------------------------------------- |
-| `↑` `↓` | Navigate up and down through the list of search results  |
-| `Tab`   | Move focus to the next interactive widget  |
-| `Enter` | Initiate the download for the currently selected torrent  |
-| `p`     | Pause the currently active download  |
-| `r`     | Resume a previously paused download  |
-| `q`     | Quit `torrra`  |
+| Key      | Action                                                                        |
+| :------- | :---------------------------------------------------------------------------- |
+| `↑` `↓`  | Navigate up and down through the list of search results                       |
+| `Tab`    | Move focus to the next interactive widget                                     |
+| `Enter`  | Initiate the download for the currently selected torrent                      |
+| `p`      | Pause the currently active download                                           |
+| `r`      | Resume a previously paused download                                           |
+| `q`      | Quit `torrra`                                                                 |
 
 ## Configuration
 
