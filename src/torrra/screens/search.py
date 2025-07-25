@@ -301,5 +301,5 @@ class SearchScreen(Screen[None]):
                     return cast(str, resp.headers.get("Location", url))
                 return url
         except Exception as e:
-            print(f"[error] resolving magnet uri: {e}")
+            print(f"resolving magnet uri: {e}")
             return url

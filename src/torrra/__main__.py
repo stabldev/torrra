@@ -16,10 +16,30 @@ def cli(ctx: click.Context) -> None:
 
 
 @cli.command(help="Use Jackett as the indexer.")
-@click.option("--url", required=True, help="Jackett server URL.")
-@click.option("--api-key", required=True, help="Jackett API key.")
+@click.option("--url", required=False, help="Jackett server URL.")
+@click.option("--api-key", required=False, help="Jackett API key.")
 @click.option("--no-cache", is_flag=True, help="Disable caching mechanism.")
-def jackett(url: str, api_key: str, no_cache: bool) -> None:
+def jackett(url: str | None, api_key: str | None, no_cache: bool) -> None:
+    if url is None and api_key is None:
+        from torrra.core.config import Config
+        from torrra.core.exceptions import ConfigError
+
+        config = Config()
+
+        try:
+            url = config.get("indexers.jackett.url")
+            api_key = config.get("indexers.jackett.api_key")
+        except ConfigError as e:
+            click.secho(f"{e}\ncheck your configuration file.", fg="red", err=True)
+            return
+    elif url is None or api_key is None:
+        click.secho(
+            "both --url and --api-key must be provided together, or neither to use config.",
+            fg="red",
+            err=True,
+        )
+        return
+
     click.secho(f"connecting to jackett server at: {url}", fg="cyan")
 
     import asyncio
