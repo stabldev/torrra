@@ -24,11 +24,10 @@
   - [Docker](#docker)
   - [Local Development](#local-development)
 - [Usage](#usage)
-  - [CLI Commands & Flags](#cli-commands--flags)
-  - [TUI Controls](#tui-controls)
+  - [Command-Line Interface (CLI)](#command-line-interface-cli)
+  - [Text-User Interface (TUI) Controls](#text-user-interface-tui-controls)
 - [Configuration](#configuration)
   - [Managing Your Configuration](#managing-your-configuration)
-  - [Config Options](#config-options)
 - [Indexer Support](#indexer-support)
 - [Roadmap](#roadmap)
 - [Contributing](#contributing)
@@ -42,6 +41,7 @@
 - Pause and resume torrent downloads using keyboard shortcuts.
 - Operates as both a `CLI` tool and a full-screen terminal `UI`.
 - Toggle between dark and light themes.
+- Opt-in caching for blazing fast repeated searches.
 
 ## Installation
 
@@ -94,10 +94,10 @@ The official image is hosted on Docker Hub: [`stabldev/torrra`](https://hub.dock
 #### Quick Usage
 
 ```bash
-docker run --rm -it stabldev/torrra:latest --jackett
+docker run --rm -it stabldev/torrra:latest jackett --url <url> --api-key <api_key>
 ```
 
-> Replace `--jackett` with your preferred provider flag. You can also pass URL and API key directly: `--jackett http://localhost:9117 your_api_key`.
+> Replace `jackett` with your preferred indexer option.
 > You must mount any required config or download directories if needed.
 
 #### With Config and Downloads Folder Mounted
@@ -105,8 +105,7 @@ docker run --rm -it stabldev/torrra:latest --jackett
 ```bash
 docker run --rm -it \
   -v ~/.config/torrra:/root/.config/torrra \
-  -v ~/Downloads:/downloads \
-  stabldev/torrra:latest --jackett
+  stabldev/torrra:latest jackett --url <url> --api-key <api_key>
 ```
 
 > Ensure your `config.toml` inside `~/.config/torrra` is set up correctly.
@@ -127,53 +126,68 @@ uv sync # or `pip install -e .`
 uv run torrra
 ```
 
+Here's an improved version of your `Usage` section, focusing on clarity, user-friendliness, and a logical flow.
+
 ## Usage
 
-To start `torrra`, you must specify a provider. For example, to use [`Jackett`](https://github.com/Jackett/Jackett):
+Specify an indexer and provide its connection details. For instance, to use [`Jackett`](https://github.com/Jackett/Jackett):
 
 ```bash
-torrra --jackett
-```
+torrra jackett --url http://localhost:9117 --api-key <your_jackett_api_key>
+````
 
-> Uses Jackett with credentials from your saved configuration.
+> Replace `<your_jackett_api_key>` with your actual `Jackett` API key.
 
-Or pass your own `URL` and `API_KEY` directly. For example, to use [`Prowlarr`](https://github.com/Prowlarr/Prowlarr):
+Similarly, for [`Prowlarr`](https://github.com/Prowlarr/Prowlarr):
 
 ```bash
-torrra --prowlarr http://localhost:9696 your_api_key
+torrra prowlarr --url http://localhost:9696 --api-key <your_prowlarr_api_key>
 ```
 
-> Omitting a provider flag will result in an error.
+> Replace `<your_prowlarr_api_key>` with your actual `Prowlarr` API key.
 
-### CLI Commands & Flags
+### Command-Line Interface (CLI)
 
-#### Top-level commands
+`torrra` offers a comprehensive CLI for managing configurations and launching the application with specific indexers.
 
-| Command         | Description                                  |
-| :-------------- | :------------------------------------------- |
-| `torrra`        | Launches the interactive TUI                 |
-| `torrra config` | Manages configuration settings               |
-| `torrra --help` | Displays help for the top-level CLI commands |
+| Command               | Description                                                             |
+| :--------------------- | :------------------------------------------------------------------------- |
+| `torrra`               | Displays the help message if no subcommand is provided.  |
+| `torrra --help`        | Shows the general help message.  |
+| `torrra --version`     | Displays the current installed version of `torrra`.  |
+| `torrra config`        | Accesses the configuration management subcommands.  |
+| `torrra jackett`       | Initializes `torrra` using [`Jackett`](https://github.com/Jackett/Jackett) as the torrent indexer.  |
+| `torrra prowlarr`      | Initializes `torrra` using [`Prowlarr`](https://github.com/Prowlarr/Prowlarr) as the torrent indexer.  |
 
-#### Provider flags (used with `torrra`)
+#### `torrra config` Subcommands
 
-| Flag               | Description                                                                   |
-| :----------------- | :---------------------------------------------------------------------------- |
-| `-h`, `--help`     | Displays help for the main application                                        |
-| `-v`, `--version`  | Shows the current `torrra` version                                            |
-| `-j`, `--jackett`  | Uses Jackett as the torrent indexer. Optionally accepts `URL` and `API_KEY`.  |
-| `-p`, `--prowlarr` | Uses Prowlarr as the torrent indexer. Optionally accepts `URL` and `API_KEY`. |
+| Subcommand              | Description                                                            |
+| :---------------------- | :------------------------------------------------------------------------ |
+| `torrra config get <key>`| Retrieves the value associated with a specific key. |
+| `torrra config set <key> <value>`| Sets a configuration key to a specified value.  |
+| `torrra config list`    | Lists all currently set configuration values.  |
 
-### TUI Controls
+#### Indexer Options
 
-| Key     | Action                       |
-| :------ | :--------------------------- |
-| `↑↓`    | Navigate through results     |
-| `Tab`   | Focus the next widget        |
-| `Enter` | Start download for selection |
-| `p`     | Pause the current download   |
-| `r`     | Resume a paused download     |
-| `q`     | Quit `torrra`                |
+Both `jackett` and `prowlarr` support:
+
+- `--url` (Required): Indexer URL
+- `--api-key` (Required): Your API key
+- `--no-cache`: Disable caching
+- `--help`: Show command help
+
+### Text-User Interface (TUI) Controls
+
+Once `torrra` is running, you'll interact with it through its intuitive TUI. Here are the keyboard controls:
+
+| Key     | Action                                                                       |
+| :------ | :-------------------------------------------------------------------------- |
+| `↑` `↓` | Navigate up and down through the list of search results or available options.  |
+| `Tab`   | Move focus to the next interactive widget (e.g., search bar, results list).  |
+| `Enter` | Initiate the download for the currently selected torrent.  |
+| `p`     | Pause the currently active download.  |
+| `r`     | Resume a previously paused download.  |
+| `q`     | Quit the `torrra` application and return to the command line.  |
 
 ## Configuration
 
@@ -197,26 +211,17 @@ remember_last_path = true                    # Reuse the last used path as defau
 Use the built-in `torrra config` command to manage settings:
 
 ```bash
-torrra config -g general.download_path             # Get a specific config value
-torrra config -s general.remember_last_path False  # Set a key-value pair
-torrra config -l                                   # List all config settings
+torrra config get general.download_path              # Get a specific config value
+torrra config set general.remember_last_path false   # Set a key-value pair
+torrra config list                                   # List all config settings
 ```
-
-#### Config Options
-
-| Flag                    | Description                                              |
-| :---------------------- | :------------------------------------------------------- |
-| `-g`, `--get KEY`       | Retrieves a config value (e.g., `general.download_path`) |
-| `-s`, `--set KEY VALUE` | Sets a key-value pair                                    |
-| `-l`, `--list`          | Lists all configuration settings                         |
-| `-h`, `--help`          | Displays help for the config command                     |
 
 ## Indexer Support
 
 Currently supported:
 
-- [`Jackett`](https://github.com/Jackett/Jackett) (via `--jackett` or `-j`)
-- [`Prowlarr`](https://github.com/Prowlarr/Prowlarr) (via `--prowlarr` or `-p`)
+- [`Jackett`](https://github.com/Jackett/Jackett) (via `jackett`)
+- [`Prowlarr`](https://github.com/Prowlarr/Prowlarr) (via `prowlarr`)
 
 Planned:
 
