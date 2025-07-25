@@ -59,6 +59,13 @@ repository = "https://github.com/stabldev/torrra"
 [project.scripts]
 torrra = "torrra.__main__:cli"
 
+[project.optional-dependencies]
+docs = [
+    "furo>=2025.7.19",
+    "myst-parser>=4.0.1",
+    "sphinx>=8.2.3",
+]
+
 [dependency-groups]
 dev = ["libtorrent-stubs>=0.0.1", "textual-dev>=1.7.0"]
 
