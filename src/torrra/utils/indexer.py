@@ -12,10 +12,8 @@ def handle_indexer_command(
     no_cache: bool,
 ):
     if url is None and api_key is None:
-        from torrra.core.config import Config
+        from torrra.core.context import config
         from torrra.core.exceptions import ConfigError
-
-        config = Config()
 
         try:
             url = config.get(f"indexers.{name}.url")
@@ -46,6 +44,11 @@ def handle_indexer_command(
 
     if asyncio.run(validate_indexer()):
         from torrra.app import TorrraApp
+        from torrra.core.context import config
+
+        # update/store indexers configuration
+        config.set(f"indexers.{name}.url", url)
+        config.set(f"indexers.{name}.api_key", api_key)
 
         provider = Indexer(name, url, api_key)
         app = TorrraApp(provider, use_cache=not no_cache)

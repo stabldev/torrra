@@ -13,7 +13,7 @@ from textual.widgets import DataTable, Input, LoadingIndicator, ProgressBar, Sta
 from textual.widgets.data_table import ColumnKey
 
 from torrra._types import Indexer, Torrent
-from torrra.core.config import Config
+from torrra.core.context import config
 from torrra.indexers.jackett import JackettIndexer
 from torrra.indexers.prowlarr import ProwlarrIndexer
 from torrra.utils.fs import get_resource_path
@@ -212,7 +212,6 @@ class SearchScreen(Screen[None]):
 
     @work(exclusive=True, thread=True)
     async def _download_torrent(self, magnet_uri: str) -> None:
-        config = Config()
         magnet_uri = await self._resolve_magnet_uri_if_redirect(magnet_uri)
 
         self.lt_session = lt.session()
