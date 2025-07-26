@@ -8,7 +8,7 @@
 [![License](https://img.shields.io/github/license/stabldev/torrra)](https://github.com/stabldev/torrra/blob/main/LICENSE)
 [![GitHub Issues or Pull Requests](https://img.shields.io/github/issues/stabldev/torrra)](https://github.com/stabldev/torrra/issues)
 
-![demo](./docs/demo.gif)
+![demo](./docs/_static/demo.gif)
 
 ## Overview
 
