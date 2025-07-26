@@ -59,7 +59,7 @@ def handle_indexer_command(
         app.run()
 
 
-def auto_detect_indexer_and_run():
+def auto_detect_indexer_and_run(no_cache: bool):
     from torrra.core.context import config
     from torrra.core.exceptions import ConfigError
 
@@ -77,7 +77,7 @@ def auto_detect_indexer_and_run():
             connection_error_cls_str=f"torrra.core.exceptions.{default_indexer.title()}ConnectionError",
             url=url,
             api_key=api_key,
-            no_cache=False,
+            no_cache=no_cache,
         )
     except ConfigError as e:
         click.secho(f"{e}\ncheck your configuration file.", fg="red", err=True)

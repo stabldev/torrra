@@ -5,12 +5,13 @@ from torrra._version import __version__
 
 @click.group(invoke_without_command=True)
 @click.version_option(version=__version__, prog_name="torrra")
+@click.option("--no-cache", is_flag=True, help="Disable caching mechanism.")
 @click.pass_context
-def cli(ctx: click.Context) -> None:
+def cli(ctx: click.Context, no_cache: bool) -> None:
     if not ctx.invoked_subcommand:
         from torrra.utils.indexer import auto_detect_indexer_and_run
 
-        auto_detect_indexer_and_run()
+        auto_detect_indexer_and_run(no_cache)
 
 
 # ========== INDEXERS ==========
