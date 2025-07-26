@@ -8,8 +8,9 @@ from torrra._version import __version__
 @click.pass_context
 def cli(ctx: click.Context) -> None:
     if not ctx.invoked_subcommand:
-        # run app
-        pass
+        from torrra.utils.indexer import auto_detect_indexer_and_run
+
+        auto_detect_indexer_and_run()
 
 
 # ========== INDEXERS ==========

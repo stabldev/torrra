@@ -1,3 +1,5 @@
+from typing import cast
+
 import click
 
 from torrra._types import Indexer, IndexerName
@@ -32,8 +34,10 @@ def handle_indexer_command(
     click.secho(f"connecting to {name} server at {url}", fg="cyan")
     import asyncio
 
-    indexer_cls = _lazy_import(indexer_cls_str)
-    connection_error_cls = _lazy_import(connection_error_cls_str)
+    from torrra.utils.helpers import lazy_import
+
+    indexer_cls = lazy_import(indexer_cls_str)
+    connection_error_cls = lazy_import(connection_error_cls_str)
 
     async def validate_indexer() -> bool:
         try:
@@ -55,13 +59,26 @@ def handle_indexer_command(
         app.run()
 
 
-def _lazy_import(dotted_path: str):
-    import importlib
+def auto_detect_indexer_and_run():
+    from torrra.core.context import config
+    from torrra.core.exceptions import ConfigError
 
     try:
-        module_path, obj_name = dotted_path.rsplit(".", 1)
-        module = importlib.import_module(module_path)
-        return getattr(module, obj_name)
-    except (ModuleNotFoundError, AttributeError) as e:
-        click.secho(f"failed to load: {dotted_path}\n{e}", fg="red", err=True)
-        raise
+        default_indexer = config.get("indexers.default")
+        if not default_indexer:
+            raise ConfigError("no default indexer specified under [indexers.default].")
+
+        url = config.get(f"indexers.{default_indexer}.url")
+        api_key = config.get(f"indexers.{default_indexer}.api_key")
+
+        handle_indexer_command(
+            name=cast(IndexerName, default_indexer),
+            indexer_cls_str=f"torrra.indexers.{default_indexer}.{default_indexer.title()}Indexer",
+            connection_error_cls_str=f"torrra.core.exceptions.{default_indexer.title()}ConnectionError",
+            url=url,
+            api_key=api_key,
+            no_cache=False,
+        )
+    except ConfigError as e:
+        click.secho(f"{e}\ncheck your configuration file.", fg="red", err=True)
+        return
