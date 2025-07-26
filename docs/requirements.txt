@@ -1,0 +1,4 @@
+myst-parser>=4.0.1
+qiskit-sphinx-theme>=2.0.0
+sphinx>=8.2.3
+sphinx-copybutton>=0.5.2
