@@ -59,16 +59,14 @@ repository = "https://github.com/stabldev/torrra"
 [project.scripts]
 torrra = "torrra.__main__:cli"
 
-[project.optional-dependencies]
+[dependency-groups]
+dev = ["libtorrent-stubs>=0.0.1", "textual-dev>=1.7.0"]
 docs = [
     "myst-parser>=4.0.1",
     "qiskit-sphinx-theme>=2.0.0",
     "sphinx>=8.2.3",
     "sphinx-copybutton>=0.5.2",
 ]
-
-[dependency-groups]
-dev = ["libtorrent-stubs>=0.0.1", "textual-dev>=1.7.0"]
 
 [tool.pyright]
 reportUnusedCallResult = "none"
