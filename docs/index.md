@@ -19,16 +19,16 @@ Welcome to the official docs for **torrra** - A Python tool that lets you find a
 :maxdepth: 2
 :caption: USER GUIDE
 
-installation
-usage
-configuration
-indexers
+guide/installation
+guide/usage
+guide/configuration
+guide/indexers
 ```
 
 ```{toctree}
 :maxdepth: 2
 :caption: DEVELOPMENT
 
-roadmap
-contributing
+dev/roadmap
+dev/contributing
 ```
