@@ -29,6 +29,6 @@ guide/indexers
 :maxdepth: 2
 :caption: DEVELOPMENT
 
-development/roadmap
-development/contributing
+roadmap
+contributing
 ```
