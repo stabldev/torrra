@@ -19,10 +19,10 @@ Welcome to the official docs for **torrra** - A Python tool that lets you find a
 :maxdepth: 2
 :caption: USER GUIDE
 
-guide/installation
-guide/usage
-guide/configuration
-guide/indexers
+installation
+usage
+configuration
+indexers
 ```
 
 ```{toctree}

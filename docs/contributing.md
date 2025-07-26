@@ -24,13 +24,13 @@ When reporting a bug, please include:
 - **Environment:** Your operating system, Python version, `torrra` version, and how you installed `torrra` (e.g., `pipx`, Docker, standalone binary).
 - **Screenshots/GIFs:** If applicable, a screenshot or GIF (like the one in the main README) can be very helpful.
 
-You can open a bug report here: [Open a new issue](https://github.com/stabldev/torrra/issues/new?assignees=&labels=bug&projects=&template=bug_report.md&title=%5BBug%5D%3A+).
+You can open a bug report here: [Open a new issue](https://github.com/stabldev/torrra/issues/new?template=bug_report.yml).
 
 ### 2. Suggesting Features
 
 We're always looking for ideas to improve `torrra`! If you have a feature in mind, please open an issue to suggest it.
 
-Before suggesting a new feature, please check the [existing issues](https://github.com/stabldev/torrra/issues) and the [Roadmap](./roadmap.md) to see if it's already being discussed or planned.
+Before suggesting a new feature, please check the [existing issues](https://github.com/stabldev/torrra/issues) and the [Roadmap](roadmap) to see if it's already being discussed or planned.
 
 When suggesting a feature, please include:
 
@@ -39,7 +39,7 @@ When suggesting a feature, please include:
 - **Use Case:** How would a user typically use this feature?
 - **Potential Benefits:** Why do you think this feature would be valuable?
 
-You can open a feature request here: [Open a new issue](https://github.com/stabldev/torrra/issues/new?assignees=&labels=enhancement&projects=&template=feature_request.md&title=%5BFeature%5D%3A+).
+You can open a feature request here: [Open a new issue](https://github.com/stabldev/torrra/issues/new?template=feature_request.yml).
 
 ### 3. Submitting Pull Requests (Code Contributions)
 
