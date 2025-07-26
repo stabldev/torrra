@@ -3,10 +3,10 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Installation" href="installation.html" />
+<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Usage" href="usage.html" /><link rel="prev" title="Torrra - “rrr”" href="index.html" />
 
     <!-- Generated with Sphinx 8.2.3 and Furo 2025.07.19 -->
-        <title>Torrra 1.2.0 documentation</title>
+        <title>Installation - Torrra 1.2.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=25af2a20" />
     <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
@@ -167,7 +167,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="#"><div class="brand">Torrra 1.2.0 documentation</div></a>
+      <a href="index.html"><div class="brand">Torrra 1.2.0 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -188,7 +188,7 @@
   <aside class="sidebar-drawer">
     <div class="sidebar-container">
       
-      <div class="sidebar-sticky"><a class="sidebar-brand" href="#">
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
   
   <span class="sidebar-brand-text">Torrra 1.2.0 documentation</span>
   
@@ -199,8 +199,8 @@
 </form>
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
   <p class="caption" role="heading"><span class="caption-text">user guide</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<ul class="current">
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="usage.html">Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="indexers.html">Indexers</a></li>
@@ -224,7 +224,7 @@
         </a>
         <div class="content-icon-container">
           <div class="view-this-page">
-  <a class="muted-link" href="_sources/index.md.txt" title="View this page">
+  <a class="muted-link" href="_sources/installation.md.txt" title="View this page">
     <svg><use href="#svg-eye"></use></svg>
     <span class="visually-hidden">View this page</span>
   </a>
@@ -244,50 +244,96 @@
           </label>
         </div>
         <article role="main" id="furo-main-content">
-          <section id="torrra-rrr">
-<h1>Torrra - “rrr”<a class="headerlink" href="#torrra-rrr" title="Link to this heading">¶</a></h1>
-<p>Welcome to the official docs for <strong>torrra</strong> - A Python tool that lets you find and download torrents without leaving your CLI.</p>
-<p><a class="reference external" href="https://pypi.org/project/torrra/"><img alt="PyPI" src="https://img.shields.io/pypi/v/torrra" /></a>
-<a class="reference external" href="https://aur.archlinux.org/packages/torrra"><img alt="AUR Version" src="https://img.shields.io/aur/version/torrra" /></a>
-<a class="reference external" href="https://github.com/stabldev/torrra/releases"><img alt="GitHub release" src="https://img.shields.io/github/v/release/stabldev/torrra?sort=semver" /></a>
-<a class="reference external" href="https://github.com/stabldev/torrra/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/github/license/stabldev/torrra" /></a>
-<a class="reference external" href="https://github.com/stabldev/torrra/issues"><img alt="GitHub Issues or Pull Requests" src="https://img.shields.io/github/issues/stabldev/torrra" /></a></p>
-<section id="features">
-<h2>Features<a class="headerlink" href="#features" title="Link to this heading">¶</a></h2>
+          <section id="installation">
+<h1>Installation<a class="headerlink" href="#installation" title="Link to this heading">¶</a></h1>
+<p>Torrra offers multiple installation methods to suit different environments. Choose the option that best fits your system.</p>
+<section id="recommended-methods">
+<h2>Recommended Methods<a class="headerlink" href="#recommended-methods" title="Link to this heading">¶</a></h2>
+<section id="pipx-cross-platform">
+<h3>pipx (Cross-Platform)<a class="headerlink" href="#pipx-cross-platform" title="Link to this heading">¶</a></h3>
+<p>For most users, we recommend installing with <a class="reference external" href="https://pypa.github.io/pipx/">pipx</a>, which provides isolated Python environments:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pipx<span class="w"> </span>install<span class="w"> </span>torrra
+</pre></div>
+</div>
+<p><strong>Features:</strong></p>
 <ul class="simple">
-<li><p>Integrate with services like <a class="reference external" href="https://github.com/Jackett/Jackett"><code class="docutils literal notranslate"><span class="pre">Jackett</span></code></a> and <a class="reference external" href="https://github.com/Prowlarr/Prowlarr"><code class="docutils literal notranslate"><span class="pre">Prowlarr</span></code></a></p></li>
-<li><p>Fetch and download magnet links directly, powered by <a class="reference external" href="https://libtorrent.org/"><code class="docutils literal notranslate"><span class="pre">Libtorrent</span></code></a></p></li>
-<li><p>A responsive download manager built with <a class="reference external" href="https://textual.textualize.io/"><code class="docutils literal notranslate"><span class="pre">Textual</span></code></a></p></li>
-<li><p>Pause and resume torrent downloads using keyboard shortcuts</p></li>
-<li><p>Operates as both a <code class="docutils literal notranslate"><span class="pre">CLI</span></code> tool and a full-screen terminal <code class="docutils literal notranslate"><span class="pre">UI</span></code></p></li>
-<li><p>Toggle between dark and light themes</p></li>
-<li><p>Opt-in caching for blazing fast repeated searches</p></li>
+<li><p>Works on Linux, macOS, and Windows</p></li>
+<li><p>Automatically handles <code class="docutils literal notranslate"><span class="pre">libtorrent</span></code> dependency</p></li>
+<li><p>Prevents conflicts with system Python packages</p></li>
 </ul>
+<p><strong>Requirements:</strong></p>
+<ul class="simple">
+<li><p>Python ≥ 3.13</p></li>
+</ul>
+<details>
+<summary>Don't have pipx?</summary>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>--user<span class="w"> </span>pipx
+pipx<span class="w"> </span>ensurepath
+</pre></div>
+</div>
+</details>
 </section>
-<section id="contents">
-<h2>Contents<a class="headerlink" href="#contents" title="Link to this heading">¶</a></h2>
-<div class="toctree-wrapper compound">
-<p class="caption" role="heading"><span class="caption-text">user guide</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="installation.html#recommended-methods">Recommended Methods</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="installation.html#pipx-cross-platform">pipx (Cross-Platform)</a></li>
+</section>
+<section id="alternative-methods">
+<h2>Alternative Methods<a class="headerlink" href="#alternative-methods" title="Link to this heading">¶</a></h2>
+<section id="arch-linux">
+<h3>Arch Linux<a class="headerlink" href="#arch-linux" title="Link to this heading">¶</a></h3>
+<ol class="arabic">
+<li><p><strong>Source build</strong> (compiles during installation):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>yay<span class="w"> </span>-S<span class="w"> </span>torrra
+</pre></div>
+</div>
+</li>
+<li><p><strong>Precompiled binary</strong> (faster installation):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>yay<span class="w"> </span>-S<span class="w"> </span>torrra-bin
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>No Python installation required</p></li>
+<li><p>Standalone binary built with PyInstaller</p></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="installation.html#alternative-methods">Alternative Methods</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="installation.html#arch-linux">Arch Linux</a></li>
-<li class="toctree-l3"><a class="reference internal" href="installation.html#standalone-binaries">Standalone Binaries</a></li>
-<li class="toctree-l3"><a class="reference internal" href="installation.html#docker">Docker</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="installation.html#development-installation">Development Installation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="installation.html#verify-install">Verify Install</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="usage.html">Usage</a></li>
-<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="indexers.html">Indexers</a></li>
-</ul>
+</ol>
+</section>
+<section id="standalone-binaries">
+<h3>Standalone Binaries<a class="headerlink" href="#standalone-binaries" title="Link to this heading">¶</a></h3>
+<p>Download pre-built executables from our <a class="reference external" href="https://github.com/stabldev/torrra/releases">GitHub Releases</a>.</p>
+<p><strong>Post-download steps:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>chmod<span class="w"> </span>+x<span class="w"> </span>torrra-vX.Y.Z-*-x86_64<span class="w">  </span><span class="c1"># Make executable</span>
+sudo<span class="w"> </span>mv<span class="w"> </span>torrra-vX.Y.Z-*-x86_64<span class="w"> </span>/usr/local/bin/torrra<span class="w">  </span><span class="c1"># Install to PATH</span>
+</pre></div>
+</div>
+</section>
+<section id="docker">
+<h3>Docker<a class="headerlink" href="#docker" title="Link to this heading">¶</a></h3>
+<p>Official images are available on <a class="reference external" href="https://hub.docker.com/r/stabldev/torrra">Docker Hub</a>.</p>
+<p><strong>Basic usage:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>-it<span class="w"> </span>stabldev/torrra:latest<span class="w"> </span>jackett<span class="w"> </span>--url<span class="w"> </span>&lt;url&gt;<span class="w"> </span>--api-key<span class="w"> </span>&lt;key&gt;
+</pre></div>
+</div>
+<p><strong>Persistent configuration:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>-it<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-v<span class="w"> </span>~/.config/torrra:/root/.config/torrra<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>stabldev/torrra:latest<span class="w"> </span>jackett<span class="w"> </span>--url<span class="w"> </span>&lt;url&gt;<span class="w"> </span>--api-key<span class="w"> </span>&lt;key&gt;
+</pre></div>
+</div>
+</section>
+</section>
+<section id="development-installation">
+<h2>Development Installation<a class="headerlink" href="#development-installation" title="Link to this heading">¶</a></h2>
+<p>For contributing to Torrra:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/stabldev/torrra
+<span class="nb">cd</span><span class="w"> </span>torrra
+uv<span class="w"> </span>sync<span class="w">         </span><span class="c1"># or: pip install -e .</span>
+uv<span class="w"> </span>run<span class="w"> </span>torrra<span class="w">   </span><span class="c1"># or: torrra</span>
+</pre></div>
+</div>
+</section>
+<section id="verify-install">
+<h2>Verify Install<a class="headerlink" href="#verify-install" title="Link to this heading">¶</a></h2>
+<p>After installation, confirm it works:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>torrra<span class="w"> </span>--version
+</pre></div>
 </div>
 </section>
 </section>
@@ -297,16 +343,26 @@
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="installation.html">
+          <a class="next-page" href="usage.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">Installation</div>
+                <div class="title">Usage</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
-          
+          <a class="prev-page" href="index.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">Home</div>
+                
+              </div>
+            </a>
         </div>
         <div class="bottom-of-page">
           <div class="left-details">
@@ -337,9 +393,19 @@
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#">Torrra - “rrr”</a><ul>
-<li><a class="reference internal" href="#features">Features</a></li>
-<li><a class="reference internal" href="#contents">Contents</a></li>
+<li><a class="reference internal" href="#">Installation</a><ul>
+<li><a class="reference internal" href="#recommended-methods">Recommended Methods</a><ul>
+<li><a class="reference internal" href="#pipx-cross-platform">pipx (Cross-Platform)</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#alternative-methods">Alternative Methods</a><ul>
+<li><a class="reference internal" href="#arch-linux">Arch Linux</a></li>
+<li><a class="reference internal" href="#standalone-binaries">Standalone Binaries</a></li>
+<li><a class="reference internal" href="#docker">Docker</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#development-installation">Development Installation</a></li>
+<li><a class="reference internal" href="#verify-install">Verify Install</a></li>
 </ul>
 </li>
 </ul>
