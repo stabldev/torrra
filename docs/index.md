@@ -2,12 +2,6 @@
 
 Welcome to the official docs for **torrra** - A Python tool that lets you find and download torrents without leaving your CLI.
 
-[![PyPI](https://img.shields.io/pypi/v/torrra)](https://pypi.org/project/torrra/)
-[![AUR Version](https://img.shields.io/aur/version/torrra)](https://aur.archlinux.org/packages/torrra)
-[![GitHub release](https://img.shields.io/github/v/release/stabldev/torrra?sort=semver)](https://github.com/stabldev/torrra/releases)
-[![License](https://img.shields.io/github/license/stabldev/torrra)](https://github.com/stabldev/torrra/blob/main/LICENSE)
-[![GitHub Issues or Pull Requests](https://img.shields.io/github/issues/stabldev/torrra)](https://github.com/stabldev/torrra/issues)
-
 ## Features
 
 - Integrate with services like [`Jackett`](https://github.com/Jackett/Jackett) and [`Prowlarr`](https://github.com/Prowlarr/Prowlarr)
@@ -22,11 +16,19 @@ Welcome to the official docs for **torrra** - A Python tool that lets you find a
 ## Contents
 
 ```{toctree}
-:maxdepth: 3
-:caption: user guide
+:maxdepth: 2
+:caption: USER GUIDE
 
 installation
 usage
 configuration
 indexers
+```
+
+```{toctree}
+:maxdepth: 2
+:caption: DEVELOPMENT
+
+roadmap
+contributing
 ```

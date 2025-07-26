@@ -710,6 +710,18 @@ wheels = [
 ]
 
 [[package]]
+name = "sphinx-autodoc-typehints"
+version = "3.2.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "sphinx" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/93/68/a388a9b8f066cd865d9daa65af589d097efbfab9a8c302d2cb2daa43b52e/sphinx_autodoc_typehints-3.2.0.tar.gz", hash = "sha256:107ac98bc8b4837202c88c0736d59d6da44076e65a0d7d7d543a78631f662a9b", size = 36724, upload-time = "2025-04-25T16:53:25.872Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f7/c7/8aab362e86cbf887e58be749a78d20ad743e1eb2c73c2b13d4761f39a104/sphinx_autodoc_typehints-3.2.0-py3-none-any.whl", hash = "sha256:884b39be23b1d884dcc825d4680c9c6357a476936e3b381a67ae80091984eb49", size = 20563, upload-time = "2025-04-25T16:53:24.492Z" },
+]
+
+[[package]]
 name = "sphinx-basic-ng"
 version = "1.0.0b2"
 source = { registry = "https://pypi.org/simple" }
@@ -864,6 +876,7 @@ docs = [
     { name = "furo" },
     { name = "myst-parser" },
     { name = "sphinx" },
+    { name = "sphinx-autodoc-typehints" },
     { name = "sphinx-copybutton" },
 ]
 
@@ -884,6 +897,7 @@ requires-dist = [
     { name = "myst-parser", marker = "extra == 'docs'", specifier = ">=4.0.1" },
     { name = "platformdirs", specifier = ">=4.3.8" },
     { name = "sphinx", marker = "extra == 'docs'", specifier = ">=8.2.3" },
+    { name = "sphinx-autodoc-typehints", marker = "extra == 'docs'", specifier = ">=3.2.0" },
     { name = "sphinx-copybutton", marker = "extra == 'docs'", specifier = ">=0.5.2" },
     { name = "textual", specifier = ">=4.0.0" },
     { name = "tomli-w", specifier = ">=1.2.0" },
