@@ -1,5 +1,6 @@
-.hidden {
-    display: none;
+/* global widget styles */
+Screen {
+    padding: 1;
 }
 
 Input {
@@ -7,4 +8,9 @@ Input {
     margin: 0;
     background: transparent;
     border: solid $secondary-muted;
+}
+
+/* utility classes */
+.hidden {
+    display: none;
 }
