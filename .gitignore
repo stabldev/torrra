@@ -1,3 +1,6 @@
+# Sphinx build output
+docs/_build/
+
 # Python-generated files
 __pycache__/
 *.py[oc]
