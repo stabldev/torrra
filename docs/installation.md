@@ -49,6 +49,17 @@ You can download pre-built executables of `torrra` directly from the [GitHub Rel
 >
 > (Replace `vX.Y.Z-*-x86_64` with the actual filename you downloaded.)
 
+## Homebrew (macOS)
+
+Thanks to community contribution, `torrra` is also available via [Homebrew](https://brew.sh/) for macOS users.
+
+This method installs the precompiled binary version of `torrra`, avoiding the need for Python or any additional setup.
+
+```bash
+brew tap Maniacsan/homebrew-torrra
+brew install torrra
+```
+
 ## Docker
 
 `torrra` is also available as a Docker image, providing an isolated and portable way to run the tool without installing its dependencies directly on your host system.
