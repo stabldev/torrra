@@ -27,7 +27,7 @@ class WelcomeScreen(Screen[str]):
 
     @override
     def compose(self) -> ComposeResult:
-        with Container():
+        with Container(id="welcome_container"):
             yield Static(BANNER, id="banner")
             yield Static(
                 "\n".join(
@@ -42,7 +42,7 @@ class WelcomeScreen(Screen[str]):
             provider_name = f" - {self.provider.name}" if self.provider else ""
             yield Static(f"v{__version__}{provider_name}", id="version")
             with Container(id="commands_container"):
-                with Grid(id="commands"):
+                with Grid(id="commands_grid"):
                     yield Static("[commands]", id="title", markup=False)
                     yield Static("[esc]ape focus", markup=False)
                     yield Static("esc", classes="key")
