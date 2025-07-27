@@ -1,10 +1,10 @@
 SearchScreen Vertical {
     /* search input */
-    #search {
+    Input#search {
         dock: top;
     }
     /* results data-table */
-    #results_table {
+    DataTable#results_table {
         background: transparent;
         border: solid $secondary-muted;
         padding: 0 1;
@@ -22,18 +22,18 @@ SearchScreen Vertical {
         }
     }
     /* loading indicator and text */
-    #loader {
+    Vertical#loader {
         align: center middle;
-        #indicator {
-            height: auto;
+        Static#status {
             content-align-horizontal: center;
         }
-        #status {
+        LoadingIndicator#indicator {
+            height: auto;
             content-align-horizontal: center;
         }
     }
     /* downloads section */
-    #downloads_container {
+    Container#downloads_container {
         dock: bottom;
         height: auto;
         border: solid $secondary-muted;
@@ -42,15 +42,15 @@ SearchScreen Vertical {
             border: solid $secondary;
         }
         /* bottom section: progressbar and actions */
-        #progressbar-and-actions {
+        Horizontal#progressbar-and-actions {
             height: auto;
-            #progressbar {
+            ProgressBar#progressbar {
                 width: 1fr;
                 #bar {
                     width: 90%;
                 }
             }
-            #actions {
+            Static#actions {
                 content-align-horizontal: right;
                 width: auto;
             }
