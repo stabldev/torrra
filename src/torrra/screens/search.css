@@ -2,10 +2,6 @@ SearchScreen #search {
     dock: top;
 }
 
-SearchScreen #search:focus {
-    border: solid $secondary;
-}
-
 SearchScreen #results_table {
     background: transparent;
     border: solid $secondary-muted;
