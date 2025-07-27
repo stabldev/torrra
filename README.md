@@ -2,11 +2,14 @@
 
 > A Python tool that lets you find and download torrents without leaving your CLI.
 
-[![Docs](https://readthedocs.org/projects/torrra/badge/?version=latest)](https://torrra.readthedocs.io/)
-[![PyPI](https://img.shields.io/pypi/v/torrra)](https://pypi.org/project/torrra/)
-[![AUR Version](https://img.shields.io/aur/version/torrra)](https://aur.archlinux.org/packages/torrra)
-[![License](https://img.shields.io/github/license/stabldev/torrra)](https://github.com/stabldev/torrra/blob/main/LICENSE)
-[![GitHub Issues or Pull Requests](https://img.shields.io/github/issues/stabldev/torrra)](https://github.com/stabldev/torrra/issues)
+[![Python Versions](https://img.shields.io/pypi/pyversions/torrra?style=flat-square)](https://pypi.org/project/torrra/)
+[![PyPI](https://img.shields.io/pypi/v/torrra?style=flat-square)](https://pypi.org/project/torrra/)
+[![AUR Version](https://img.shields.io/aur/version/torrra?style=flat-square)](https://aur.archlinux.org/packages/torrra)
+[![Pepy Total Downloads](https://img.shields.io/pepy/dt/torrra?style=flat-square&color=blue)](https://pypi.org/project/torrra/)
+[![Docs](https://readthedocs.org/projects/torrra/badge/?version=latest&style=flat-square)](https://torrra.readthedocs.io/)
+[![License](https://img.shields.io/github/license/stabldev/torrra?style=flat-square)](https://github.com/stabldev/torrra/blob/main/LICENSE)
+[![GitHub Issues or Pull Requests](https://img.shields.io/github/issues/stabldev/torrra?style=flat-square)](https://github.com/stabldev/torrra/issues)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square)](https://github.com/stabldev/torrra/issues)
 
 ![demo](./docs/_static/demo.gif)
 
