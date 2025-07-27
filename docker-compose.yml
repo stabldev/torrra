@@ -6,8 +6,9 @@ services:
     container_name: torrra
     stdin_open: true
     tty: true
-    # volumes:
-    #   - .:/app
+    volumes:
+      - torrra_config:/root/.config
+      # - ./docker_downloads:/root/Downloads
     develop:
       watch:
         - action: sync
@@ -21,8 +22,9 @@ services:
     ports:
       - "9118:9117"
     volumes:
-      - jackett-config:/config
+      - jackett_config:/config
     restart: unless-stopped
 
 volumes:
-  jackett-config:
+  torrra_config:
+  jackett_config:
