@@ -1,6 +1,6 @@
 # Configuration
 
-`torrra`'s behavior can be customized through a `config.toml` file, allowing you to set default paths, preferences, and other operational parameters.
+`torrra`'s behavior can be customized through a `config.toml` file, allowing you to set default paths, indexers, preferences, and other operational parameters.
 
 ## Configuration File Location
 
@@ -20,10 +20,40 @@ Here's an example of what your `config.toml` might look like:
 ```toml
 [general]
 download_path = "/home/username/Downloads"    # The default folder where torrents will be saved
-remember_last_path = true                     # If set to 'true', torrra will reuse the last used download path as the default for subsequent downloads.
+remember_last_path = true                     # If true, torrra will reuse the last used download path.
+
+[indexers]
+default = "jackett"                           # The name of the default indexer to use if none is specified at runtime
+
+[indexers.jackett]
+url = "http://localhost:9117"                 # Base URL of the Jackett instance
+api_key = "your-jackett-api-key"              # API key for authentication
+
+[indexers.prowlarr]
+url = "http://localhost:9696"                 # Base URL of the Prowlarr instance
+api_key = "your-prowlarr-api-key"             # API key for authentication
 ```
 
 You can create or edit this file manually with a text editor.
+
+### Indexer Selection
+
+`torrra` supports configuring multiple torrent indexers (e.g., **Jackett**, **Prowlarr**) in the config file. At runtime, you can:
+
+Use the default indexer by simply running:
+
+```bash
+torrra
+```
+
+Override the default by specifying the indexer name:
+
+```bash
+torrra jackett
+```
+
+This will use the configuration under `[indexers.jackett]`.
+If the selected indexer is not defined in the config file, `torrra` will show an error and exit.
 
 ## Managing Your Configuration via CLI
 
@@ -59,4 +89,4 @@ To view all currently set configuration values in your `config.toml` file:
 torrra config list
 ```
 
-This command will display a comprehensive list of all configured settings and their current values.
+This command will display a comprehensive list of all configured settings and their current values, including general preferences and indexer-related entries.

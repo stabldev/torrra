@@ -83,7 +83,7 @@ For persistent configuration and downloads, you should mount your local configur
 ```bash
 docker run --rm -it \
   -v ~/.config/torrra:/root/.config/torrra \
-  -v /path/to/your/downloads:/downloads \
+  -v /path/to/your/downloads:/root/Downloads \
   stabldev/torrra:latest jackett --url <url> --api-key <api_key>
 ```
 
