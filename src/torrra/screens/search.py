@@ -55,35 +55,37 @@ class SearchScreen(Screen[None]):
 
     @override
     def compose(self) -> ComposeResult:
-        search_input = Input(
-            placeholder="Search...", id="search", value=self.initial_query
-        )
-        search_input.border_title = "[$secondary]s[/]earch"
-        results_table: DataTable[None] = DataTable(
-            id="results_table",
-            cursor_type="row",
-            show_cursor=True,
-            cell_padding=2,
-            classes="hidden",
-        )
-        results_table.border_title = "[$secondary]r[/]esults"
-
         with Vertical():
+            # search input
+            search_input = Input(
+                placeholder="Search...", id="search", value=self.initial_query
+            )
+            search_input.border_title = "[$secondary]s[/]earch"
             yield search_input
+            # loading indicator
             with Vertical(id="loader"):
-                yield Static()
-                yield LoadingIndicator()
-            yield results_table
+                yield Static(id="status_text")
+                yield LoadingIndicator(id="indicator")
+            # results data-table
+            results_dt: DataTable[None] = DataTable(
+                id="results_table",
+                cursor_type="row",
+                show_cursor=True,
+                cell_padding=2,
+                classes="hidden",
+            )
+            results_dt.border_title = "[$secondary]r[/]esults"
+            yield results_dt
+            # downloads container
             with Container(id="downloads_container") as c:
                 c.border_title = "[$secondary]d[/]ownloads"
                 c.can_focus = True
-                yield Static("No active downloads")
-                with Horizontal(id="bar-and-actions", classes="hidden"):
-                    yield ProgressBar(total=100)
+                yield Static("No active downloads", id="status")
+                with Horizontal(id="progressbar-and-actions", classes="hidden"):
+                    yield ProgressBar(total=100, id="progressbar")
                     yield Static(
                         "[$secondary-muted][$secondary]p[/$secondary]ause [$secondary]r[/$secondary]esume",
                         id="actions",
-                        disabled=True,
                     )
 
     def on_mount(self) -> None:

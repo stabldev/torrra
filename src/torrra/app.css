@@ -8,10 +8,9 @@ Input {
     margin: 0;
     background: transparent;
     border: solid $secondary-muted;
-}
-
-Input:focus {
-    border: solid $secondary;
+    &:focus {
+        border: solid $secondary;
+    }
 }
 
 /* utility classes */

@@ -1,65 +1,59 @@
-SearchScreen #search {
-    dock: top;
-}
-
-SearchScreen #results_table {
-    background: transparent;
-    border: solid $secondary-muted;
-    padding: 0 1;
-    scrollbar-size: 0 0;
-    height: 1fr;
-}
-
-SearchScreen #results_table:focus {
-    border: solid $secondary;
-}
-
-SearchScreen #results_table:disabled {
-    border: solid $secondary-muted;
-}
-
-SearchScreen #results_table > .datatable--header,
-SearchScreen #results_table > .datatable--header-hover {
-    background: transparent;
-}
-
-SearchScreen #loader {
-    align: center middle;
-}
-
-SearchScreen #loader LoadingIndicator {
-    height: auto;
-    content-align-horizontal: center;
-}
-
-SearchScreen #loader Static {
-    content-align-horizontal: center;
-}
-
-SearchScreen #downloads_container {
-    dock: bottom;
-    height: auto;
-    border: solid $secondary-muted;
-    padding: 0 1;
-}
-
-SearchScreen #downloads_container:focus {
-    border: solid $secondary;
-}
-
-SearchScreen #downloads_container #bar-and-actions {
-    height: auto;
-}
-
-SearchScreen #downloads_container #bar-and-actions ProgressBar {
-    width: 1fr;
-}
-
-SearchScreen #downloads_container #bar-and-actions ProgressBar #bar {
-    width: 90%;
-}
-
-SearchScreen #downloads_container #bar-and-actions #actions {
-    content-align-horizontal: right;
-    width: auto;
+SearchScreen Vertical {
+    /* search input */
+    #search {
+        dock: top;
+    }
+    /* results data-table */
+    #results_table {
+        background: transparent;
+        border: solid $secondary-muted;
+        padding: 0 1;
+        scrollbar-size: 0 0;
+        height: 1fr;
+        &:focus {
+            border: solid $secondary;
+        }
+        &:disabled {
+            border: solid $secondary-muted;
+        }
+        & > .datatable--header,
+        & > .datatable--header-hover {
+            background: transparent;
+        }
+    }
+    /* loading indicator and text */
+    #loader {
+        align: center middle;
+        #indicator {
+            height: auto;
+            content-align-horizontal: center;
+        }
+        #status_text {
+            content-align-horizontal: center;
+        }
+    }
+    /* downloads section */
+    #downloads_container {
+        dock: bottom;
+        height: auto;
+        border: solid $secondary-muted;
+        padding: 0 1;
+        &:focus {
+            border: solid $secondary;
+        }
+        /* bottom section: progressbar and actions */
+        #progressbar-and-actions {
+            height: auto;
+            #progressbar {
+                width: 1fr;
+                #bar {
+                    width: 90%;
+                }
+            }
+            #actions {
+                content-align-horizontal: right;
+                width: auto;
+            }
+        }
+    }
 }
