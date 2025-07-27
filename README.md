@@ -23,7 +23,7 @@ _Torrra_ provides a streamlined command-line interface for torrent search and do
 pipx install torrra
 ```
 
-Other options: [AUR](https://aur.archlinux.org/packages/torrra), [standalone binaries](https://github.com/stabldev/torrra/releases), [Homebrew](https://github.com/Maniacsan/homebrew-torrra) or [Docker](https://hub.docker.com/r/stabldev/torrra).
+Other options: [`AUR`](https://aur.archlinux.org/packages/torrra), [`standalone binaries`](https://github.com/stabldev/torrra/releases), [`Homebrew`](https://github.com/Maniacsan/homebrew-torrra) or [`Docker`](https://hub.docker.com/r/stabldev/torrra).
 
 [See full install options →](https://torrra.readthedocs.io/en/latest/installation.html)
 
