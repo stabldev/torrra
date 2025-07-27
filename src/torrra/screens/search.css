@@ -28,7 +28,7 @@ SearchScreen Vertical {
             height: auto;
             content-align-horizontal: center;
         }
-        #status_text {
+        #status {
             content-align-horizontal: center;
         }
     }

@@ -64,7 +64,7 @@ class SearchScreen(Screen[None]):
             yield search_input
             # loading indicator
             with Vertical(id="loader"):
-                yield Static(id="status_text")
+                yield Static(id="status")
                 yield LoadingIndicator(id="indicator")
             # results data-table
             results_dt: DataTable[None] = DataTable(
@@ -153,7 +153,7 @@ class SearchScreen(Screen[None]):
 
         table = cast(DataTable[None], self.query_one("#results_table", DataTable))
         loader = self.query_one("#loader", Vertical)
-        loader_text = self.query_one("#loader Static", Static)
+        loader_text = self.query_one("#loader #status", Static)
 
         table.add_class("hidden")
         table.clear()
@@ -167,18 +167,18 @@ class SearchScreen(Screen[None]):
         row_key = event.row_key
         magnet_uri = row_key.value
 
-        self.query_one("#bar-and-actions", Horizontal).remove_class("hidden")
+        self.query_one("#progressbar-and-actions", Horizontal).remove_class("hidden")
         self.query_one("#search", Input).disabled = True
         cast(DataTable[None], event.control).disabled = True
         self._download_torrent(magnet_uri)
 
     @work(exclusive=True, thread=True)
     async def _perform_search(self, query: str) -> None:
-        client = self._get_indexer()
+        indexer = self._get_indexer_instance()
         results = []
-        if client:
+        if indexer:
             try:
-                results = await client.search(query, use_cache=self.use_cache)
+                results = await indexer.search(query, use_cache=self.use_cache)
             except Exception as e:
                 self.log.error(f"error during search: {e}")
 
@@ -278,19 +278,19 @@ class SearchScreen(Screen[None]):
             time.sleep(5)
 
     def _update_download_ui(self, status: str, progress: float) -> None:
-        self.query_one("#downloads_container Static", Static).update(status)
-        self.query_one("#downloads_container ProgressBar", ProgressBar).update(
+        self.query_one("#downloads_container #status", Static).update(status)
+        self.query_one("#downloads_container #progressbar", ProgressBar).update(
             progress=progress
         )
 
-    def _get_indexer(self) -> JackettIndexer | ProwlarrIndexer | None:
+    def _get_indexer_instance(self) -> JackettIndexer | ProwlarrIndexer | None:
         if not self.indexer:
             return
 
-        if self.indexer.name == "jackett":
-            return JackettIndexer(url=self.indexer.url, api_key=self.indexer.api_key)
-        elif self.indexer.name == "prowlarr":
-            return ProwlarrIndexer(url=self.indexer.url, api_key=self.indexer.api_key)
+        INDEXER_MAP = {"jackett": JackettIndexer, "prowlarr": ProwlarrIndexer}
+
+        indexer = INDEXER_MAP[self.indexer.name]
+        return indexer(url=self.indexer.url, api_key=self.indexer.api_key)
 
     async def _resolve_magnet_uri_if_redirect(self, url: str) -> str:
         if url.startswith("magnet:"):
