@@ -232,12 +232,9 @@ class SearchScreen(Screen[None]):
 
         if isinstance(resolved, str) and resolved.startswith("magnet:"):
             self.lt_handle = lt.add_magnet_uri(self.lt_session, resolved, params)
-        elif isinstance(resolved, lt.torrent_info):
+        else:
             params["ti"] = resolved
             self.lt_handle = self.lt_session.add_torrent(params)
-        else:
-            # if none, not possibble
-            return  # make linter happie
 
         while not self.lt_handle.has_metadata():
             time.sleep(0.5)
