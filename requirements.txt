@@ -146,9 +146,9 @@ libtorrent==2.0.11 \
 libtorrent-stubs==0.0.1 \
     --hash=sha256:1fe701c23b4fb1f68e6abd7118e5f2fae10a3ce13d5ad22d277d1b425351afa4 \
     --hash=sha256:43fd9ce83959d1aeb2b592e25a9ae5ed0d15b488223e37b7cd4c53b6f2fceaf1
-libtorrent-windows-dll==0.0.3 ; sys_platform == 'win32' \
-    --hash=sha256:84f0f4f8d80f36a8769eeed8b85aa03ed1a961fd44ff597d60771f63f77135d8 \
-    --hash=sha256:eac387522f70286fcad688c78c3f8e428c43fef3bd48f493bc4fb480d68ed366
+libtorrent-windows-dll==0.0.2 ; sys_platform == 'win32' \
+    --hash=sha256:c179e9d33c2b7aa6f8022c458b72663cd1d3d8ec7bebd8b7510598d5ff68f110 \
+    --hash=sha256:eaf841e52503e3c1160b220611ffad241a37bbfe0d5a10d76692ad18a0317a09
     # via torrra
 linkify-it-py==2.0.3 \
     --hash=sha256:68cda27e162e9215c17d786649d1da0021a451bdc436ef9e0fa0ba5234b9b048 \
