@@ -1,3 +1,5 @@
+import os
+import tempfile
 import time
 from typing import ClassVar, cast, override
 
@@ -214,7 +216,10 @@ class SearchScreen(Screen[None]):
 
     @work(exclusive=True, thread=True)
     async def _download_torrent(self, magnet_uri: str) -> None:
-        magnet_uri = await self._resolve_magnet_uri_if_redirect(magnet_uri)
+        resolved_magnet_uri = await self._resolve_magnet_uri(magnet_uri)
+        if resolved_magnet_uri is None:
+            # TODO: show notify (requuires custom styling)
+            return
 
         self.lt_session = lt.session()
         self.lt_session.listen_on(6881, 6891)
@@ -224,7 +229,7 @@ class SearchScreen(Screen[None]):
             "storage_mode": lt.storage_mode_t.storage_mode_sparse,
         }
 
-        self.lt_handle = lt.add_magnet_uri(self.lt_session, magnet_uri, params)
+        self.lt_handle = lt.add_magnet_uri(self.lt_session, resolved_magnet_uri, params)
 
         self.app.call_from_thread(
             self._update_download_ui, "[b $success]Fetching Metadata...[/]", 0
@@ -292,15 +297,36 @@ class SearchScreen(Screen[None]):
         indexer = INDEXER_MAP[self.indexer.name]
         return indexer(url=self.indexer.url, api_key=self.indexer.api_key)
 
-    async def _resolve_magnet_uri_if_redirect(self, url: str) -> str:
-        if url.startswith("magnet:"):
-            return url
+    async def _resolve_magnet_uri(self, input_uri: str) -> str | None:
+        if input_uri.startswith("magnet:"):
+            return input_uri
+
         try:
-            async with httpx.AsyncClient() as client:
-                resp = await client.get(url, follow_redirects=False)
+            async with httpx.AsyncClient(follow_redirects=False) as client:
+                resp = await client.get(input_uri)
+                # get magnet uri from location headers if its a redirect url
                 if resp.status_code in (301, 302):
-                    return cast(str, resp.headers.get("Location", url))
-                return url
+                    return resp.headers.get("location")
+
+                # download .torrent file and make magnet_uri from it
+                content_type = resp.headers.get("content-type")
+                if "application/x-bittorrent" in content_type or input_uri.endswith(
+                    ".torrent"
+                ):
+                    with tempfile.NamedTemporaryFile(
+                        suffix=".torrent", delete=False
+                    ) as tmp_file:
+                        tmp_file.write(resp.content)
+                        tmp_path = tmp_file.name
+
+                    try:
+                        torrent_info = lt.torrent_info(tmp_path)
+                        return lt.make_magnet_uri(torrent_info)
+                    finally:
+                        # remove the tmp file after done
+                        os.remove(tmp_path)
+                return None
+
         except Exception as e:
-            print(f"resolving magnet uri: {e}")
-            return url
+            self.log.error(f"an unexpected error occurred: {e}")
+            return None
