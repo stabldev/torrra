@@ -68,10 +68,10 @@ class JackettIndexer:
 
     def _normalize_result(self, r: dict[str, Any]) -> Torrent:
         return Torrent(
-            title=r.get("Title", ""),
+            title=r.get("Title", "unknown"),
             size=r.get("Size", 0),
             seeders=r.get("Seeders", 0),
             leechers=r.get("Peers", 0),
             source=r.get("Tracker", "unknown"),
-            magnet_uri=r.get("MagnetUri", None),
+            magnet_uri=r.get("MagnetUri") or r.get("Link"),
         )

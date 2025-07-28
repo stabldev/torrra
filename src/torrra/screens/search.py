@@ -1,5 +1,7 @@
+import os
+import tempfile
 import time
-from typing import ClassVar, cast, override
+from typing import Any, ClassVar, cast, override
 
 import httpx
 import libtorrent as lt
@@ -170,6 +172,7 @@ class SearchScreen(Screen[None]):
         self.query_one("#progressbar-and-actions", Horizontal).remove_class("hidden")
         self.query_one("#search", Input).disabled = True
         cast(DataTable[None], event.control).disabled = True
+        self._update_download_ui("[b $success]Fetching Metadata...[/]", 0)
         self._download_torrent(magnet_uri)
 
     @work(exclusive=True, thread=True)
@@ -214,21 +217,24 @@ class SearchScreen(Screen[None]):
 
     @work(exclusive=True, thread=True)
     async def _download_torrent(self, magnet_uri: str) -> None:
-        magnet_uri = await self._resolve_magnet_uri_if_redirect(magnet_uri)
+        resolved = await self._resolve_magnet_uri_or_torrent_info(magnet_uri)
+        if resolved is None:
+            # TODO: show notify (requuires custom styling)
+            return
 
         self.lt_session = lt.session()
         self.lt_session.listen_on(6881, 6891)
 
-        params = {
+        params: dict[str, Any] = {
             "save_path": config.get("general.download_path"),
             "storage_mode": lt.storage_mode_t.storage_mode_sparse,
         }
 
-        self.lt_handle = lt.add_magnet_uri(self.lt_session, magnet_uri, params)
-
-        self.app.call_from_thread(
-            self._update_download_ui, "[b $success]Fetching Metadata...[/]", 0
-        )
+        if isinstance(resolved, str) and resolved.startswith("magnet:"):
+            self.lt_handle = lt.add_magnet_uri(self.lt_session, resolved, params)
+        else:
+            params["ti"] = resolved
+            self.lt_handle = self.lt_session.add_torrent(params)
 
         while not self.lt_handle.has_metadata():
             time.sleep(0.5)
@@ -292,15 +298,35 @@ class SearchScreen(Screen[None]):
         indexer = INDEXER_MAP[self.indexer.name]
         return indexer(url=self.indexer.url, api_key=self.indexer.api_key)
 
-    async def _resolve_magnet_uri_if_redirect(self, url: str) -> str:
-        if url.startswith("magnet:"):
-            return url
+    async def _resolve_magnet_uri_or_torrent_info(
+        self, input_uri: str
+    ) -> str | lt.torrent_info | None:
+        if input_uri.startswith("magnet:"):
+            return input_uri
+
         try:
-            async with httpx.AsyncClient() as client:
-                resp = await client.get(url, follow_redirects=False)
+            async with httpx.AsyncClient(follow_redirects=False) as client:
+                resp = await client.get(input_uri)
                 if resp.status_code in (301, 302):
-                    return cast(str, resp.headers.get("Location", url))
-                return url
+                    return resp.headers.get("location")
+
+                content_type = resp.headers.get("content-type")
+                if "application/x-bittorrent" in content_type or input_uri.endswith(
+                    ".torrent"
+                ):
+                    with tempfile.NamedTemporaryFile(
+                        suffix=".torrent", delete=False
+                    ) as tmp_file:
+                        tmp_file.write(resp.content)
+                        tmp_path = tmp_file.name
+
+                    try:
+                        return lt.torrent_info(tmp_path)
+                    finally:
+                        # cleanup the tmp torrent file
+                        os.remove(tmp_path)
+                return None
+
         except Exception as e:
-            print(f"resolving magnet uri: {e}")
-            return url
+            self.log.error(f"an unexpected error occurred: {e}")
+            return None

@@ -65,10 +65,10 @@ class ProwlarrIndexer:
 
     def _normalize_result(self, r: dict[str, Any]) -> Torrent:
         return Torrent(
-            title=r.get("title", ""),
+            title=r.get("title", "unknown"),
             size=r.get("size", 0),
             seeders=r.get("seeders", 0),
             leechers=r.get("leechers", 0),
             source=r.get("indexer", "unknown"),
-            magnet_uri=r.get("magnetUrl", None),
+            magnet_uri=r.get("magnetUrl") or r.get("downloadUrl"),
         )
