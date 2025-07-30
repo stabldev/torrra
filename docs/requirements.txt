@@ -15,7 +15,7 @@ docutils==0.21.2
     #   myst-parser
     #   qiskit-sphinx-theme
     #   sphinx
-furo==2024.8.6
+furo==2025.7.19
     # via qiskit-sphinx-theme
 idna==3.10
     # via requests
