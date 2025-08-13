@@ -92,7 +92,7 @@ docker run --rm -it \
 ### Image Tags
 
 - `stabldev/torrra:latest` - Always points to the most recent stable release.
-- `stabldev/torrra:<version>` - For a specific release version (e.g., `stabldev/torrra:0.1.0`).
+- `stabldev/torrra:<version>` - For a specific release version (e.g., `stabldev/torrra:v1.2.3`).
 
 ## Local Development
 
