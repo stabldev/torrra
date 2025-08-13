@@ -101,12 +101,12 @@ jobs:
 
           if [[ "$RUNNER_OS" == "Linux" ]]; then
             chmod +x dist/torrra
-            cp dist/torrra "dist-out/torrra_${{ env.VERSION }}_linux_${ARCH}"
+            cp dist/torrra "dist-out/torrra_${VERSION}_linux_${ARCH}"
           elif [[ "$RUNNER_OS" == "Windows" ]]; then
-            cp dist/torrra.exe "dist-out/torrra_${{ env.VERSION }}_windows_${ARCH}.exe"
+            cp dist/torrra.exe "dist-out/torrra_${VERSION}_windows_${ARCH}.exe"
           elif [[ "$RUNNER_OS" == "macOS" ]]; then
             chmod +x dist/torrra
-            cp dist/torrra "dist-out/torrra_${{ env.VERSION }}_macos_${ARCH}"
+            cp dist/torrra "dist-out/torrra_${VERSION}_macos_${ARCH}"
           fi
 
       - name: Upload binary to release
