@@ -189,7 +189,7 @@ class SearchScreen(Screen[None]):
 
     @on(SearchResults)
     def _show_search_results(self, message: SearchResults) -> None:
-        table = cast(DataTable[None], self.query_one("#results_table", DataTable))
+        table = cast(DataTable[str], self.query_one("#results_table", DataTable))
         loader = self.query_one("#loader", Vertical)
         loader_text = loader.query_one(Static)
 
@@ -200,19 +200,25 @@ class SearchScreen(Screen[None]):
         loader.add_class("hidden")
         table.remove_class("hidden")
 
+        seen_magnets: set[str] = set()
         for idx, torrent in enumerate(message.results):
-            row = [
+            if torrent.magnet_uri is None:
+                continue
+            if torrent.magnet_uri in seen_magnets:
+                continue
+
+            seen_magnets.add(torrent.magnet_uri)
+
+            table.add_row(
                 str(idx + 1),
                 torrent.title,
                 human_readable_size(torrent.size),
                 str(torrent.seeders),
                 str(torrent.leechers),
                 torrent.source,
-            ]
-
-            table.add_row(
-                *row, key=torrent.magnet_uri  # pyright: ignore[reportArgumentType]
+                key=torrent.magnet_uri,
             )
+
         table.focus()
 
     @work(exclusive=True, thread=True)
