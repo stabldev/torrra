@@ -1,0 +1,17 @@
+# Maintainer: stabldev <thestabldev@gmail.com>
+# This is not a full PKGBUILD
+# pkgname, pkgver, and sha256sums are to be generated
+
+pkgrel=1
+pkgdesc="A Python tool that lets you find and download torrents without leaving your CLI."
+arch=("x86_64")
+url="https://github.com/stabldev/torrra"
+license=("MIT")
+provides=("torrra")
+conflicts=("torrra")
+source=("torrra-${pkgver}::$url/releases/download/v$pkgver/torrra_v${pkgver}_linux_x86_64")
+sha256sums=()
+
+package() {
+    install -Dm755 "torrra-$pkgver" "$pkgdir/usr/bin/torrra"
+}
