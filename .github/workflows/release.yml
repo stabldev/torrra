@@ -6,21 +6,8 @@ on:
       - "v*"
 
 jobs:
-  get_version:
-    name: Get Version
-    runs-on: ubuntu-latest
-    outputs:
-      version: ${{ steps.version.outputs.version }}
-      refname: ${{ steps.refname.outputs.refname }}
-    steps:
-      - id: version
-        run: echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
-      - id: refname
-        run: echo "refname=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
-
   publish_pypi:
     name: Publish to PyPI
-    needs: get_version
     runs-on: ubuntu-latest
     environment:
       name: pypi
@@ -45,7 +32,6 @@ jobs:
 
   publish_docker:
     name: Publish to Docker Hub
-    needs: get_version
     runs-on: ubuntu-latest
     environment:
       name: dockerhub
@@ -53,6 +39,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+
+      - name: Set version
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
@@ -73,11 +63,10 @@ jobs:
           push: true
           tags: |
             ${{ vars.DOCKERHUB_USERNAME }}/torrra:latest
-            ${{ vars.DOCKERHUB_USERNAME }}/torrra:${{ needs.get_version.outputs.version }}
+            ${{ vars.DOCKERHUB_USERNAME }}/torrra:${{ steps.version.outputs.version }}
 
   build_and_release_binaries:
     name: Build on ${{ matrix.os }}
-    needs: get_version
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -109,36 +98,35 @@ jobs:
           ARCH=$(uname -m)
 
           if [[ "$RUNNER_OS" == "Linux" ]]; then
-            chmod +x dist/torrra
-            cp dist/torrra "dist-out/torrra_${{ needs.get_version.outputs.refname }}_linux_${ARCH}"
+            cp dist/torrra "dist-out/torrra_${GITHUB_REF_NAME}_linux_${ARCH}"
           elif [[ "$RUNNER_OS" == "Windows" ]]; then
-            cp dist/torrra.exe "dist-out/torrra_${{ needs.get_version.outputs.refname }}_windows_${ARCH}.exe"
+            cp dist/torrra.exe "dist-out/torrra_${GITHUB_REF_NAME}_windows_${ARCH}.exe"
           elif [[ "$RUNNER_OS" == "macOS" ]]; then
-            chmod +x dist/torrra
-            cp dist/torrra "dist-out/torrra_${{ needs.get_version.outputs.refname }}_macos_${ARCH}"
+            cp dist/torrra "dist-out/torrra_${GITHUB_REF_NAME}_macos_${ARCH}"
           fi
 
       - name: Upload binary to release
         uses: softprops/action-gh-release@v2
         with:
           files: dist-out/*
-          token: ${{ secrets.GITHUB_TOKEN }}
 
   publish_aur:
     name: Publish to AUR
-    needs:
-      - get_version
-      - build_and_release_binaries
+    needs: build_and_release_binaries
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v5
 
+      - name: Set version
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+
       - name: Publish torrra to AUR
         uses: stabldev/aur-publish-action@v1
         with:
           pkgname: torrra
-          pkgver: ${{ needs.get_version.outputs.version }}
+          pkgver: ${{ steps.version.outputs.version }}
           pkgbuild_template: ./pkgbuild-template/torrra/PKGBUILD
           aur_ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
 
@@ -146,6 +134,6 @@ jobs:
         uses: stabldev/aur-publish-action@v1
         with:
           pkgname: torrra-bin
-          pkgver: ${{ needs.get_version.outputs.version }}
+          pkgver: ${{ steps.version.outputs.version }}
           pkgbuild_template: ./pkgbuild-template/torrra-bin/PKGBUILD
           aur_ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
