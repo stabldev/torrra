@@ -29,7 +29,7 @@ class JackettIndexer:
             res = resp.json().get("Results", [])
             torrents = [self._normalize_result(r) for r in res]
 
-        if use_cache:
+        if use_cache and torrents:
             set_cache(key, [t.to_dict() for t in torrents])
 
         return torrents
