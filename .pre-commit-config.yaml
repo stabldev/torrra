@@ -1,12 +1,12 @@
 repos:
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.8.11
+    rev: 0.8.22
     hooks:
       - id: uv-lock
       - id: uv-export
 
   - repo: https://github.com/psf/black-pre-commit-mirror
-    rev: 25.1.0
+    rev: 25.9.0
     hooks:
       - id: black
         language_version: python3.13
