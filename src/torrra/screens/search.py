@@ -171,7 +171,6 @@ class SearchScreen(Screen[None]):
         row_key = event.row_key
         magnet_uri = row_key.value
 
-        self.query_one("#progressbar-and-actions", Horizontal).remove_class("hidden")
         self.query_one("#search", Input).disabled = True
         cast(DataTable[None], event.control).disabled = True
         self._update_download_ui("[b $success]Fetching Metadata...[/]", 0)
@@ -223,11 +222,11 @@ class SearchScreen(Screen[None]):
 
         table.focus()
 
-    @work(exclusive=True, thread=True)
+    @work(exclusive=False, thread=True)
     async def _handle_magnet_uri(self, magnet_uri: str) -> None:
         resolved = await self._resolve_magnet_uri_or_torrent_info(magnet_uri)
         if resolved is None:
-            # TODO: show failure
+            self.app.call_from_thread(self._update_download_ui, "[$error]Failed to resolve magnet URI[/]", 0)
             return
         
         if config.get("general.download_in_external_client"):
@@ -239,16 +238,25 @@ class SearchScreen(Screen[None]):
         if isinstance(magnet_or_torrent_info, lt.torrent_info):
             magnet_uri = lt.make_magnet_uri(magnet_or_torrent_info)
             if not magnet_uri:
-                # TODO: show failure
+                self.app.call_from_thread(self._update_download_ui, "[$error]Failed to generate magnet URI from torrent info[/]", 0)
                 return
         else:
             magnet_uri = magnet_or_torrent_info
         
         if magnet_uri.startswith("magnet:"):
-            self._open_magnet_uri(magnet_uri)
-        # TODO: show failure or fallback to torrent file
+            try:
+                self._open_magnet_uri(magnet_uri)
+            except Exception as e:
+                self.app.call_from_thread(self._update_download_ui, "[$error]Failed to open magnet URI[/]", 0)
+                self.log.error(f"failed to open magnet URI: {e}")
+            else:
+                self.app.call_from_thread(self._update_download_ui, "[$success]Magnet URI opened in external client[/]", 0)
+        else:
+            self.app.call_from_thread(self._update_download_ui, f"[$error]Invalid magnet URI: {magnet_uri}[/]", 0)
 
     async def _download_torrent(self, magnet_or_torrent_info: str | lt.torrent_info) -> None:
+
+        self.query_one("#progressbar-and-actions", Horizontal).remove_class("hidden")
 
         self.lt_session = lt.session()
         self.lt_session.listen_on(6881, 6891)
@@ -360,9 +368,11 @@ class SearchScreen(Screen[None]):
             return None
 
     def _open_magnet_uri(self, magnet_uri: str) -> None:
+        args = []
         if platform.system() == 'Darwin':       # macOS
-            subprocess.call(('open', magnet_uri))
+            args = ['open', magnet_uri]
         elif platform.system() == 'Windows':    # Windows
-            subprocess.Popen(["start", "\"\"", magnet_uri], shell=True)
+            args = ["start", "\"\"", magnet_uri]
         else:                                   # linux variants
-            subprocess.call(('xdg-open', magnet_uri))
+            args = ['xdg-open', magnet_uri]
+        subprocess.Popen(args, stdin=None, stdout=None, stderr=None)
