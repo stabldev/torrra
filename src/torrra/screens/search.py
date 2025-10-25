@@ -1,5 +1,7 @@
 import os
 import tempfile
+import subprocess
+import platform
 import time
 from typing import Any, ClassVar, cast, override
 
@@ -173,7 +175,7 @@ class SearchScreen(Screen[None]):
         self.query_one("#search", Input).disabled = True
         cast(DataTable[None], event.control).disabled = True
         self._update_download_ui("[b $success]Fetching Metadata...[/]", 0)
-        self._download_torrent(magnet_uri)
+        self._handle_magnet_uri(magnet_uri)
 
     @work(exclusive=True, thread=True)
     async def _perform_search(self, query: str) -> None:
@@ -222,11 +224,31 @@ class SearchScreen(Screen[None]):
         table.focus()
 
     @work(exclusive=True, thread=True)
-    async def _download_torrent(self, magnet_uri: str) -> None:
+    async def _handle_magnet_uri(self, magnet_uri: str) -> None:
         resolved = await self._resolve_magnet_uri_or_torrent_info(magnet_uri)
         if resolved is None:
-            # TODO: show notify (requuires custom styling)
+            # TODO: show failure
             return
+        
+        if config.get("general.download_in_external_client"):
+            await self._download_in_external_client(resolved)
+        else:
+            await self._download_torrent(resolved)
+
+    async def _download_in_external_client(self, magnet_or_torrent_info: str | lt.torrent_info) -> None:
+        if isinstance(magnet_or_torrent_info, lt.torrent_info):
+            magnet_uri = lt.make_magnet_uri(magnet_or_torrent_info)
+            if not magnet_uri:
+                # TODO: show failure
+                return
+        else:
+            magnet_uri = magnet_or_torrent_info
+        
+        if magnet_uri.startswith("magnet:"):
+            self._open_magnet_uri(magnet_uri)
+        # TODO: show failure or fallback to torrent file
+
+    async def _download_torrent(self, magnet_or_torrent_info: str | lt.torrent_info) -> None:
 
         self.lt_session = lt.session()
         self.lt_session.listen_on(6881, 6891)
@@ -236,10 +258,10 @@ class SearchScreen(Screen[None]):
             "storage_mode": lt.storage_mode_t.storage_mode_sparse,
         }
 
-        if isinstance(resolved, str) and resolved.startswith("magnet:"):
-            self.lt_handle = lt.add_magnet_uri(self.lt_session, resolved, params)
+        if isinstance(magnet_or_torrent_info, str) and magnet_or_torrent_info.startswith("magnet:"):
+            self.lt_handle = lt.add_magnet_uri(self.lt_session, magnet_or_torrent_info, params)
         else:
-            params["ti"] = resolved
+            params["ti"] = magnet_or_torrent_info
             self.lt_handle = self.lt_session.add_torrent(params)
 
         while not self.lt_handle.has_metadata():
@@ -336,3 +358,11 @@ class SearchScreen(Screen[None]):
         except Exception as e:
             self.log.error(f"an unexpected error occurred: {e}")
             return None
+
+    def _open_magnet_uri(self, magnet_uri: str) -> None:
+        if platform.system() == 'Darwin':       # macOS
+            subprocess.call(('open', magnet_uri))
+        elif platform.system() == 'Windows':    # Windows
+            subprocess.Popen(["start", "\"\"", magnet_uri], shell=True)
+        else:                                   # linux variants
+            subprocess.call(('xdg-open', magnet_uri))
