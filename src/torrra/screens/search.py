@@ -1,7 +1,7 @@
 import os
-import tempfile
-import subprocess
 import platform
+import subprocess
+import tempfile
 import time
 from typing import Any, ClassVar, cast, override
 
@@ -226,35 +226,55 @@ class SearchScreen(Screen[None]):
     async def _handle_magnet_uri(self, magnet_uri: str) -> None:
         resolved = await self._resolve_magnet_uri_or_torrent_info(magnet_uri)
         if resolved is None:
-            self.app.call_from_thread(self._update_download_ui, "[$error]Failed to resolve magnet URI[/]", 0)
+            self.app.call_from_thread(
+                self._update_download_ui, "[$error]Failed to resolve magnet URI[/]", 0
+            )
             return
-        
+
         if config.get("general.download_in_external_client"):
             await self._download_in_external_client(resolved)
         else:
             await self._download_torrent(resolved)
 
-    async def _download_in_external_client(self, magnet_or_torrent_info: str | lt.torrent_info) -> None:
+    async def _download_in_external_client(
+        self, magnet_or_torrent_info: str | lt.torrent_info
+    ) -> None:
         if isinstance(magnet_or_torrent_info, lt.torrent_info):
             magnet_uri = lt.make_magnet_uri(magnet_or_torrent_info)
             if not magnet_uri:
-                self.app.call_from_thread(self._update_download_ui, "[$error]Failed to generate magnet URI from torrent info[/]", 0)
+                self.app.call_from_thread(
+                    self._update_download_ui,
+                    "[$error]Failed to generate magnet URI from torrent info[/]",
+                    0,
+                )
                 return
         else:
             magnet_uri = magnet_or_torrent_info
-        
+
         if magnet_uri.startswith("magnet:"):
             try:
                 self._open_magnet_uri(magnet_uri)
             except Exception as e:
-                self.app.call_from_thread(self._update_download_ui, "[$error]Failed to open magnet URI[/]", 0)
+                self.app.call_from_thread(
+                    self._update_download_ui, "[$error]Failed to open magnet URI[/]", 0
+                )
                 self.log.error(f"failed to open magnet URI: {e}")
             else:
-                self.app.call_from_thread(self._update_download_ui, "[$success]Magnet URI opened in external client[/]", 0)
+                self.app.call_from_thread(
+                    self._update_download_ui,
+                    "[$success]Magnet URI opened in external client[/]",
+                    0,
+                )
         else:
-            self.app.call_from_thread(self._update_download_ui, f"[$error]Invalid magnet URI: {magnet_uri}[/]", 0)
+            self.app.call_from_thread(
+                self._update_download_ui,
+                f"[$error]Invalid magnet URI: {magnet_uri}[/]",
+                0,
+            )
 
-    async def _download_torrent(self, magnet_or_torrent_info: str | lt.torrent_info) -> None:
+    async def _download_torrent(
+        self, magnet_or_torrent_info: str | lt.torrent_info
+    ) -> None:
 
         self.query_one("#progressbar-and-actions", Horizontal).remove_class("hidden")
 
@@ -266,8 +286,12 @@ class SearchScreen(Screen[None]):
             "storage_mode": lt.storage_mode_t.storage_mode_sparse,
         }
 
-        if isinstance(magnet_or_torrent_info, str) and magnet_or_torrent_info.startswith("magnet:"):
-            self.lt_handle = lt.add_magnet_uri(self.lt_session, magnet_or_torrent_info, params)
+        if isinstance(
+            magnet_or_torrent_info, str
+        ) and magnet_or_torrent_info.startswith("magnet:"):
+            self.lt_handle = lt.add_magnet_uri(
+                self.lt_session, magnet_or_torrent_info, params
+            )
         else:
             params["ti"] = magnet_or_torrent_info
             self.lt_handle = self.lt_session.add_torrent(params)
@@ -369,10 +393,10 @@ class SearchScreen(Screen[None]):
 
     def _open_magnet_uri(self, magnet_uri: str) -> None:
         args = []
-        if platform.system() == 'Darwin':       # macOS
-            args = ['open', magnet_uri]
-        elif platform.system() == 'Windows':    # Windows
-            args = ["start", "\"\"", magnet_uri]
-        else:                                   # linux variants
-            args = ['xdg-open', magnet_uri]
+        if platform.system() == "Darwin":  # macOS
+            args = ["open", magnet_uri]
+        elif platform.system() == "Windows":  # Windows
+            args = ["start", '""', magnet_uri]
+        else:  # linux variants
+            args = ["xdg-open", magnet_uri]
         subprocess.Popen(args, stdin=None, stdout=None, stderr=None)
