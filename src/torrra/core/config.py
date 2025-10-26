@@ -87,6 +87,7 @@ class Config:
             "general": {
                 "download_path": user_downloads_dir(),
                 "remember_last_path": True,
+                "download_in_external_client": False,
             }
         }
 
