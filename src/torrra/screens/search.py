@@ -7,13 +7,13 @@ import httpx
 import libtorrent as lt
 from textual import on, work
 from textual.app import ComposeResult
+from textual.binding import BindingType
 from textual.containers import Container, Horizontal, Vertical
 from textual.message import Message
 from textual.screen import Screen
 from textual.types import CSSPathType
 from textual.widgets import DataTable, Input, LoadingIndicator, ProgressBar, Static
 from textual.widgets.data_table import ColumnKey
-from textual.binding import BindingType
 
 from torrra._types import Indexer, Torrent
 from torrra.core.context import config
