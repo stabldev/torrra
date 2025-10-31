@@ -13,6 +13,7 @@ from textual.screen import Screen
 from textual.types import CSSPathType
 from textual.widgets import DataTable, Input, LoadingIndicator, ProgressBar, Static
 from textual.widgets.data_table import ColumnKey
+from textual.binding import BindingType
 
 from torrra._types import Indexer, Torrent
 from torrra.core.context import config
@@ -23,6 +24,16 @@ from torrra.utils.helpers import human_readable_size
 
 
 class SearchScreen(Screen[None]):
+    BINDINGS: ClassVar[list[BindingType]] = [
+        ("l", "select_cursor", "Select item"),
+        ("k", "cursor_up", "Go to previous row"),
+        ("ctrl+u", "page_up", "Scroll up"),
+        ("j", "cursor_down", "Go to next row"),
+        ("ctrl+d", "page_down", "Scroll down"),
+        ("g", "scroll_top", "Go to top"),
+        ("G", "scroll_bottom", "Go to bottom"),
+    ]
+
     CSS_PATH: ClassVar[CSSPathType | None] = get_resource_path("screens/search.css")
     # https://github.com/edward-jazzhands/eds-sandbox/blob/main/python/textual/examples/datatable_expandcol.py
     no_col_width: int = 3
@@ -146,6 +157,35 @@ class SearchScreen(Screen[None]):
 
         self.lt_handle.resume()
         self.lt_paused = False
+
+    # Vim bindings
+    def action_cursor_up(self) -> None:
+        table = self.query_one("#results_table", DataTable)
+        table.action_cursor_up()
+
+    def action_cursor_down(self) -> None:
+        table = self.query_one("#results_table", DataTable)
+        table.action_cursor_down()
+
+    def action_scroll_top(self) -> None:
+        table = self.query_one("#results_table", DataTable)
+        table.action_scroll_top()
+
+    def action_scroll_bottom(self) -> None:
+        table = self.query_one("#results_table", DataTable)
+        table.action_scroll_bottom()
+
+    def action_select_cursor(self) -> None:
+        table = self.query_one("#results_table", DataTable)
+        table.action_select_cursor()
+
+    def action_page_down(self) -> None:
+        table = self.query_one("#results_table", DataTable)
+        table.action_page_down()
+
+    def action_page_up(self) -> None:
+        table = self.query_one("#results_table", DataTable)
+        table.action_page_up()
 
     @on(Input.Submitted, "#search")
     async def handle_search(self, event: Input.Submitted) -> None:
