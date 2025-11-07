@@ -46,7 +46,7 @@ class JackettIndexer:
 
             except httpx.RequestError:
                 raise JackettConnectionError(
-                    f"could not connect to jackett server\n"
+                    "could not connect to jackett server\n"
                     + "please make sure jackett server is running and the url is correct"
                 )
 

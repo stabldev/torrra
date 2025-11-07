@@ -5,14 +5,9 @@ repos:
       - id: uv-lock
       - id: uv-export
 
-  - repo: https://github.com/psf/black-pre-commit-mirror
-    rev: 25.9.0
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.4
     hooks:
-      - id: black
-        language_version: python3.13
-
-  - repo: https://github.com/pycqa/isort
-    rev: 7.0.0
-    hooks:
-      - id: isort
-        args: ["--profile", "black"]
+      - id: ruff-check
+        args: [--fix]
+      - id: ruff-format
