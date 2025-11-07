@@ -45,7 +45,7 @@ class ProwlarrIndexer:
 
             except httpx.RequestError:
                 raise ProwlarrConnectionError(
-                    f"could not connect to prowlarr server\n"
+                    "could not connect to prowlarr server\n"
                     + "please make sure prowlarr server is running and the url is correct"
                 )
 
