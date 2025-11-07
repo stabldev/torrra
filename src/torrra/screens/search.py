@@ -1,8 +1,7 @@
 import os
-import platform
-import subprocess
 import tempfile
 import time
+import webbrowser
 from typing import Any, ClassVar, cast, override
 
 import httpx
@@ -47,11 +46,17 @@ class SearchScreen(Screen[None]):
             self.query: str = query
             super().__init__()
 
-    def __init__(self, indexer: Indexer | None, initial_query: str, use_cache: bool):
+    class DownloadStatus(Message):
+        def __init__(self, status: str, progress: float) -> None:
+            self.status: str = status
+            self.progress: float = progress
+            super().__init__()
+
+    def __init__(self, indexer: Indexer | None, query: str):
         super().__init__()
         self.indexer: Indexer | None = indexer
-        self.initial_query: str = initial_query
-        self.use_cache: bool = use_cache
+        self.search_query: str = query
+        self.use_cache: bool = True  # TODO: read from config
         # libtorrent
         self.lt_session: lt.session | None = None
         self.lt_handle: lt.torrent_handle | None = None
@@ -62,7 +67,7 @@ class SearchScreen(Screen[None]):
         with Vertical():
             # search input
             search_input = Input(
-                placeholder="Search...", id="search", value=self.initial_query
+                placeholder="Search...", id="search", value=self.search_query
             )
             search_input.border_title = "[$secondary]s[/]earch"
             yield search_input
@@ -94,7 +99,7 @@ class SearchScreen(Screen[None]):
 
     def on_mount(self) -> None:
         self.post_message(
-            Input.Submitted(self.query_one("#search", Input), self.initial_query)
+            Input.Submitted(self.query_one("#search", Input), self.search_query)
         )
 
         table = cast(DataTable[None], self.query_one("#results_table", DataTable))
@@ -150,7 +155,7 @@ class SearchScreen(Screen[None]):
         self.lt_paused = False
 
     @on(Input.Submitted, "#search")
-    async def handle_search(self, event: Input.Submitted) -> None:
+    def handle_search(self, event: Input.Submitted) -> None:
         query = event.value
         if not query:
             return
@@ -167,25 +172,28 @@ class SearchScreen(Screen[None]):
         self._perform_search(query)
 
     @on(DataTable.RowSelected, "#results_table")
-    def handle_select(self, event: DataTable.RowSelected) -> None:
+    async def handle_select(self, event: DataTable.RowSelected) -> None:
         row_key = event.row_key
         magnet_uri = row_key.value
 
         self.query_one("#search", Input).disabled = True
         cast(DataTable[None], event.control).disabled = True
-        self._update_download_ui("[b $success]Fetching Metadata...[/]", 0)
-        self._handle_magnet_uri(magnet_uri)
+        self._update_download_status("[b $success]Fetching Metadata...[/]")
 
-    @work(exclusive=True, thread=True)
+        assert isinstance(magnet_uri, str)
+        resolved_magnet_uri = await self._resolve_magnet_uri(magnet_uri)
+        self._handle_magnet_uri(resolved_magnet_uri)
+
+    @work(exclusive=True)
     async def _perform_search(self, query: str) -> None:
         indexer = self._get_indexer_instance()
         results = []
+
         if indexer:
             try:
                 results = await indexer.search(query, use_cache=self.use_cache)
             except Exception as e:
                 self.log.error(f"error during search: {e}")
-
         self.post_message(self.SearchResults(results, query))
 
     @on(SearchResults)
@@ -200,16 +208,14 @@ class SearchScreen(Screen[None]):
 
         loader.add_class("hidden")
         table.remove_class("hidden")
+        table.focus()
 
         seen_magnets: set[str] = set()
         for idx, torrent in enumerate(message.results):
-            if torrent.magnet_uri is None:
-                continue
-            if torrent.magnet_uri in seen_magnets:
+            if torrent.magnet_uri is None or torrent.magnet_uri in seen_magnets:
                 continue
 
             seen_magnets.add(torrent.magnet_uri)
-
             table.add_row(
                 str(idx + 1),
                 torrent.title,
@@ -220,61 +226,28 @@ class SearchScreen(Screen[None]):
                 key=torrent.magnet_uri,
             )
 
-        table.focus()
-
-    @work(exclusive=False, thread=True)
-    async def _handle_magnet_uri(self, magnet_uri: str) -> None:
-        resolved = await self._resolve_magnet_uri_or_torrent_info(magnet_uri)
-        if resolved is None:
-            self.app.call_from_thread(
-                self._update_download_ui, "[$error]Failed to resolve magnet URI[/]", 0
-            )
+    def _handle_magnet_uri(self, magnet_uri: str | None) -> None:
+        if not magnet_uri:
+            self._update_download_status("[$error]Invalid magnet URI[/]")
+            return
+        if config.get("general.download_in_external_client").lower() == "true":
+            self._download_in_external_client(magnet_uri)
             return
 
-        if config.get("general.download_in_external_client"):
-            await self._download_in_external_client(resolved)
-        else:
-            await self._download_torrent(resolved)
+        self._download_torrent(magnet_uri)
 
-    async def _download_in_external_client(
-        self, magnet_or_torrent_info: str | lt.torrent_info
-    ) -> None:
-        if isinstance(magnet_or_torrent_info, lt.torrent_info):
-            magnet_uri = lt.make_magnet_uri(magnet_or_torrent_info)
-            if not magnet_uri:
-                self.app.call_from_thread(
-                    self._update_download_ui,
-                    "[$error]Failed to generate magnet URI from torrent info[/]",
-                    0,
-                )
-                return
-        else:
-            magnet_uri = magnet_or_torrent_info
+    def _download_in_external_client(self, magnet_uri: str) -> None:
+        opened = webbrowser.open(magnet_uri)
+        if not opened:
+            self._update_download_status("[$error]Failed to open magnet URI[/]")
+            return
 
-        if magnet_uri.startswith("magnet:"):
-            try:
-                self._open_magnet_uri(magnet_uri)
-            except Exception as e:
-                self.app.call_from_thread(
-                    self._update_download_ui, "[$error]Failed to open magnet URI[/]", 0
-                )
-                self.log.error(f"failed to open magnet URI: {e}")
-            else:
-                self.app.call_from_thread(
-                    self._update_download_ui,
-                    "[$success]Magnet URI opened in external client[/]",
-                    0,
-                )
-        else:
-            self.app.call_from_thread(
-                self._update_download_ui,
-                f"[$error]Invalid magnet URI: {magnet_uri}[/]",
-                0,
-            )
+        self._update_download_status(
+            "[$success]Magnet URI opened in external client[/]"
+        )
 
-    async def _download_torrent(
-        self, magnet_or_torrent_info: str | lt.torrent_info
-    ) -> None:
+    @work(exclusive=True, thread=True)
+    def _download_torrent(self, magnet_uri: str) -> None:
         self.query_one("#progressbar-and-actions", Horizontal).remove_class("hidden")
 
         self.lt_session = lt.session()
@@ -285,16 +258,7 @@ class SearchScreen(Screen[None]):
             "storage_mode": lt.storage_mode_t.storage_mode_sparse,
         }
 
-        if isinstance(
-            magnet_or_torrent_info, str
-        ) and magnet_or_torrent_info.startswith("magnet:"):
-            self.lt_handle = lt.add_magnet_uri(
-                self.lt_session, magnet_or_torrent_info, params
-            )
-        else:
-            params["ti"] = magnet_or_torrent_info
-            self.lt_handle = self.lt_session.add_torrent(params)
-
+        self.lt_handle = lt.add_magnet_uri(self.lt_session, magnet_uri, params)
         while not self.lt_handle.has_metadata():
             time.sleep(0.5)
 
@@ -319,13 +283,7 @@ class SearchScreen(Screen[None]):
                 )
                 + f"Size: {total_size}[/]"
             )
-
-            self.app.call_from_thread(
-                self._update_download_ui,
-                seed_status,
-                s.progress * 100,
-            )
-
+            self._update_download_status(seed_status, s.progress * 100)
             time.sleep(1)
 
         while True:
@@ -339,13 +297,17 @@ class SearchScreen(Screen[None]):
                 + f"Uploaded: {human_readable_size(s.total_upload)}[/]"
             )
 
-            self.app.call_from_thread(self._update_download_ui, seed_status, 100)
+            self._update_download_status(seed_status, 100)
             time.sleep(5)
 
-    def _update_download_ui(self, status: str, progress: float) -> None:
-        self.query_one("#downloads_container #status", Static).update(status)
+    def _update_download_status(self, message: str, progress: float = 0) -> None:
+        self.post_message(self.DownloadStatus(message, progress))
+
+    @on(DownloadStatus)
+    def on_download_status(self, message: DownloadStatus) -> None:
+        self.query_one("#downloads_container #status", Static).update(message.status)
         self.query_one("#downloads_container #progressbar", ProgressBar).update(
-            progress=progress
+            progress=message.progress
         )
 
     def _get_indexer_instance(self) -> JackettIndexer | ProwlarrIndexer | None:
@@ -357,45 +319,34 @@ class SearchScreen(Screen[None]):
         indexer = INDEXER_MAP[self.indexer.name]
         return indexer(url=self.indexer.url, api_key=self.indexer.api_key)
 
-    async def _resolve_magnet_uri_or_torrent_info(
-        self, input_uri: str
-    ) -> str | lt.torrent_info | None:
+    async def _resolve_magnet_uri(self, input_uri: str) -> str | None:
         if input_uri.startswith("magnet:"):
             return input_uri
 
         try:
             async with httpx.AsyncClient(follow_redirects=False) as client:
                 resp = await client.get(input_uri)
-                if resp.status_code in (301, 302):
-                    return resp.headers.get("location")
 
-                content_type = resp.headers.get("content-type")
-                if "application/x-bittorrent" in content_type or input_uri.endswith(
-                    ".torrent"
-                ):
-                    with tempfile.NamedTemporaryFile(
-                        suffix=".torrent", delete=False
-                    ) as tmp_file:
-                        tmp_file.write(resp.content)
-                        tmp_path = tmp_file.name
+            if resp.status_code in (301, 302):
+                return resp.headers.get("location")
 
-                    try:
-                        return lt.torrent_info(tmp_path)
-                    finally:
-                        # cleanup the tmp torrent file
-                        os.remove(tmp_path)
-                return None
+            content_type = resp.headers.get("content-type")
+            if "application/x-bittorrent" in content_type or input_uri.endswith(
+                ".torrent"
+            ):
+                with tempfile.NamedTemporaryFile(
+                    suffix=".torrent", delete=False
+                ) as tmp_file:
+                    tmp_file.write(resp.content)
+                    tmp_path = tmp_file.name
+
+                try:
+                    torrent_info = lt.torrent_info(tmp_path)
+                    return lt.make_magnet_uri(torrent_info)
+                finally:
+                    os.remove(tmp_path)
+            return None
 
         except Exception as e:
             self.log.error(f"an unexpected error occurred: {e}")
             return None
-
-    def _open_magnet_uri(self, magnet_uri: str) -> None:
-        args = []
-        if platform.system() == "Darwin":  # macOS
-            args = ["open", magnet_uri]
-        elif platform.system() == "Windows":  # Windows
-            args = ["start", '""', magnet_uri]
-        else:  # linux variants
-            args = ["xdg-open", magnet_uri]
-        subprocess.Popen(args, stdin=None, stdout=None, stderr=None)
