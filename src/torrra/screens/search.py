@@ -275,7 +275,6 @@ class SearchScreen(Screen[None]):
     async def _download_torrent(
         self, magnet_or_torrent_info: str | lt.torrent_info
     ) -> None:
-
         self.query_one("#progressbar-and-actions", Horizontal).remove_class("hidden")
 
         self.lt_session = lt.session()
