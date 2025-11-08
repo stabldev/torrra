@@ -1,5 +1,7 @@
+import threading
 import time
 import webbrowser
+from contextlib import suppress
 from typing import TYPE_CHECKING, Any, ClassVar, cast, override
 
 from textual import on, work
@@ -60,6 +62,9 @@ class SearchScreen(Screen[None]):
         self._lt_session: lt.session | None = None
         self._lt_handle: lt.torrent_handle | None = None
         self._lt_paused: bool = False
+
+        # application states
+        self._stop_event: threading.Event = threading.Event()
 
         # ui refs (cached later)
         self._search_input: Input
@@ -129,8 +134,12 @@ class SearchScreen(Screen[None]):
         self.post_message(Input.Submitted(self._search_input, self.search_query))
 
     def on_unmount(self) -> None:
+        self._stop_event.set()
+
+        # clean libtorrent session
         if self._lt_session and self._lt_handle:
-            self._lt_session.remove_torrent(self._lt_handle)
+            with suppress(Exception):
+                self._lt_session.remove_torrent(self._lt_handle)
 
         # RAII cleanup
         self._lt_session = None
@@ -276,7 +285,10 @@ class SearchScreen(Screen[None]):
         }
 
         self._lt_handle = lt.add_magnet_uri(self._lt_session, magnet_uri, params)
+
         while not self._lt_handle.has_metadata():
+            if self._stop_event.is_set():
+                return
             time.sleep(0.5)
 
         torrent_info = self._lt_handle.get_torrent_info()
@@ -293,6 +305,9 @@ class SearchScreen(Screen[None]):
         self._download_progressbar_and_actions.remove_class("hidden")
         # downloading loop
         while not self._lt_handle.is_seed():
+            if self._stop_event.is_set():
+                return
+
             s = self._lt_handle.status()
             msg = (
                 download_status_str.format(
@@ -307,7 +322,7 @@ class SearchScreen(Screen[None]):
             time.sleep(1)
 
         # seeding loop
-        while True:
+        while not self._stop_event.is_set():
             s = self._lt_handle.status()
             msg = (
                 download_status_str.format(
@@ -319,7 +334,7 @@ class SearchScreen(Screen[None]):
             )
 
             self._update_download_status(msg, 100)
-            time.sleep(5)
+            time.sleep(1)
 
     # --------------------------------------------------
     # DOWNLOAD STATUS UPDATES
