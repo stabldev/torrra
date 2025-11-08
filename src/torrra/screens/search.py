@@ -355,7 +355,7 @@ class SearchScreen(Screen[None]):
             return self._indexer_instance_cache
 
         name = self.indexer.name
-        indexer_cls_str = f"torrra.indexers.{name.title()}.{name.title()}Indexer"
+        indexer_cls_str = f"torrra.indexers.{name}.{name.title()}Indexer"
 
         indexer_cls = lazy_import(indexer_cls_str)
         assert issubclass(indexer_cls, BaseIndexer)
