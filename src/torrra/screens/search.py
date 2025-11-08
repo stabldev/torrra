@@ -61,9 +61,9 @@ class SearchScreen(Screen[None]):
         # libtorrent state
         self._lt_session: lt.session | None = None
         self._lt_handle: lt.torrent_handle | None = None
-        self._lt_paused: bool = False
 
         # application states
+        self._pause_event: threading.Event = threading.Event()
         self._stop_event: threading.Event = threading.Event()
 
         # ui refs (cached later)
@@ -168,21 +168,21 @@ class SearchScreen(Screen[None]):
         if (
             not self._download_container.has_focus
             or not self._lt_handle
-            or self._lt_paused
+            or self._pause_event.is_set()
         ):
             return
         self._lt_handle.pause()
-        self._lt_paused = True
+        self._pause_event.set()
 
     def key_r(self) -> None:
         if (
             not self._download_container.has_focus
             or not self._lt_handle
-            or not self._lt_paused
+            or not self._pause_event.is_set()
         ):
             return
         self._lt_handle.resume()
-        self._lt_paused = False
+        self._pause_event.clear()
 
     # --------------------------------------------------
     # SEARCH LOGIC
@@ -311,7 +311,7 @@ class SearchScreen(Screen[None]):
             s = self._lt_handle.status()
             msg = (
                 download_status_str.format(
-                    status="Paused" if self._lt_paused else "Download",
+                    status="Paused" if self._pause_event.is_set() else "Download",
                     seeds=s.num_seeds,
                     peers=s.num_peers,
                 )
@@ -326,7 +326,7 @@ class SearchScreen(Screen[None]):
             s = self._lt_handle.status()
             msg = (
                 download_status_str.format(
-                    status="Paused" if self._lt_paused else "Seed",
+                    status="Paused" if self._pause_event.is_set() else "Seed",
                     seeds=s.num_seeds,
                     peers=s.num_peers,
                 )
