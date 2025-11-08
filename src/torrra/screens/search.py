@@ -1,11 +1,7 @@
-import os
-import tempfile
 import time
 import webbrowser
-from contextlib import suppress
 from typing import Any, ClassVar, cast, override
 
-import httpx
 import libtorrent as lt
 from textual import on, work
 from textual.app import ComposeResult
@@ -21,6 +17,7 @@ from torrra.core.context import config
 from torrra.indexers.utils import get_indexer
 from torrra.utils.fs import get_resource_path
 from torrra.utils.helpers import human_readable_size
+from torrra.utils.magnet import resolve_magnet_uri
 
 
 class SearchScreen(Screen[None]):
@@ -234,7 +231,7 @@ class SearchScreen(Screen[None]):
         self._table.disabled = True
         self._update_download_status("[b $success]Fetching Metadata...[/]")
 
-        resolved = await self._resolve_magnet_uri(magnet_uri)
+        resolved = await resolve_magnet_uri(magnet_uri)
         self._handle_magnet_uri(resolved)
 
     def _handle_magnet_uri(self, magnet_uri: str | None) -> None:
@@ -325,39 +322,3 @@ class SearchScreen(Screen[None]):
     def on_download_status(self, message: DownloadStatus) -> None:
         self._download_status_label.update(message.status)
         self._download_progressbar.update(progress=message.progress)
-
-    # --------------------------------------------------
-    # HELPERS
-    # --------------------------------------------------
-    async def _resolve_magnet_uri(self, input_uri: str) -> str | None:
-        if input_uri.startswith("magnet:"):
-            return input_uri
-
-        try:
-            async with httpx.AsyncClient(follow_redirects=False) as client:
-                resp = await client.get(input_uri)
-
-            if resp.status_code in (301, 302):
-                return resp.headers.get("location")
-
-            content_type = resp.headers.get("content-type")
-            if "application/x-bittorrent" in content_type or input_uri.endswith(
-                ".torrent"
-            ):
-                with tempfile.NamedTemporaryFile(
-                    suffix=".torrent", delete=False
-                ) as tmp_file:
-                    tmp_file.write(resp.content)
-                    tmp_path = tmp_file.name
-
-                try:
-                    torrent_info = lt.torrent_info(tmp_path)
-                    return lt.make_magnet_uri(torrent_info)
-                finally:
-                    with suppress(Exception):
-                        os.remove(tmp_path)
-            return None
-
-        except Exception as e:
-            self.log.error(f"an unexpected error occurred: {e}")
-            return None
