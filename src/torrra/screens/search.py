@@ -1,8 +1,7 @@
 import time
 import webbrowser
-from typing import Any, ClassVar, cast, override
+from typing import TYPE_CHECKING, Any, ClassVar, cast, override
 
-import libtorrent as lt
 from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Container, Horizontal, Vertical
@@ -18,6 +17,9 @@ from torrra.indexers.utils import get_indexer
 from torrra.utils.fs import get_resource_path
 from torrra.utils.helpers import human_readable_size
 from torrra.utils.magnet import resolve_magnet_uri
+
+if TYPE_CHECKING:
+    import libtorrent as lt
 
 
 class SearchScreen(Screen[None]):
@@ -59,8 +61,9 @@ class SearchScreen(Screen[None]):
         self._loader: Vertical
         self._loader_status: Static
         self._download_container: Container
-        self._download_progressbar: ProgressBar
         self._download_status_label: Static
+        self._download_progressbar: ProgressBar
+        self._download_progressbar_and_actions: Horizontal
 
     # --------------------------------------------------
     # COMPOSE
@@ -68,30 +71,18 @@ class SearchScreen(Screen[None]):
     @override
     def compose(self) -> ComposeResult:
         with Vertical():
-            # search input
-            search_input = Input(
-                placeholder="Search...", id="search", value=self.search_query
-            )
-            search_input.border_title = "[$secondary]s[/]earch"
-            yield search_input
-            # loading indicator
+            yield Input(placeholder="Search...", id="search", value=self.search_query)
             with Vertical(id="loader"):
                 yield Static(id="status")
                 yield LoadingIndicator(id="indicator")
-            # results data-table
-            results_dt: DataTable[str] = DataTable(
+            yield DataTable(
                 id="results_table",
                 cursor_type="row",
                 show_cursor=True,
                 cell_padding=2,
                 classes="hidden",
             )
-            results_dt.border_title = "[$secondary]r[/]esults"
-            yield results_dt
-            # downloads container
-            with Container(id="downloads_container") as c:
-                c.border_title = "[$secondary]d[/]ownloads"
-                c.can_focus = True
+            with Container(id="downloads_container"):
                 yield Static("No active downloads", id="status")
                 with Horizontal(id="progressbar-and-actions", classes="hidden"):
                     yield ProgressBar(total=100, id="progressbar")
@@ -105,15 +96,24 @@ class SearchScreen(Screen[None]):
     # --------------------------------------------------
     def on_mount(self) -> None:
         self._search_input = self.query_one("#search", Input)
+        self._search_input.border_title = "[$secondary]s[/]earch"
+
         self._table = self.query_one("#results_table", DataTable)
+        self._table.border_title = "[$secondary]r[/]esults"
+
         self._download_container = self.query_one("#downloads_container", Container)
+        self._download_container.border_title = "[$secondary]d[/]ownloads"
+        self._download_container.can_focus = True
+
         self._loader = self.query_one("#loader", Vertical)
         self._loader_status = self.query_one("#loader #status", Static)
-        self._download_progressbar = self.query_one("#progressbar", ProgressBar)
         self._download_status_label = self._download_container.query_one(
             "#status", Static
         )
-
+        self._download_progressbar = self.query_one("#progressbar", ProgressBar)
+        self._download_progressbar_and_actions = self.query_one(
+            "#progressbar-and-actions", Horizontal
+        )
         # setup table
         for label, key, width in self.COLS:
             self._table.add_column(label, width=width, key=key)
@@ -140,7 +140,6 @@ class SearchScreen(Screen[None]):
             - total_cell_padding
             - border_and_padding
         )
-
         # make title column expand
         self._table.columns[ColumnKey("title_col")].width = title_col_width
 
@@ -257,7 +256,7 @@ class SearchScreen(Screen[None]):
     # --------------------------------------------------
     @work(exclusive=True, thread=True)
     def _download_in_libtorrent(self, magnet_uri: str) -> None:
-        self.query_one("#progressbar-and-actions", Horizontal).remove_class("hidden")
+        import libtorrent as lt
 
         self._lt_session = lt.session()
         self._lt_session.listen_on(6881, 6891)
@@ -275,18 +274,19 @@ class SearchScreen(Screen[None]):
         title = torrent_info.name()
         total_size = human_readable_size(torrent_info.total_size())
 
-        status_template = (
+        download_status_str = (
             f"[b $secondary]Title: [$primary]{title}[/$primary] - "
             "Mode: [$success]{status}[/$success] - "
             "Seeds: {seeds} - "
             "Peers: {peers} - "
         )
 
+        self._download_progressbar_and_actions.remove_class("hidden")
         # downloading loop
         while not self._lt_handle.is_seed():
             s = self._lt_handle.status()
             msg = (
-                status_template.format(
+                download_status_str.format(
                     status="Paused" if self._lt_paused else "Download",
                     seeds=s.num_seeds,
                     peers=s.num_peers,
@@ -301,7 +301,7 @@ class SearchScreen(Screen[None]):
         while True:
             s = self._lt_handle.status()
             msg = (
-                status_template.format(
+                download_status_str.format(
                     status="Paused" if self._lt_paused else "Seed",
                     seeds=s.num_seeds,
                     peers=s.num_peers,
