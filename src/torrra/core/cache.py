@@ -3,7 +3,7 @@ import hashlib
 from typing import Any, cast
 
 # no official stubs for diskcache
-from diskcache import Cache  # pyright: ignore[reportMissingTypeStubs]
+from diskcache import Cache
 from platformdirs import user_cache_dir
 
 from torrra.core.constants import CACHE_TTL
@@ -23,7 +23,7 @@ def get_cache(key: str) -> Any:
 
 
 def set_cache(key: str, value: Any, expire: int = CACHE_TTL) -> None:
-    cache.set(key, value, expire=expire)  # pyright: ignore[reportUnknownMemberType]
+    cache.set(key, value, expire=expire)
 
 
 def delete_cache(key: str) -> None:
