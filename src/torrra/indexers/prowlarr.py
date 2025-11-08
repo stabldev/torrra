@@ -3,7 +3,7 @@ from typing import Any, cast
 import httpx
 
 from torrra._types import Torrent, TorrentDict
-from torrra.core.cache import get_cache, has_cache, make_cache_key, set_cache
+from torrra.core.cache import cache
 from torrra.core.exceptions import ProwlarrConnectionError
 
 
@@ -14,10 +14,10 @@ class ProwlarrIndexer:
         self.timeout: int = timeout
 
     async def search(self, query: str, use_cache: bool = True) -> list[Torrent]:
-        key = make_cache_key("prowlarr", query)
+        key = cache.make_key("prowlarr", query)
 
-        if use_cache and has_cache(key):
-            raw_data = cast(list[TorrentDict], get_cache(key))
+        if use_cache and key in cache:
+            raw_data = cast(list[TorrentDict], cache.get(key))
             return [Torrent.from_dict(d) for d in raw_data]
 
         endpoint = f"{self.url}/api/v1/search"
@@ -29,7 +29,7 @@ class ProwlarrIndexer:
             torrents = [self._normalize_result(r) for r in resp.json()]
 
         if use_cache:
-            set_cache(key, [t.to_dict() for t in torrents])
+            cache.set(key, [t.to_dict() for t in torrents])
 
         return torrents
 

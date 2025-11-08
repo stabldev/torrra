@@ -13,7 +13,7 @@ from textual.widgets import DataTable, Input, LoadingIndicator, ProgressBar, Sta
 from textual.widgets.data_table import ColumnKey
 
 from torrra._types import Indexer, Torrent
-from torrra.core.context import config
+from torrra.core.config import config
 from torrra.indexers.utils import get_indexer
 from torrra.utils.fs import get_resource_path
 from torrra.utils.helpers import human_readable_size
