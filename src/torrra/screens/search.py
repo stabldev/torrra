@@ -13,9 +13,9 @@ from textual.widgets.data_table import ColumnKey
 
 from torrra._types import Indexer, Torrent
 from torrra.core.config import config
-from torrra.indexers.utils import get_indexer
+from torrra.indexers.base import BaseIndexer
 from torrra.utils.fs import get_resource_path
-from torrra.utils.helpers import human_readable_size
+from torrra.utils.helpers import human_readable_size, lazy_import
 from torrra.utils.magnet import resolve_magnet_uri
 
 if TYPE_CHECKING:
@@ -24,6 +24,7 @@ if TYPE_CHECKING:
 
 class SearchScreen(Screen[None]):
     CSS_PATH: ClassVar[CSSPathType | None] = get_resource_path("screens/search.css")
+
     # layout constants
     COLS: list[tuple[str, str, int]] = [
         ("No.", "no_col", 3),
@@ -33,6 +34,9 @@ class SearchScreen(Screen[None]):
         ("Leech", "leechers_col", 5),
         ("Source", "source_col", 6),
     ]
+
+    # class-level caches
+    _indexer_instance_cache: BaseIndexer | None = None
 
     class SearchResults(Message):
         def __init__(self, results: list[Torrent], query: str) -> None:
@@ -46,15 +50,17 @@ class SearchScreen(Screen[None]):
             self.progress: float = progress
             super().__init__()
 
-    def __init__(self, indexer: Indexer | None, query: str):
+    def __init__(self, indexer: Indexer, query: str):
         super().__init__()
-        self.indexer: Indexer | None = indexer
+        self.indexer: Indexer = indexer
         self.search_query: str = query
         self.use_cache: bool = True  # TODO: read from config
+
         # libtorrent state
         self._lt_session: lt.session | None = None
         self._lt_handle: lt.torrent_handle | None = None
         self._lt_paused: bool = False
+
         # ui refs (cached later)
         self._search_input: Input
         self._table: DataTable[str]
@@ -114,16 +120,19 @@ class SearchScreen(Screen[None]):
         self._download_progressbar_and_actions = self.query_one(
             "#progressbar-and-actions", Horizontal
         )
+
         # setup table
         for label, key, width in self.COLS:
             self._table.add_column(label, width=width, key=key)
+
         # send initial search
         self.post_message(Input.Submitted(self._search_input, self.search_query))
 
     def on_unmount(self) -> None:
-        # clean libtorrent session
         if self._lt_session and self._lt_handle:
-            self._lt_session.remove_torrent(self._lt_handle, lt.options_t.delete_files)
+            self._lt_session.remove_torrent(self._lt_handle)
+
+        # RAII cleanup
         self._lt_session = None
 
     # --------------------------------------------------
@@ -131,7 +140,6 @@ class SearchScreen(Screen[None]):
     # --------------------------------------------------
     def on_resize(self) -> None:
         total_cell_padding = self._table.cell_padding * 2 * len(self._table.columns)
-        # space taken for border and padding
         border_and_padding = 4
         cols_total_width_without_title = sum(w for t, _, w in self.COLS if t != "Title")
         title_col_width = (
@@ -140,6 +148,7 @@ class SearchScreen(Screen[None]):
             - total_cell_padding
             - border_and_padding
         )
+
         # make title column expand
         self._table.columns[ColumnKey("title_col")].width = title_col_width
 
@@ -184,7 +193,7 @@ class SearchScreen(Screen[None]):
 
     @work(exclusive=True)
     async def _perform_search(self, query: str) -> None:
-        indexer = get_indexer()
+        indexer = self._get_indexer_instance()
         results = []
 
         if indexer:
@@ -322,3 +331,22 @@ class SearchScreen(Screen[None]):
     def on_download_status(self, message: DownloadStatus) -> None:
         self._download_status_label.update(message.status)
         self._download_progressbar.update(progress=message.progress)
+
+    # --------------------------------------------------
+    # HELPERS
+    # --------------------------------------------------
+    def _get_indexer_instance(self) -> BaseIndexer:
+        if self._indexer_instance_cache:
+            return self._indexer_instance_cache
+
+        name = self.indexer.name
+        indexer_cls_str = f"torrra.indexers.{name.title()}.{name.title()}Indexer"
+
+        indexer_cls = lazy_import(indexer_cls_str)
+        assert issubclass(indexer_cls, BaseIndexer)
+        indexer_instance = indexer_cls(
+            url=self.indexer.url, api_key=self.indexer.api_key
+        )
+
+        self._indexer_instance_cache = indexer_instance
+        return indexer_instance

@@ -21,9 +21,9 @@ BANNER = """
 class WelcomeScreen(Screen[str]):
     CSS_PATH: ClassVar[CSSPathType | None] = get_resource_path("screens/welcome.css")
 
-    def __init__(self, provider: Indexer | None) -> None:
+    def __init__(self, indexer: Indexer) -> None:
         super().__init__()
-        self.provider: Indexer | None = provider
+        self.indexer: Indexer = indexer
 
     @override
     def compose(self) -> ComposeResult:
@@ -39,8 +39,10 @@ class WelcomeScreen(Screen[str]):
                 id="subtitle",
             )
             yield Input(placeholder="Search...", id="search")
-            provider_name = f" - {self.provider.name}" if self.provider else ""
-            yield Static(f"v{__version__}{provider_name}", id="version")
+            yield Static(
+                f"v{__version__}{f' - {self.indexer.name}' if self.indexer else ''}",
+                id="version",
+            )
             with Container(id="commands_container"):
                 with Grid(id="commands_grid"):
                     yield Static("[commands]", id="title", markup=False)

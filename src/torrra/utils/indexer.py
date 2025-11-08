@@ -6,6 +6,7 @@ import click
 from torrra._types import Indexer, IndexerName
 from torrra.core.config import config
 from torrra.core.exceptions import ConfigError
+from torrra.indexers.base import BaseIndexer
 from torrra.utils.helpers import lazy_import
 
 
@@ -45,14 +46,15 @@ def handle_indexer_command(
     assert url is not None and api_key is not None
 
     # async indexer validation
-    async def validate_indexer():
+    async def healthcheck_indexer():
         try:
-            return await indexer_cls(url, api_key).validate()
+            assert issubclass(indexer_cls, BaseIndexer)
+            return await indexer_cls(url, api_key).healthcheck()
         except connection_error_cls as e:
             click.secho(str(e), fg="red", err=True)
             return False
 
-    if not asyncio.run(validate_indexer()):
+    if not asyncio.run(healthcheck_indexer()):
         return
 
     # update/store indexers configuration
@@ -62,8 +64,8 @@ def handle_indexer_command(
     # load app only when needed (heavy stuff)
     from torrra.app import TorrraApp
 
-    provider = Indexer(name, url, api_key)
-    app = TorrraApp(provider, use_cache=not no_cache)
+    indexer = Indexer(name, url, api_key)
+    app = TorrraApp(indexer, use_cache=not no_cache)
     app.run()
 
 

@@ -21,19 +21,19 @@ class TorrraApp(App[None]):
         ("escape", "clear_focus", "Clear focus"),
     ]
 
-    def __init__(self, provider: Indexer | None, use_cache: bool) -> None:
+    def __init__(self, indexer: Indexer, use_cache: bool) -> None:
         super().__init__()
-        self.provider: Indexer | None = provider
+        self.indexer: Indexer = indexer
         self.use_cache: bool = use_cache
 
     @work
     async def on_mount(self) -> None:
         self.theme = "gruvbox"
 
-        if query := await self.push_screen_wait(WelcomeScreen(provider=self.provider)):
+        if query := await self.push_screen_wait(WelcomeScreen(indexer=self.indexer)):
             from torrra.screens.search import SearchScreen
 
-            search_screen = SearchScreen(indexer=self.provider, query=query)
+            search_screen = SearchScreen(indexer=self.indexer, query=query)
             await self.push_screen(search_screen)
 
     def action_clear_focus(self) -> None:

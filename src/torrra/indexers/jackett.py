@@ -1,18 +1,15 @@
-from typing import Any, cast
+from typing import Any, cast, override
 
 import httpx
 
 from torrra._types import Torrent, TorrentDict
 from torrra.core.cache import cache
 from torrra.core.exceptions import JackettConnectionError
+from torrra.indexers.base import BaseIndexer
 
 
-class JackettIndexer:
-    def __init__(self, url: str, api_key: str, timeout: int = 10):
-        self.url: str = url.rstrip("/")
-        self.api_key: str = api_key
-        self.timeout: int = timeout
-
+class JackettIndexer(BaseIndexer):
+    @override
     async def search(self, query: str, use_cache: bool = True) -> list[Torrent]:
         key = cache.make_key("jackett", query)
 
@@ -34,7 +31,8 @@ class JackettIndexer:
 
         return torrents
 
-    async def validate(self) -> bool:
+    @override
+    async def healthcheck(self) -> bool:
         url = f"{self.url}/api/v2.0/indexers/nonexistent_indexer/results"
         params = {"apikey": self.api_key}
 
@@ -66,6 +64,7 @@ class JackettIndexer:
                         + "unexpected response from jackett server. please verify your setup"
                     )
 
+    @override
     def _normalize_result(self, r: dict[str, Any]) -> Torrent:
         return Torrent(
             title=r.get("Title", "unknown"),

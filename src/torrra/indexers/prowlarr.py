@@ -1,18 +1,15 @@
-from typing import Any, cast
+from typing import Any, cast, override
 
 import httpx
 
 from torrra._types import Torrent, TorrentDict
 from torrra.core.cache import cache
 from torrra.core.exceptions import ProwlarrConnectionError
+from torrra.indexers.base import BaseIndexer
 
 
-class ProwlarrIndexer:
-    def __init__(self, url: str, api_key: str, timeout: int = 10):
-        self.url: str = url.rstrip("/")
-        self.api_key: str = api_key
-        self.timeout: int = timeout
-
+class ProwlarrIndexer(BaseIndexer):
+    @override
     async def search(self, query: str, use_cache: bool = True) -> list[Torrent]:
         key = cache.make_key("prowlarr", query)
 
@@ -33,7 +30,8 @@ class ProwlarrIndexer:
 
         return torrents
 
-    async def validate(self) -> bool:
+    @override
+    async def healthcheck(self) -> bool:
         url = f"{self.url}/api/v1/health"
         params = {"apikey": self.api_key}
 
@@ -63,6 +61,7 @@ class ProwlarrIndexer:
                         + "unexpected response from prowlarr server. please verify your setup"
                     )
 
+    @override
     def _normalize_result(self, r: dict[str, Any]) -> Torrent:
         return Torrent(
             title=r.get("title", "unknown"),
