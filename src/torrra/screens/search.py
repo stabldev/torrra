@@ -52,11 +52,11 @@ class SearchScreen(Screen[None]):
             self.progress: float = progress
             super().__init__()
 
-    def __init__(self, indexer: Indexer, query: str):
+    def __init__(self, indexer: Indexer, query: str, use_cache: bool):
         super().__init__()
         self.indexer: Indexer = indexer
         self.search_query: str = query
-        self.use_cache: bool = True  # TODO: read from config
+        self.use_cache: bool = use_cache
 
         # libtorrent state
         self._lt_session: lt.session | None = None
@@ -256,7 +256,7 @@ class SearchScreen(Screen[None]):
             self._update_download_status("[$error]Invalid magnet URI[/]")
             return
 
-        if config.get("general.download_in_external_client").lower() == "true":
+        if config.get("general.download_in_external_client"):
             self._download_in_external_client(magnet_uri)
         else:
             self._download_in_libtorrent(magnet_uri)

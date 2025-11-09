@@ -84,7 +84,7 @@ class Config:
             with open(CONFIG_FILE, "rb") as f:
                 self.config = tomllib.load(f)
         except Exception as e:
-            print(f"loading config: {e}")
+            print(f"loading config failed: {e}")
 
     def _create_default_config(self) -> None:
         self.config = {
@@ -93,6 +93,7 @@ class Config:
                 "remember_last_path": True,
                 "download_in_external_client": False,
                 "theme": "textual-dark",
+                "use_cache": True,
             }
         }
 

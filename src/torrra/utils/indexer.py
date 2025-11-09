@@ -65,8 +65,13 @@ def handle_indexer_command(
     from torrra.app import TorrraApp
 
     try:
+        # determine cache settings with CLI override
+        use_cache = config.get("general.use_cache", True)
+        if no_cache:  # --no-cache flag overrides config
+            use_cache = False
+
         indexer = Indexer(name, url, api_key)
-        app = TorrraApp(indexer, use_cache=not no_cache)
+        app = TorrraApp(indexer, use_cache=use_cache)
         app.run()
     except RuntimeError as e:
         click.secho(str(e), fg="red", err=True)
