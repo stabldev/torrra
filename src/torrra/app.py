@@ -42,8 +42,11 @@ class TorrraApp(App[None]):
         if query := await self.push_screen_wait(WelcomeScreen(indexer=self.indexer)):
             from torrra.screens.search import SearchScreen
 
-            search_screen = SearchScreen(indexer=self.indexer, query=query)
-            await self.push_screen(search_screen)
+            await self.push_screen(
+                SearchScreen(
+                    indexer=self.indexer, query=query, use_cache=self.use_cache
+                )
+            )
 
     def action_clear_focus(self) -> None:
         self.set_focus(None)
