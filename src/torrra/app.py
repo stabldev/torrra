@@ -27,8 +27,15 @@ class TorrraApp(App[None]):
         self.indexer: Indexer = indexer
         self.use_cache: bool = use_cache
 
-        # load theme from config file (with fallback)
-        self.theme = config.get("general.theme", "textual-dark")
+        # load theme from config file
+        theme = config.get("general.theme", "textual-dark")
+        if theme not in self.available_themes:
+            error_message = (
+                f"invalid theme '{theme}' configured.\n"
+                f"available themes: {', '.join(sorted(self.available_themes))}"
+            )
+            raise RuntimeError(error_message)
+        self.theme = theme
 
     @work
     async def on_mount(self) -> None:
