@@ -64,9 +64,12 @@ def handle_indexer_command(
     # load app only when needed (heavy stuff)
     from torrra.app import TorrraApp
 
-    indexer = Indexer(name, url, api_key)
-    app = TorrraApp(indexer, use_cache=not no_cache)
-    app.run()
+    try:
+        indexer = Indexer(name, url, api_key)
+        app = TorrraApp(indexer, use_cache=not no_cache)
+        app.run()
+    except RuntimeError as e:
+        click.secho(str(e), fg="red", err=True)
 
 
 def auto_detect_indexer_and_run(no_cache: bool) -> None:

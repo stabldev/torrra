@@ -18,7 +18,7 @@ class Config:
         self.config: dict[str, Any] = {}
         self._load_config()
 
-    def get(self, key_path: str) -> str:
+    def get(self, key_path: str, default: Any | None = None) -> Any:
         keys = key_path.split(".")
         current = self.config
 
@@ -33,6 +33,9 @@ class Config:
             return current
 
         except (KeyError, TypeError):
+            if default is not None:
+                return default
+
             if len(keys) > 1:
                 raise ConfigError(f"key does not contain a section: {key_path}")
             raise ConfigError(f"key not found: {key_path}")
@@ -89,6 +92,7 @@ class Config:
                 "download_path": user_downloads_dir(),
                 "remember_last_path": True,
                 "download_in_external_client": False,
+                "theme": "textual-dark",
             }
         }
 
