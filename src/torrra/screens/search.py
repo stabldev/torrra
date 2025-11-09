@@ -256,7 +256,7 @@ class SearchScreen(Screen[None]):
             self._update_download_status("[$error]Invalid magnet URI[/]")
             return
 
-        if config.get("general.download_in_external_client").lower() == "true":
+        if config.get("general.download_in_external_client"):
             self._download_in_external_client(magnet_uri)
         else:
             self._download_in_libtorrent(magnet_uri)
