@@ -93,6 +93,7 @@ class Config:
                 "remember_last_path": True,
                 "download_in_external_client": False,
                 "theme": "textual-dark",
+                "use_cache": True,
             }
         }
 
