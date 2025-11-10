@@ -325,7 +325,7 @@ class SearchScreen(Screen[None]):
         seed_ratio = config.get("general.seed_ratio")
         while not self._stop_event.is_set():
             s = self._lt_handle.status()
-            
+
             # check if seed ratio is reached
             if seed_ratio is not None:
                 # calculate current ratio: uploaded / downloaded
@@ -334,11 +334,11 @@ class SearchScreen(Screen[None]):
                     if current_ratio >= seed_ratio:
                         self._update_download_status(
                             f"[b $success]Seeding complete! Reached target ratio of {seed_ratio:.2f}[/]",
-                            100
+                            100,
                         )
                         time.sleep(2)  # show message for 2 seconds
                         break
-            
+
             msg = (
                 download_status_str.format(
                     status="Paused" if self._pause_event.is_set() else "Seed",
