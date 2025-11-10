@@ -94,7 +94,6 @@ class SearchScreen(Screen[None]):
                 show_cursor=True,
                 cell_padding=2,
                 classes="hidden",
-                expand_col="title_col",
             )
             with Container(id="downloads_container"):
                 yield Static("No active downloads", id="status")
@@ -113,6 +112,7 @@ class SearchScreen(Screen[None]):
         self._search_input.border_title = "[$secondary]s[/]earch"
 
         self._table = self.query_one("#results_table", AutoResizingDataTable)
+        self._table.expand_col = "title_col"
         self._table.border_title = "[$secondary]r[/]esults"
 
         self._download_container = self.query_one("#downloads_container", Container)

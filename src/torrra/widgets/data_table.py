@@ -1,5 +1,6 @@
-from typing import Any, TypeVar
+from typing import TypeVar
 
+from textual.reactive import reactive
 from textual.widgets import DataTable
 from textual.widgets.data_table import ColumnKey
 
@@ -7,16 +8,14 @@ T = TypeVar("T")
 
 
 class AutoResizingDataTable(DataTable[T]):
-    def __init__(self, *args: Any, expand_col: str, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-        self.expand_col: str = expand_col
+    expand_col: reactive[str | None] = reactive(None)
 
     def on_resize(self) -> None:
         self._resize_columns()
         self.refresh()
 
     def _resize_columns(self) -> None:
-        if not self.columns:
+        if not self.columns or not self.expand_col:
             return
 
         # TODO: This is a bit of a hack. The 4 accounts for border and padding.
