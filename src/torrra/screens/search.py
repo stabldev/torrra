@@ -38,6 +38,9 @@ class SearchScreen(Screen[None]):
         ("Source", "source_col", 6),
     ]
 
+    METADATA_INTERVAL: ClassVar[float] = 0.5
+    DOWNLOAD_SEED_INTERVAL: ClassVar[float] = 1.0
+
     # class-level caches
     _indexer_instance_cache: BaseIndexer | None = None
 
@@ -281,7 +284,7 @@ class SearchScreen(Screen[None]):
         while not self._lt_handle.has_metadata():
             if self._stop_event.is_set():
                 return
-            time.sleep(0.5)
+            time.sleep(self.METADATA_INTERVAL)
 
         torrent_info = self._lt_handle.get_torrent_info()
         title = torrent_info.name()
@@ -311,7 +314,7 @@ class SearchScreen(Screen[None]):
             )
 
             self._update_download_status(msg, s.progress * 100)
-            time.sleep(1)
+            time.sleep(self.DOWNLOAD_SEED_INTERVAL)
 
         # seeding loop
         seed_ratio = config.get("general.seed_ratio", None)
@@ -331,7 +334,7 @@ class SearchScreen(Screen[None]):
                         f"[b $success]Seeding complete! Reached target ratio of {seed_ratio:.2f}[/]",
                         100,
                     )
-                    time.sleep(1)  # keep thread for 1s for proper ui update
+                    time.sleep(self.DOWNLOAD_SEED_INTERVAL)
                     break
 
             msg = (
@@ -344,7 +347,7 @@ class SearchScreen(Screen[None]):
             )
 
             self._update_download_status(msg, 100)
-            time.sleep(1)
+            time.sleep(self.DOWNLOAD_SEED_INTERVAL)
 
     # --------------------------------------------------
     # DOWNLOAD STATUS UPDATES
