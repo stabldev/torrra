@@ -37,13 +37,35 @@ Then use the arrow keys to navigate, `Enter` to download, `p` to pause, `r` to r
 
 [See full CLI & TUI guide →](https://torrra.readthedocs.io/en/latest/usage.html)
 
+## Configuration
+
+For persistent settings, `torrra` uses a `config.toml` file where you can configure your indexers, download paths, and themes. This avoids the need to pass arguments on every run.
+
+For example, to set up Jackett as your default indexer:
+```bash
+# Set your Jackett URL and API key
+torrra config set indexers.jackett.url http://localhost:9117
+torrra config set indexers.jackett.api_key <your_api_key>
+
+# Set Jackett as the default indexer
+torrra config set indexers.default jackett
+```
+
+Now you can simply run `torrra` to start searching:
+```bash
+torrra
+```
+
+[Learn more about configuration →](https://torrra.readthedocs.io/en/latest/configuration.html)
+
 ## Features
 
 - Search with [`Jackett`](https://github.com/Jackett/Jackett) or [`Prowlarr`](https://github.com/Prowlarr/Prowlarr)
-- Download torrents with [`Libtorrent`](https://libtorrent.org)
-- Full-screen TUI with pause/resume
-- Smart config + opt-in caching
-- Native support for Linux/macOS/Windows
+- Download torrents directly with pause/resume support
+- Beautiful and responsive TUI built with [`Textual`](https://textual.textualize.io/)
+- Customizable themes (dark, light, and more)
+- Smart config + opt-in caching for fast searches
+- Native support for Linux, macOS, and Windows
 
 [Full feature list →](https://torrra.readthedocs.io/en/latest/#features)
 
