@@ -1,51 +1,51 @@
 WelcomeScreen {
-    align: center middle;
-    /* main container */
-    Container#welcome_container {
-        max-width: 50;
-        height: auto;
-        /* ascii banner text */
-        Static#banner {
-            text-align: center;
-        }
-        /* subtext/description */
-        Static#subtitle {
-            color: $text-secondary;
-            text-align: center;
-        }
-        /* current version */
-        Static#version {
-            color: $foreground-muted;
-            text-align: center;
-        }
-        /* command list container */
-        Container#commands_container {
-            margin-top: 1;
-            align-horizontal: center;
-            height: auto;
-            /* commands grid */
-            Grid#commands_grid {
-                width: 75%;
-                height: 3;
-                grid-size: 2;
-                grid-columns: 1fr auto;
-                /* command text */
-                Static {
-                    text-align: left;
-                    color: $foreground-muted;
-                    /* main center text/title */
-                    &#title {
-                        text-align: center;
-                        column-span: 2;
-                        color: $text-secondary;
-                    }
-                    /* highlight command key/shortcut */
-                    &.key {
-                        text-align: right;
-                        color: $text-secondary;
-                    }
-                }
-            }
-        }
+  align: center middle;
+  /* main container */
+  Container#welcome_container {
+    max-width: 50;
+    height: auto;
+    /* ascii banner text */
+    Static#banner {
+      text-align: center;
     }
+    /* subtext/description */
+    Static#subtitle {
+      color: $text-secondary;
+      text-align: center;
+    }
+    /* current version */
+    Static#version {
+      color: $foreground-muted;
+      text-align: center;
+    }
+    /* command list container */
+    Container#commands_container {
+      margin-top: 1;
+      align-horizontal: center;
+      height: auto;
+      /* commands grid */
+      Grid#commands_grid {
+        width: 75%;
+        height: 3;
+        grid-size: 2;
+        grid-columns: 1fr auto;
+        /* command text */
+        Static {
+          text-align: left;
+          color: $foreground-muted;
+          /* main center text/title */
+          &#title {
+            text-align: center;
+            column-span: 2;
+            color: $text-secondary;
+          }
+          /* highlight command key/shortcut */
+          &.key {
+            text-align: right;
+            color: $text-secondary;
+          }
+        }
+      }
+    }
+  }
 }
