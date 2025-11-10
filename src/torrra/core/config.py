@@ -1,5 +1,6 @@
 import ast
 import tomllib
+from contextlib import suppress
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -54,12 +55,18 @@ class Config:
                     )
                 current = current[key]
 
-            try:
-                value = ast.literal_eval(value)
-            except (ValueError, SyntaxError):
-                pass
+            new_value: Any = value
+            # handle case-insensitive "true"/"false" for booleans
+            if value.lower() == "true":
+                new_value = True
+            elif value.lower() == "false":
+                new_value = False
+            # handle other literals (int, float, etc.)
+            else:  # convert data type silently
+                with suppress(ValueError, SyntaxError):
+                    new_value = ast.literal_eval(value)
 
-            current[keys[-1]] = value
+            current[keys[-1]] = new_value
             self._save_config()
 
         except (KeyError, TypeError) as e:
@@ -94,6 +101,7 @@ class Config:
                 "download_in_external_client": False,
                 "theme": "textual-dark",
                 "use_cache": True,
+                "seed_ratio": None,
             }
         }
 

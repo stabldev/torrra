@@ -262,7 +262,7 @@ class SearchScreen(Screen[None]):
             self._download_in_libtorrent(magnet_uri)
 
     def _download_in_external_client(self, magnet_uri: str) -> None:
-        if webbrowser.open(magnet_uri):
+        if not webbrowser.open(magnet_uri):
             self._update_download_status("[$error]Failed to open magnet URI[/]")
         else:
             self._update_download_status(
@@ -322,15 +322,33 @@ class SearchScreen(Screen[None]):
             time.sleep(1)
 
         # seeding loop
+        seed_ratio = config.get("general.seed_ratio", None)
+        # ensure seed_ratio is a valid number, otherwise default to infinite seeding
+        if not isinstance(seed_ratio, (int, float)) or seed_ratio < 0:
+            seed_ratio = None
+
         while not self._stop_event.is_set():
             s = self._lt_handle.status()
+
+            # check if seed ratio is reached
+            if seed_ratio is not None and s.total_payload_download > 0:
+                # calculate current ratio: uploaded / downloaded
+                current_ratio = s.total_payload_upload / s.total_payload_download
+                if current_ratio >= seed_ratio:
+                    self._update_download_status(
+                        f"[b $success]Seeding complete! Reached target ratio of {seed_ratio:.2f}[/]",
+                        100,
+                    )
+                    time.sleep(1)  # keep thread for 1s for proper ui update
+                    break
+
             msg = (
                 download_status_str.format(
                     status="Paused" if self._pause_event.is_set() else "Seed",
                     seeds=s.num_seeds,
                     peers=s.num_peers,
                 )
-                + f"Uploaded: {human_readable_size(s.total_upload)}[/]"
+                + f"Uploaded: {human_readable_size(s.total_payload_upload)}[/]"
             )
 
             self._update_download_status(msg, 100)
