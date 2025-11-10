@@ -19,6 +19,7 @@ class TorrraApp(App[None]):
     CSS_PATH: ClassVar[CSSPathType | None] = get_resource_path("app.css")
     ENABLE_COMMAND_PALETTE: ClassVar[bool] = False
     BINDINGS: ClassVar[list[BindingType]] = [
+        ("q", "quit", "Quit"),
         ("escape", "clear_focus", "Clear focus"),
     ]
 

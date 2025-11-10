@@ -10,8 +10,7 @@ from textual.containers import Container, Horizontal, Vertical
 from textual.message import Message
 from textual.screen import Screen
 from textual.types import CSSPathType
-from textual.widgets import DataTable, Input, LoadingIndicator, ProgressBar, Static
-from textual.widgets.data_table import ColumnKey
+from textual.widgets import Input, ProgressBar, Static
 
 from torrra._types import Indexer, Torrent
 from torrra.core.config import config
@@ -19,6 +18,8 @@ from torrra.indexers.base import BaseIndexer
 from torrra.utils.fs import get_resource_path
 from torrra.utils.helpers import human_readable_size, lazy_import
 from torrra.utils.magnet import resolve_magnet_uri
+from torrra.widgets.data_table import AutoResizingDataTable
+from torrra.widgets.spinner import SpinnerWidget
 
 if TYPE_CHECKING:
     import libtorrent as lt
@@ -68,9 +69,10 @@ class SearchScreen(Screen[None]):
 
         # ui refs (cached later)
         self._search_input: Input
-        self._table: DataTable[str]
-        self._loader: Vertical
+        self._table: AutoResizingDataTable[str]
+        self._loader_container: Vertical
         self._loader_status: Static
+        self._loader_spinner: SpinnerWidget
         self._download_container: Container
         self._download_status_label: Static
         self._download_progressbar: ProgressBar
@@ -85,8 +87,8 @@ class SearchScreen(Screen[None]):
             yield Input(placeholder="Search...", id="search", value=self.search_query)
             with Vertical(id="loader"):
                 yield Static(id="status")
-                yield LoadingIndicator(id="indicator")
-            yield DataTable(
+                yield SpinnerWidget(name="shark", id="spinner")
+            yield AutoResizingDataTable(
                 id="results_table",
                 cursor_type="row",
                 show_cursor=True,
@@ -109,15 +111,17 @@ class SearchScreen(Screen[None]):
         self._search_input = self.query_one("#search", Input)
         self._search_input.border_title = "[$secondary]s[/]earch"
 
-        self._table = self.query_one("#results_table", DataTable)
+        self._table = self.query_one("#results_table", AutoResizingDataTable)
+        self._table.expand_col = "title_col"
         self._table.border_title = "[$secondary]r[/]esults"
 
         self._download_container = self.query_one("#downloads_container", Container)
         self._download_container.border_title = "[$secondary]d[/]ownloads"
         self._download_container.can_focus = True
 
-        self._loader = self.query_one("#loader", Vertical)
+        self._loader_container = self.query_one("#loader", Vertical)
         self._loader_status = self.query_one("#loader #status", Static)
+        self._loader_spinner = self.query_one("#spinner", SpinnerWidget)
         self._download_status_label = self._download_container.query_one(
             "#status", Static
         )
@@ -147,20 +151,6 @@ class SearchScreen(Screen[None]):
     # --------------------------------------------------
     # UI ADJUSTMENTS / SHORTCUTS
     # --------------------------------------------------
-    def on_resize(self) -> None:
-        total_cell_padding = self._table.cell_padding * 2 * len(self._table.columns)
-        border_and_padding = 4
-        cols_total_width_without_title = sum(w for t, _, w in self.COLS if t != "Title")
-        title_col_width = (
-            self.size.width
-            - cols_total_width_without_title
-            - total_cell_padding
-            - border_and_padding
-        )
-
-        # make title column expand
-        self._table.columns[ColumnKey("title_col")].width = title_col_width
-
     def key_s(self) -> None:
         self._search_input.focus()
 
@@ -195,8 +185,9 @@ class SearchScreen(Screen[None]):
 
         self._table.add_class("hidden")
         self._table.clear()
-        self._loader.remove_class("hidden")
-        self._loader_status.update(f'Searching for: "[b]{query}[/]"')
+        self._loader_container.remove_class("hidden")
+        self._loader_spinner.resume()
+        self._loader_status.update(f"Searching for [b]{query}[/b]...")
 
         self._perform_search(query)
 
@@ -215,10 +206,11 @@ class SearchScreen(Screen[None]):
     @on(SearchResults)
     def _show_search_results(self, message: SearchResults) -> None:
         if not message.results:
-            self._loader_status.update(f'Nothing found for "[b]{message.query}[/b]"')
+            self._loader_status.update(f"Nothing Found for [b]{message.query}[/b]")
+            self._loader_spinner.pause()
             return
 
-        self._loader.add_class("hidden")
+        self._loader_container.add_class("hidden")
         self._table.remove_class("hidden")
         self._table.focus()
 
@@ -241,8 +233,8 @@ class SearchScreen(Screen[None]):
     # --------------------------------------------------
     # SELECTION / DOWNLOAD
     # --------------------------------------------------
-    @on(DataTable.RowSelected, "#results_table")
-    async def handle_select(self, event: DataTable.RowSelected) -> None:
+    @on(AutoResizingDataTable.RowSelected, "#results_table")
+    async def handle_select(self, event: AutoResizingDataTable.RowSelected) -> None:
         magnet_uri = cast(str, event.row_key.value)
         self._search_input.disabled = True
         self._table.disabled = True

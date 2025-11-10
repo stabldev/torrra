@@ -48,8 +48,6 @@ class WelcomeScreen(Screen[str]):
                     yield Static("[commands]", id="title", markup=False)
                     yield Static("[esc]ape focus", markup=False)
                     yield Static("esc", classes="key")
-                    yield Static("toggle [d]ark mode", markup=False)
-                    yield Static("d", classes="key")
                     yield Static("[q]uit", markup=False)
                     yield Static("q", classes="key")
 
