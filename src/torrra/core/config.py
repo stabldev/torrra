@@ -3,7 +3,7 @@ import tomllib
 from contextlib import suppress
 from functools import lru_cache
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import tomli_w
 from platformdirs import user_config_dir, user_downloads_dir
@@ -74,12 +74,23 @@ class Config:
 
     def list(self) -> list[str]:
         results: list[str] = []
-        for section in self.config:
-            for key, value in self.config[section].items():
-                if isinstance(value, bool):
-                    value = str(value).lower()
-                results.append(f"{section}.{key}={value}")
 
+        def _flatten_config(data: dict[str, Any], prefix: str = "") -> None:
+            # recursively iterate through config
+            for key, value in data.items():
+                # construct new prefix
+                new_prefix = f"{prefix}.{key}" if prefix else key
+                if isinstance(value, dict):
+                    # if dict, recurse deeper
+                    _flatten_config(cast(dict[str, Any], value), new_prefix)
+                else:
+                    if isinstance(value, bool):
+                        # if bool, convert to lowercase string
+                        value = str(value).lower()
+                    # append flattened key-value pair
+                    results.append(f"{new_prefix}={value}")
+
+        _flatten_config(self.config)
         return results
 
     def _load_config(self) -> None:
