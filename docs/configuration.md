@@ -24,6 +24,7 @@ remember_last_path = true                     # If true, torrra will reuse the l
 download_in_external_client = false           # If true, opens magnet links in an external torrent client instead of downloading the .torrent file.
 theme = "textual-dark"                        # Theme for the application (e.g., "textual-dark", "textual-light", etc.).
 use_cache = true                              # If true, search results will be cached to speed up subsequent searches.
+cache_ttl = 300                               # The time in seconds that search results will be cached.
 seed_ratio = 1.5                              # Target upload/download ratio. Seeding stops when reached. Omit or set None for infinite seeding.
 
 [indexers]

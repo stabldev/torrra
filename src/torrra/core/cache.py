@@ -5,7 +5,8 @@ from typing import Any, override
 from diskcache import Cache as _Cache
 from platformdirs import user_cache_dir
 
-from torrra.core.constants import CACHE_TTL
+from torrra.core.config import config
+from torrra.core.constants import DEFAULT_CACHE_TTL
 
 
 class Cache(_Cache):
@@ -19,7 +20,7 @@ class Cache(_Cache):
         tag: Any = None,
         retry: bool = False,
     ):
-        expire = CACHE_TTL  # TODO: load from config
+        expire = config.get("general.cache_ttl", DEFAULT_CACHE_TTL)
         return super().set(key, value, expire, read, tag, retry)
 
     def make_key(self, prefix: str, query: str) -> str:

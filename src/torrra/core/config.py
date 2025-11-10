@@ -8,6 +8,7 @@ from typing import Any, cast
 import tomli_w
 from platformdirs import user_config_dir, user_downloads_dir
 
+from torrra.core.constants import DEFAULT_CACHE_TTL
 from torrra.core.exceptions import ConfigError
 
 CONFIG_DIR = Path(user_config_dir("torrra"))
@@ -112,6 +113,7 @@ class Config:
                 "download_in_external_client": False,
                 "theme": "textual-dark",
                 "use_cache": True,
+                "cache_ttl": DEFAULT_CACHE_TTL,
                 "seed_ratio": None,
             }
         }
