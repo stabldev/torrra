@@ -42,6 +42,7 @@ Then use the arrow keys to navigate, `Enter` to download, `p` to pause, `r` to r
 For persistent settings, `torrra` uses a `config.toml` file where you can configure your indexers, download paths, and themes. This avoids the need to pass arguments on every run.
 
 For example, to set up Jackett as your default indexer:
+
 ```bash
 # Set your Jackett URL and API key
 torrra config set indexers.jackett.url http://localhost:9117
@@ -52,6 +53,7 @@ torrra config set indexers.default jackett
 ```
 
 Now you can simply run `torrra` to start searching:
+
 ```bash
 torrra
 ```
@@ -71,8 +73,14 @@ torrra
 
 ## Contributing
 
-Found a bug? Want to help?
-Check out [Contributing](https://torrra.readthedocs.io/en/latest/contributing.html) or [open an issue](https://github.com/stabldev/torrra/issues).
+Contributions are welcome and greatly appreciated!
+
+Whether it's reporting a bug, submitting a feature request, or writing code, we value your help.
+
+- **Found a bug or have an idea?** [Open an issue](https://github.com/stabldev/torrra/issues/new/choose) to let us know.
+- **Want to contribute code?** Check out the [Contributing Guide](https://torrra.readthedocs.io/en/latest/contributing.html) to learn how to set up your development environment and submit a pull request.
+
+We're excited to see what you build!
 
 ## License
 
