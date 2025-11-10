@@ -10,8 +10,7 @@ from textual.containers import Container, Horizontal, Vertical
 from textual.message import Message
 from textual.screen import Screen
 from textual.types import CSSPathType
-from textual.widgets import DataTable, Input, ProgressBar, Static
-from textual.widgets.data_table import ColumnKey
+from textual.widgets import Input, ProgressBar, Static
 
 from torrra._types import Indexer, Torrent
 from torrra.core.config import config
@@ -19,6 +18,7 @@ from torrra.indexers.base import BaseIndexer
 from torrra.utils.fs import get_resource_path
 from torrra.utils.helpers import human_readable_size, lazy_import
 from torrra.utils.magnet import resolve_magnet_uri
+from torrra.widgets.data_table import AutoResizingDataTable
 from torrra.widgets.spinner import SpinnerWidget
 
 if TYPE_CHECKING:
@@ -69,7 +69,7 @@ class SearchScreen(Screen[None]):
 
         # ui refs (cached later)
         self._search_input: Input
-        self._table: DataTable[str]
+        self._table: AutoResizingDataTable[str]
         self._loader_container: Vertical
         self._loader_status: Static
         self._loader_spinner: SpinnerWidget
@@ -88,12 +88,13 @@ class SearchScreen(Screen[None]):
             with Vertical(id="loader"):
                 yield Static(id="status")
                 yield SpinnerWidget(name="shark", id="spinner")
-            yield DataTable(
+            yield AutoResizingDataTable(
                 id="results_table",
                 cursor_type="row",
                 show_cursor=True,
                 cell_padding=2,
                 classes="hidden",
+                expand_col="title_col",
             )
             with Container(id="downloads_container"):
                 yield Static("No active downloads", id="status")
@@ -111,7 +112,7 @@ class SearchScreen(Screen[None]):
         self._search_input = self.query_one("#search", Input)
         self._search_input.border_title = "[$secondary]s[/]earch"
 
-        self._table = self.query_one("#results_table", DataTable)
+        self._table = self.query_one("#results_table", AutoResizingDataTable)
         self._table.border_title = "[$secondary]r[/]esults"
 
         self._download_container = self.query_one("#downloads_container", Container)
@@ -150,20 +151,6 @@ class SearchScreen(Screen[None]):
     # --------------------------------------------------
     # UI ADJUSTMENTS / SHORTCUTS
     # --------------------------------------------------
-    def on_resize(self) -> None:
-        total_cell_padding = self._table.cell_padding * 2 * len(self._table.columns)
-        border_and_padding = 4
-        cols_total_width_without_title = sum(w for t, _, w in self.COLS if t != "Title")
-        title_col_width = (
-            self.size.width
-            - cols_total_width_without_title
-            - total_cell_padding
-            - border_and_padding
-        )
-
-        # make title column expand
-        self._table.columns[ColumnKey("title_col")].width = title_col_width
-
     def key_s(self) -> None:
         self._search_input.focus()
 
@@ -246,8 +233,8 @@ class SearchScreen(Screen[None]):
     # --------------------------------------------------
     # SELECTION / DOWNLOAD
     # --------------------------------------------------
-    @on(DataTable.RowSelected, "#results_table")
-    async def handle_select(self, event: DataTable.RowSelected) -> None:
+    @on(AutoResizingDataTable.RowSelected, "#results_table")
+    async def handle_select(self, event: AutoResizingDataTable.RowSelected) -> None:
         magnet_uri = cast(str, event.row_key.value)
         self._search_input.disabled = True
         self._table.disabled = True
