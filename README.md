@@ -73,15 +73,13 @@ torrra
 
 ## Contributing
 
-Contributions are welcome and greatly appreciated!
-
+Contributions are welcome and greatly appreciated!\
 Whether it's reporting a bug, submitting a feature request, or writing code, we value your help.
 
 - **Found a bug or have an idea?** [Open an issue](https://github.com/stabldev/torrra/issues/new/choose) to let us know.
-- **Want to contribute code?** Check out the [Contributing Guide](https://torrra.readthedocs.io/en/latest/contributing.html) to learn how to set up your development environment and submit a pull request.
-
-We're excited to see what you build!
+- **Want to contribute code?** Check out the [Contributing Guide](https://torrra.readthedocs.io/en/latest/contributing.html),\
+  to learn how to set up your development environment and submit a pull request.
 
 ## License
 
-[MIT](https://github.com/stabldev/torrra/blob/main/LICENSE) Copyright (c) [stabldev](https://github.com/stabldev)
+[MIT](LICENSE) © 2025 ^\_^ [`@stabldev`](https://github.com/stabldev)
