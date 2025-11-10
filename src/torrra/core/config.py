@@ -94,6 +94,7 @@ class Config:
                 "download_in_external_client": False,
                 "theme": "textual-dark",
                 "use_cache": True,
+                "seed_ratio": None,
             }
         }
 
