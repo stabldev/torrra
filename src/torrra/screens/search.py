@@ -10,7 +10,7 @@ from textual.containers import Container, Horizontal, Vertical
 from textual.message import Message
 from textual.screen import Screen
 from textual.types import CSSPathType
-from textual.widgets import DataTable, Input, LoadingIndicator, ProgressBar, Static
+from textual.widgets import DataTable, Input, ProgressBar, Static
 from textual.widgets.data_table import ColumnKey
 
 from torrra._types import Indexer, Torrent
@@ -19,6 +19,7 @@ from torrra.indexers.base import BaseIndexer
 from torrra.utils.fs import get_resource_path
 from torrra.utils.helpers import human_readable_size, lazy_import
 from torrra.utils.magnet import resolve_magnet_uri
+from torrra.widgets.spinner import SpinnerWidget
 
 if TYPE_CHECKING:
     import libtorrent as lt
@@ -69,8 +70,9 @@ class SearchScreen(Screen[None]):
         # ui refs (cached later)
         self._search_input: Input
         self._table: DataTable[str]
-        self._loader: Vertical
+        self._loader_container: Vertical
         self._loader_status: Static
+        self._loader_spinner: SpinnerWidget
         self._download_container: Container
         self._download_status_label: Static
         self._download_progressbar: ProgressBar
@@ -85,7 +87,7 @@ class SearchScreen(Screen[None]):
             yield Input(placeholder="Search...", id="search", value=self.search_query)
             with Vertical(id="loader"):
                 yield Static(id="status")
-                yield LoadingIndicator(id="indicator")
+                yield SpinnerWidget(name="shark", id="spinner")
             yield DataTable(
                 id="results_table",
                 cursor_type="row",
@@ -116,8 +118,9 @@ class SearchScreen(Screen[None]):
         self._download_container.border_title = "[$secondary]d[/]ownloads"
         self._download_container.can_focus = True
 
-        self._loader = self.query_one("#loader", Vertical)
+        self._loader_container = self.query_one("#loader", Vertical)
         self._loader_status = self.query_one("#loader #status", Static)
+        self._loader_spinner = self.query_one("#spinner", SpinnerWidget)
         self._download_status_label = self._download_container.query_one(
             "#status", Static
         )
@@ -195,8 +198,9 @@ class SearchScreen(Screen[None]):
 
         self._table.add_class("hidden")
         self._table.clear()
-        self._loader.remove_class("hidden")
-        self._loader_status.update(f'Searching for: "[b]{query}[/]"')
+        self._loader_container.remove_class("hidden")
+        self._loader_spinner.resume()
+        self._loader_status.update(f"Searching for [b]{query}[/b]...")
 
         self._perform_search(query)
 
@@ -215,10 +219,11 @@ class SearchScreen(Screen[None]):
     @on(SearchResults)
     def _show_search_results(self, message: SearchResults) -> None:
         if not message.results:
-            self._loader_status.update(f'Nothing found for "[b]{message.query}[/b]"')
+            self._loader_status.update(f"Nothing Found for [b]{message.query}[/b]")
+            self._loader_spinner.pause()
             return
 
-        self._loader.add_class("hidden")
+        self._loader_container.add_class("hidden")
         self._table.remove_class("hidden")
         self._table.focus()
 
