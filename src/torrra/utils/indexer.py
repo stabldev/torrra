@@ -10,13 +10,14 @@ from torrra.indexers.base import BaseIndexer
 from torrra.utils.helpers import lazy_import
 
 
-def handle_indexer_command(
+def run_app_with_indexer(
     name: IndexerName,
     indexer_cls_str: str,
     connection_error_cls_str: str,
     url: str | None,
     api_key: str | None,
     no_cache: bool,
+    search_query: str | None = None,
 ) -> None:
     # validate command args
     if (url is None) != (api_key is None):
@@ -71,13 +72,15 @@ def handle_indexer_command(
             use_cache = False
 
         indexer = Indexer(name, url, api_key)
-        app = TorrraApp(indexer, use_cache=use_cache)
+        app = TorrraApp(indexer, use_cache=use_cache, search_query=search_query)
         app.run()
     except RuntimeError as e:
         click.secho(str(e), fg="red", err=True)
 
 
-def auto_detect_indexer_and_run(no_cache: bool) -> None:
+def run_app_with_default_indexer(
+    no_cache: bool, search_query: str | None = None
+) -> None:
     try:
         default_indexer = config.get("indexers.default")
         if not default_indexer:
@@ -86,13 +89,14 @@ def auto_detect_indexer_and_run(no_cache: bool) -> None:
         url = config.get(f"indexers.{default_indexer}.url")
         api_key = config.get(f"indexers.{default_indexer}.api_key")
 
-        handle_indexer_command(
+        run_app_with_indexer(
             name=cast(IndexerName, default_indexer),
             indexer_cls_str=f"torrra.indexers.{default_indexer}.{default_indexer.title()}Indexer",
             connection_error_cls_str=f"torrra.core.exceptions.{default_indexer.title()}ConnectionError",
             url=url,
             api_key=api_key,
             no_cache=no_cache,
+            search_query=search_query,
         )
     except ConfigError as e:
         click.secho(f"{e}\ncheck your configuration file.", fg="red", err=True)

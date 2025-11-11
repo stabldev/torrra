@@ -56,10 +56,10 @@ class SearchScreen(Screen[None]):
             self.progress: float = progress
             super().__init__()
 
-    def __init__(self, indexer: Indexer, query: str, use_cache: bool):
+    def __init__(self, indexer: Indexer, search_query: str, use_cache: bool):
         super().__init__()
         self.indexer: Indexer = indexer
-        self.search_query: str = query
+        self.search_query: str = search_query
         self.use_cache: bool = use_cache
 
         # libtorrent state

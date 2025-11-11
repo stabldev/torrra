@@ -23,10 +23,13 @@ class TorrraApp(App[None]):
         ("escape", "clear_focus", "Clear focus"),
     ]
 
-    def __init__(self, indexer: Indexer, use_cache: bool) -> None:
+    def __init__(
+        self, indexer: Indexer, use_cache: bool, search_query: str | None
+    ) -> None:
         super().__init__()
         self.indexer: Indexer = indexer
         self.use_cache: bool = use_cache
+        self.search_query: str | None = search_query
 
         # load theme from config file
         theme = config.get("general.theme", "textual-dark")
@@ -40,14 +43,27 @@ class TorrraApp(App[None]):
 
     @work
     async def on_mount(self) -> None:
-        if query := await self.push_screen_wait(WelcomeScreen(indexer=self.indexer)):
-            from torrra.screens.search import SearchScreen
+        from torrra.screens.search import SearchScreen
 
+        if self.search_query and self.search_query.strip() != "":
             await self.push_screen(
                 SearchScreen(
-                    indexer=self.indexer, query=query, use_cache=self.use_cache
+                    indexer=self.indexer,
+                    search_query=self.search_query,
+                    use_cache=self.use_cache,
                 )
             )
+        else:
+            if search_query_from_welcome_screen := await self.push_screen_wait(
+                WelcomeScreen(indexer=self.indexer)
+            ):
+                await self.push_screen(
+                    SearchScreen(
+                        indexer=self.indexer,
+                        search_query=search_query_from_welcome_screen,
+                        use_cache=self.use_cache,
+                    )
+                )
 
     def action_clear_focus(self) -> None:
         self.set_focus(None)
