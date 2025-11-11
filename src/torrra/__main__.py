@@ -9,10 +9,10 @@ from torrra._version import __version__
 @click.pass_context
 def cli(ctx: click.Context, no_cache: bool) -> None:
     if ctx.invoked_subcommand is None:
-        from torrra.utils.indexer import run_app_with_default_indexer
+        from torrra.utils.indexer import run_with_default_indexer
 
         # detect indexer from config and execute
-        run_app_with_default_indexer(no_cache)
+        run_with_default_indexer(no_cache=no_cache)
 
 
 # --------------------------------------------------
@@ -22,10 +22,10 @@ def cli(ctx: click.Context, no_cache: bool) -> None:
 @click.argument("search_query")
 @click.option("--no-cache", is_flag=True, help="Disable caching mechanism.")
 def search(search_query: str, no_cache: bool) -> None:
-    from torrra.utils.indexer import run_app_with_default_indexer
+    from torrra.utils.indexer import run_with_default_indexer
 
     # detect indexer from config and execute with given search query
-    run_app_with_default_indexer(no_cache, search_query)
+    run_with_default_indexer(no_cache=no_cache, search_query=search_query)
 
 
 # --------------------------------------------------
@@ -36,10 +36,10 @@ def search(search_query: str, no_cache: bool) -> None:
 @click.option("--api-key", required=False, help="Jackett API key.")
 @click.option("--no-cache", is_flag=True, help="Disable caching mechanism.")
 def jackett(url: str | None, api_key: str | None, no_cache: bool) -> None:
-    from torrra.utils.indexer import run_app_with_indexer
+    from torrra.utils.indexer import run_with_indexer
 
     # run app with jackett indexer
-    run_app_with_indexer(
+    run_with_indexer(
         name="jackett",
         indexer_cls_str="torrra.indexers.jackett.JackettIndexer",
         connection_error_cls_str="torrra.core.exceptions.JackettConnectionError",
@@ -54,10 +54,10 @@ def jackett(url: str | None, api_key: str | None, no_cache: bool) -> None:
 @click.option("--api-key", required=False, help="Prowlarr API key.")
 @click.option("--no-cache", is_flag=True, help="Disable caching mechanism.")
 def prowlarr(url: str | None, api_key: str | None, no_cache: bool):
-    from torrra.utils.indexer import run_app_with_indexer
+    from torrra.utils.indexer import run_with_indexer
 
     # run app with prowlarr indexer
-    run_app_with_indexer(
+    run_with_indexer(
         name="prowlarr",
         indexer_cls_str="torrra.indexers.prowlarr.ProwlarrIndexer",
         connection_error_cls_str="torrra.core.exceptions.ProwlarrConnectionError",

@@ -10,7 +10,8 @@ from torrra.indexers.base import BaseIndexer
 from torrra.utils.helpers import lazy_import
 
 
-def run_app_with_indexer(
+def run_with_indexer(
+    *,
     name: IndexerName,
     indexer_cls_str: str,
     connection_error_cls_str: str,
@@ -78,8 +79,8 @@ def run_app_with_indexer(
         click.secho(str(e), fg="red", err=True)
 
 
-def run_app_with_default_indexer(
-    no_cache: bool, search_query: str | None = None
+def run_with_default_indexer(
+    *, no_cache: bool, search_query: str | None = None
 ) -> None:
     try:
         default_indexer = config.get("indexers.default")
@@ -89,7 +90,7 @@ def run_app_with_default_indexer(
         url = config.get(f"indexers.{default_indexer}.url")
         api_key = config.get(f"indexers.{default_indexer}.api_key")
 
-        run_app_with_indexer(
+        run_with_indexer(
             name=cast(IndexerName, default_indexer),
             indexer_cls_str=f"torrra.indexers.{default_indexer}.{default_indexer.title()}Indexer",
             connection_error_cls_str=f"torrra.core.exceptions.{default_indexer.title()}ConnectionError",
