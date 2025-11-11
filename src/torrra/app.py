@@ -8,6 +8,7 @@ from textual.types import CSSPathType
 
 from torrra._types import Indexer
 from torrra.core.config import config
+from torrra.screens.search import SearchScreen
 from torrra.screens.welcome import WelcomeScreen
 from torrra.utils.fs import get_resource_path
 
@@ -23,10 +24,13 @@ class TorrraApp(App[None]):
         ("escape", "clear_focus", "Clear focus"),
     ]
 
-    def __init__(self, indexer: Indexer, use_cache: bool) -> None:
+    def __init__(
+        self, indexer: Indexer, use_cache: bool, search_query: str | None
+    ) -> None:
         super().__init__()
         self.indexer: Indexer = indexer
         self.use_cache: bool = use_cache
+        self.search_query: str | None = search_query
 
         # load theme from config file
         theme = config.get("general.theme", "textual-dark")
@@ -38,14 +42,28 @@ class TorrraApp(App[None]):
             raise RuntimeError(error_message)
         self.theme = theme
 
-    @work
     async def on_mount(self) -> None:
-        if query := await self.push_screen_wait(WelcomeScreen(indexer=self.indexer)):
-            from torrra.screens.search import SearchScreen
-
+        if not (self.search_query and self.search_query.strip()):
+            self._show_welcome_and_search()
+        else:  # direct show search screen
             await self.push_screen(
                 SearchScreen(
-                    indexer=self.indexer, query=query, use_cache=self.use_cache
+                    indexer=self.indexer,
+                    search_query=self.search_query,
+                    use_cache=self.use_cache,
+                )
+            )
+
+    @work(exclusive=True)
+    async def _show_welcome_and_search(self) -> None:
+        if search_query := await self.push_screen_wait(
+            WelcomeScreen(indexer=self.indexer)
+        ):  # show both screens
+            await self.push_screen(
+                SearchScreen(
+                    indexer=self.indexer,
+                    search_query=search_query,
+                    use_cache=self.use_cache,
                 )
             )
 
