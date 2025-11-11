@@ -53,5 +53,7 @@ class WelcomeScreen(Screen[str]):
 
     @on(Input.Submitted, "#search")
     async def handle_search(self, event: Input.Submitted) -> None:
-        if query := event.value:
+        query = event.value
+
+        if query and query.strip():
             self.dismiss(query)

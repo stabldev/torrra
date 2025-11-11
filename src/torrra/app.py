@@ -8,6 +8,7 @@ from textual.types import CSSPathType
 
 from torrra._types import Indexer
 from torrra.core.config import config
+from torrra.screens.search import SearchScreen
 from torrra.screens.welcome import WelcomeScreen
 from torrra.utils.fs import get_resource_path
 
@@ -41,11 +42,10 @@ class TorrraApp(App[None]):
             raise RuntimeError(error_message)
         self.theme = theme
 
-    @work
     async def on_mount(self) -> None:
-        from torrra.screens.search import SearchScreen
-
-        if self.search_query and self.search_query.strip() != "":
+        if not (self.search_query and self.search_query.strip()):
+            self._show_welcome_and_search()
+        else:  # direct show search screen
             await self.push_screen(
                 SearchScreen(
                     indexer=self.indexer,
@@ -53,17 +53,19 @@ class TorrraApp(App[None]):
                     use_cache=self.use_cache,
                 )
             )
-        else:
-            if search_query_from_welcome_screen := await self.push_screen_wait(
-                WelcomeScreen(indexer=self.indexer)
-            ):
-                await self.push_screen(
-                    SearchScreen(
-                        indexer=self.indexer,
-                        search_query=search_query_from_welcome_screen,
-                        use_cache=self.use_cache,
-                    )
+
+    @work(exclusive=True)
+    async def _show_welcome_and_search(self) -> None:
+        if search_query := await self.push_screen_wait(
+            WelcomeScreen(indexer=self.indexer)
+        ):  # show both screens
+            await self.push_screen(
+                SearchScreen(
+                    indexer=self.indexer,
+                    search_query=search_query,
+                    use_cache=self.use_cache,
                 )
+            )
 
     def action_clear_focus(self) -> None:
         self.set_focus(None)
