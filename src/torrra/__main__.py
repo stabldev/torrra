@@ -42,7 +42,6 @@ def jackett(url: str | None, api_key: str | None, no_cache: bool) -> None:
     run_with_indexer(
         name="jackett",
         indexer_cls_str="torrra.indexers.jackett.JackettIndexer",
-        connection_error_cls_str="torrra.core.exceptions.JackettConnectionError",
         url=url,
         api_key=api_key,
         no_cache=no_cache,
@@ -60,7 +59,6 @@ def prowlarr(url: str | None, api_key: str | None, no_cache: bool):
     run_with_indexer(
         name="prowlarr",
         indexer_cls_str="torrra.indexers.prowlarr.ProwlarrIndexer",
-        connection_error_cls_str="torrra.core.exceptions.ProwlarrConnectionError",
         url=url,
         api_key=api_key,
         no_cache=no_cache,

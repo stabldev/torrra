@@ -4,7 +4,7 @@ import httpx
 
 from torrra._types import Torrent, TorrentDict
 from torrra.core.cache import cache
-from torrra.core.exceptions import ProwlarrConnectionError
+from torrra.core.exceptions import IndexerError
 from torrra.indexers.base import BaseIndexer
 
 
@@ -42,7 +42,7 @@ class ProwlarrIndexer(BaseIndexer):
                 return True
 
             except httpx.RequestError:
-                raise ProwlarrConnectionError(
+                raise IndexerError(
                     "could not connect to prowlarr server\n"
                     + "please make sure prowlarr server is running and the url is correct"
                 )
@@ -51,12 +51,12 @@ class ProwlarrIndexer(BaseIndexer):
                 status_code = e.response.status_code
 
                 if status_code == 401:
-                    raise ProwlarrConnectionError(
+                    raise IndexerError(
                         "invalid prowlarr server api key\n"
                         + "double-check the api key you provided"
                     )
                 else:
-                    raise ProwlarrConnectionError(
+                    raise IndexerError(
                         f"prowlarr server returned http {status_code}\n"
                         + "unexpected response from prowlarr server. please verify your setup"
                     )

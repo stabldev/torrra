@@ -4,7 +4,7 @@ import httpx
 
 from torrra._types import Torrent, TorrentDict
 from torrra.core.cache import cache
-from torrra.core.exceptions import JackettConnectionError
+from torrra.core.exceptions import IndexerError
 from torrra.indexers.base import BaseIndexer
 
 
@@ -43,7 +43,7 @@ class JackettIndexer(BaseIndexer):
                 return True
 
             except httpx.RequestError:
-                raise JackettConnectionError(
+                raise IndexerError(
                     "could not connect to jackett server\n"
                     + "please make sure jackett server is running and the url is correct"
                 )
@@ -52,14 +52,14 @@ class JackettIndexer(BaseIndexer):
                 status_code = e.response.status_code
 
                 if status_code == 401:
-                    raise JackettConnectionError(
+                    raise IndexerError(
                         "invalid jackett server api key\n"
                         + "double-check the api key you provided"
                     )
                 elif status_code == 500 and "nonexistent_indexer" in e.response.text:
                     return True
                 else:
-                    raise JackettConnectionError(
+                    raise IndexerError(
                         f"jackett server returned http {status_code}\n"
                         + "unexpected response from jackett server. please verify your setup"
                     )

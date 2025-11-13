@@ -5,7 +5,7 @@ import click
 
 from torrra._types import Indexer, IndexerName
 from torrra.core.config import config
-from torrra.core.exceptions import ConfigError
+from torrra.core.exceptions import ConfigError, IndexerError
 from torrra.indexers.base import BaseIndexer
 from torrra.utils.helpers import lazy_import
 
@@ -14,7 +14,6 @@ def run_with_indexer(
     *,
     name: IndexerName,
     indexer_cls_str: str,
-    connection_error_cls_str: str,
     url: str | None,
     api_key: str | None,
     no_cache: bool,
@@ -42,7 +41,6 @@ def run_with_indexer(
 
     # import indexers only when needed
     indexer_cls = lazy_import(indexer_cls_str)
-    connection_error_cls = lazy_import(connection_error_cls_str)
 
     # type narrowing for pyright
     assert url is not None and api_key is not None
@@ -52,7 +50,7 @@ def run_with_indexer(
         try:
             assert issubclass(indexer_cls, BaseIndexer)
             return await indexer_cls(url, api_key).healthcheck()
-        except connection_error_cls as e:
+        except IndexerError as e:
             click.secho(str(e), fg="red", err=True)
             return False
 
@@ -93,7 +91,6 @@ def run_with_default_indexer(
         run_with_indexer(
             name=cast(IndexerName, default_indexer),
             indexer_cls_str=f"torrra.indexers.{default_indexer}.{default_indexer.title()}Indexer",
-            connection_error_cls_str=f"torrra.core.exceptions.{default_indexer.title()}ConnectionError",
             url=url,
             api_key=api_key,
             no_cache=no_cache,
