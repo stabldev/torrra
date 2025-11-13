@@ -38,6 +38,7 @@ class SearchScreen(Screen[None]):
         ("Source", "source_col", 6),
     ]
 
+    # class-level constants
     METADATA_INTERVAL: ClassVar[float] = 0.5
     DOWNLOAD_SEED_INTERVAL: ClassVar[float] = 1.0
 
