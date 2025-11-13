@@ -30,7 +30,7 @@ class AutoResizingDataTable(DataTable[T]):
         if current_time - self._last_g_press < 0.4:
             self.action_scroll_top()
             self._last_g_press = 0
-        else: # save for next event
+        else:  # save for next event
             self._last_g_press = current_time
 
     def on_resize(self) -> None:
