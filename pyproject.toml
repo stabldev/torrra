@@ -1,12 +1,11 @@
 [project]
 name = "torrra"
-version = "1.2.8"
+version = "1.3.0"
 description = "A Python tool that lets you find and download torrents without leaving your CLI."
 readme = "README.md"
 authors = [{ name = "stabldev", email = "thestabldev@gmail.com" }]
 license = { text = "MIT" }
 requires-python = ">=3.13"
-
 keywords = [
     "torrent",
     "cli",
@@ -22,7 +21,6 @@ keywords = [
     "tui",
     "torrent-search",
 ]
-
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Environment :: Console",
@@ -39,15 +37,14 @@ classifiers = [
     "Topic :: Terminals",
     "Topic :: Terminals :: Terminal Emulators/X Terminals",
 ]
-
 dependencies = [
-    "click>=8.2.1",
+    "click>=8.3.0",
     "diskcache>=5.6.3",
     "httpx>=0.28.1",
     "libtorrent>=2.0.11",
-    "libtorrent-windows-dll>=0.0.2; sys_platform == 'win32'",
-    "platformdirs>=4.3.8",
-    "textual>=4.0.0",
+    "libtorrent-windows-dll>=0.0.3",
+    "platformdirs>=4.5.0",
+    "textual>=6.5.0",
     "tomli-w>=1.2.0",
 ]
 
@@ -59,8 +56,7 @@ repository = "https://github.com/stabldev/torrra"
 [project.scripts]
 torrra = "torrra.__main__:cli"
 
-[dependency-groups]
-dev = ["libtorrent-stubs>=0.0.1", "textual-dev>=1.7.0"]
+[project.optional-dependencies]
 docs = [
     "myst-parser>=4.0.1",
     "qiskit-sphinx-theme>=2.0.0",
@@ -68,11 +64,16 @@ docs = [
     "sphinx-copybutton>=0.5.2",
 ]
 
+[dependency-groups]
+dev = ["libtorrent-stubs>=0.0.1", "textual-dev>=1.7.0"]
+
 [tool.pyright]
 reportUnusedCallResult = "none"
 reportExplicitAny = "none"
 reportAny = "none"
+reportMissingTypeStubs = "none"
+reportUnknownMemberType = "none"
 
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["uv-build>=0.8.20,<0.9.0"]
+build-backend = "uv_build"

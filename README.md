@@ -37,21 +37,49 @@ Then use the arrow keys to navigate, `Enter` to download, `p` to pause, `r` to r
 
 [See full CLI & TUI guide →](https://torrra.readthedocs.io/en/latest/usage.html)
 
+## Configuration
+
+For persistent settings, `torrra` uses a `config.toml` file where you can configure your indexers, download paths, and themes. This avoids the need to pass arguments on every run.
+
+For example, to set up Jackett as your default indexer:
+
+```bash
+# Set your Jackett URL and API key
+torrra config set indexers.jackett.url http://localhost:9117
+torrra config set indexers.jackett.api_key <your_api_key>
+
+# Set Jackett as the default indexer
+torrra config set indexers.default jackett
+```
+
+Now you can simply run `torrra` to start searching:
+
+```bash
+torrra
+```
+
+[Learn more about configuration →](https://torrra.readthedocs.io/en/latest/configuration.html)
+
 ## Features
 
 - Search with [`Jackett`](https://github.com/Jackett/Jackett) or [`Prowlarr`](https://github.com/Prowlarr/Prowlarr)
-- Download torrents with [`Libtorrent`](https://libtorrent.org)
-- Full-screen TUI with pause/resume
-- Smart config + opt-in caching
-- Native support for Linux/macOS/Windows
+- Download torrents directly with pause/resume support
+- Beautiful and responsive TUI built with [`Textual`](https://textual.textualize.io/)
+- Customizable themes (dark, light, and more)
+- Smart config + opt-in caching for fast searches
+- Native support for Linux, macOS, and Windows
 
 [Full feature list →](https://torrra.readthedocs.io/en/latest/#features)
 
 ## Contributing
 
-Found a bug? Want to help?
-Check out [Contributing](https://torrra.readthedocs.io/en/latest/contributing.html) or [open an issue](https://github.com/stabldev/torrra/issues).
+Contributions are welcome and greatly appreciated!\
+Whether it's reporting a bug, submitting a feature request, or writing code, we value your help.
+
+- **Found a bug or have an idea?** [Open an issue](https://github.com/stabldev/torrra/issues/new/choose) to let us know.
+- **Want to contribute code?** Check out the [Contributing Guide](https://torrra.readthedocs.io/en/latest/contributing.html),\
+  to learn how to set up your development environment and submit a pull request.
 
 ## License
 
-[MIT](https://github.com/stabldev/torrra/blob/main/LICENSE) Copyright (c) [stabldev](https://github.com/stabldev)
+[MIT](LICENSE) © 2025 ^\_^ [`@stabldev`](https://github.com/stabldev)

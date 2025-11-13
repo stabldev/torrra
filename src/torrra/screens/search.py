@@ -1,10 +1,9 @@
-import os
-import tempfile
+import threading
 import time
-from typing import Any, ClassVar, cast, override
+import webbrowser
+from contextlib import suppress
+from typing import TYPE_CHECKING, Any, ClassVar, cast, override
 
-import httpx
-import libtorrent as lt
 from textual import on, work
 from textual.app import ComposeResult
 from textual.binding import BindingType
@@ -12,15 +11,19 @@ from textual.containers import Container, Horizontal, Vertical
 from textual.message import Message
 from textual.screen import Screen
 from textual.types import CSSPathType
-from textual.widgets import DataTable, Input, LoadingIndicator, ProgressBar, Static
-from textual.widgets.data_table import ColumnKey
+from textual.widgets import Input, ProgressBar, Static
 
 from torrra._types import Indexer, Torrent
-from torrra.core.context import config
-from torrra.indexers.jackett import JackettIndexer
-from torrra.indexers.prowlarr import ProwlarrIndexer
+from torrra.core.config import config
+from torrra.indexers.base import BaseIndexer
 from torrra.utils.fs import get_resource_path
-from torrra.utils.helpers import human_readable_size
+from torrra.utils.helpers import human_readable_size, lazy_import
+from torrra.utils.magnet import resolve_magnet_uri
+from torrra.widgets.data_table import AutoResizingDataTable
+from torrra.widgets.spinner import SpinnerWidget
+
+if TYPE_CHECKING:
+    import libtorrent as lt
 
 
 class SearchScreen(Screen[None]):
@@ -35,20 +38,22 @@ class SearchScreen(Screen[None]):
     ]
 
     CSS_PATH: ClassVar[CSSPathType | None] = get_resource_path("screens/search.css")
-    # https://github.com/edward-jazzhands/eds-sandbox/blob/main/python/textual/examples/datatable_expandcol.py
-    no_col_width: int = 3
-    title_col_minimum: int = 25  # dynamic
-    size_col_width: int = 10
-    seeders_col_width: int = 4
-    leechers_col_width: int = 5
-    source_col_width: int = 6
-    other_cols_total: int = (
-        no_col_width
-        + size_col_width
-        + seeders_col_width
-        + leechers_col_width
-        + source_col_width
-    )
+
+    # layout constants
+    COLS: list[tuple[str, str, int]] = [
+        ("No.", "no_col", 3),
+        ("Title", "title_col", 25),
+        ("Size", "size_col", 10),
+        ("Seed", "seeders_col", 4),
+        ("Leech", "leechers_col", 5),
+        ("Source", "source_col", 6),
+    ]
+
+    METADATA_INTERVAL: ClassVar[float] = 0.5
+    DOWNLOAD_SEED_INTERVAL: ClassVar[float] = 1.0
+
+    # class-level caches
+    _indexer_instance_cache: BaseIndexer | None = None
 
     class SearchResults(Message):
         def __init__(self, results: list[Torrent], query: str) -> None:
@@ -56,43 +61,55 @@ class SearchScreen(Screen[None]):
             self.query: str = query
             super().__init__()
 
-    def __init__(self, indexer: Indexer | None, initial_query: str, use_cache: bool):
-        super().__init__()
-        self.indexer: Indexer | None = indexer
-        self.initial_query: str = initial_query
-        self.use_cache: bool = use_cache
-        # libtorrent
-        self.lt_session: lt.session | None = None
-        self.lt_handle: lt.torrent_handle | None = None
-        self.lt_paused: bool = False
+    class DownloadStatus(Message):
+        def __init__(self, status: str, progress: float) -> None:
+            self.status: str = status
+            self.progress: float = progress
+            super().__init__()
 
+    def __init__(self, indexer: Indexer, search_query: str, use_cache: bool):
+        super().__init__()
+        self.indexer: Indexer = indexer
+        self.search_query: str = search_query
+        self.use_cache: bool = use_cache
+
+        # libtorrent state
+        self._lt_session: lt.session | None = None
+        self._lt_handle: lt.torrent_handle | None = None
+
+        # application states
+        self._pause_event: threading.Event = threading.Event()
+        self._stop_event: threading.Event = threading.Event()
+
+        # ui refs (cached later)
+        self._search_input: Input
+        self._table: AutoResizingDataTable[str]
+        self._loader_container: Vertical
+        self._loader_status: Static
+        self._loader_spinner: SpinnerWidget
+        self._download_container: Container
+        self._download_status_label: Static
+        self._download_progressbar: ProgressBar
+        self._download_progressbar_and_actions: Horizontal
+
+    # --------------------------------------------------
+    # COMPOSE
+    # --------------------------------------------------
     @override
     def compose(self) -> ComposeResult:
         with Vertical():
-            # search input
-            search_input = Input(
-                placeholder="Search...", id="search", value=self.initial_query
-            )
-            search_input.border_title = "[$secondary]s[/]earch"
-            yield search_input
-            # loading indicator
+            yield Input(placeholder="Search...", id="search", value=self.search_query)
             with Vertical(id="loader"):
                 yield Static(id="status")
-                yield LoadingIndicator(id="indicator")
-            # results data-table
-            results_dt: DataTable[None] = DataTable(
+                yield SpinnerWidget(name="shark", id="spinner")
+            yield AutoResizingDataTable(
                 id="results_table",
                 cursor_type="row",
                 show_cursor=True,
                 cell_padding=2,
                 classes="hidden",
             )
-            results_dt.border_title = "[$secondary]r[/]esults"
-            yield results_dt
-            # downloads container
-            with Container(id="downloads_container") as c:
-                c.border_title = "[$secondary]d[/]ownloads"
-                c.can_focus = True
+            with Container(id="downloads_container"):
                 yield Static("No active downloads", id="status")
                 with Horizontal(id="progressbar-and-actions", classes="hidden"):
                     yield ProgressBar(total=100, id="progressbar")
@@ -101,155 +118,123 @@ class SearchScreen(Screen[None]):
                         id="actions",
                     )
 
+    # --------------------------------------------------
+    # MOUNT / UNMOUNT
+    # --------------------------------------------------
     def on_mount(self) -> None:
-        self.post_message(
-            Input.Submitted(self.query_one("#search", Input), self.initial_query)
+        self._search_input = self.query_one("#search", Input)
+        self._search_input.border_title = "[$secondary]s[/]earch"
+
+        self._table = self.query_one("#results_table", AutoResizingDataTable)
+        self._table.expand_col = "title_col"
+        self._table.border_title = "[$secondary]r[/]esults"
+
+        self._download_container = self.query_one("#downloads_container", Container)
+        self._download_container.border_title = "[$secondary]d[/]ownloads"
+        self._download_container.can_focus = True
+
+        self._loader_container = self.query_one("#loader", Vertical)
+        self._loader_status = self.query_one("#loader #status", Static)
+        self._loader_spinner = self.query_one("#spinner", SpinnerWidget)
+        self._download_status_label = self._download_container.query_one(
+            "#status", Static
+        )
+        self._download_progressbar = self.query_one("#progressbar", ProgressBar)
+        self._download_progressbar_and_actions = self.query_one(
+            "#progressbar-and-actions", Horizontal
         )
 
-        table = cast(DataTable[None], self.query_one("#results_table", DataTable))
-        table.add_column("No.", width=self.no_col_width, key="no_col")
-        table.add_column("Title", width=self.title_col_minimum, key="title_col")
-        table.add_column("Size", width=self.size_col_width, key="size_col")
-        table.add_column("Seed", width=self.seeders_col_width, key="seeders_col")
-        table.add_column("Leech", width=self.leechers_col_width, key="leechers_col")
-        table.add_column("Source", width=self.source_col_width, key="source_col")
+        # setup table
+        for label, key, width in self.COLS:
+            self._table.add_column(label, width=width, key=key)
+
+        # send initial search
+        self.post_message(Input.Submitted(self._search_input, self.search_query))
 
     def on_unmount(self) -> None:
+        self._stop_event.set()
+
         # clean libtorrent session
-        if self.lt_session and self.lt_handle:
-            self.lt_session.remove_torrent(self.lt_handle)
+        if self._lt_session and self._lt_handle:
+            with suppress(Exception):
+                self._lt_session.remove_torrent(self._lt_handle)
 
-    def on_resize(self) -> None:
-        table = cast(DataTable[None], self.query_one("#results_table", DataTable))
+        # RAII cleanup
+        self._lt_session = None
 
-        total_cell_padding = table.cell_padding * 2 * len(table.columns)
-        # space taken for border and padding
-        border_and_padding = 4
-        available_width = (
-            self.size.width
-            - self.other_cols_total
-            - total_cell_padding
-            - border_and_padding
-        )
-
-        second_col_width = max(self.title_col_minimum, available_width)
-        table.columns[ColumnKey("title_col")].width = second_col_width
-
+    # --------------------------------------------------
+    # UI ADJUSTMENTS / SHORTCUTS
+    # --------------------------------------------------
     def key_s(self) -> None:
-        self.query_one("#search", Input).focus()
+        self._search_input.focus()
 
     def key_p(self) -> None:
-        downloads_container = self.query_one("#downloads_container", Container)
-        if not downloads_container.has_focus or not self.lt_handle or self.lt_paused:
-            return
-
-        self.lt_handle.pause()
-        self.lt_paused = True
-
-    def key_r(self) -> None:
-        downloads_container = self.query_one("#downloads_container", Container)
         if (
-            not downloads_container.has_focus
-            or not self.lt_handle
-            or not self.lt_paused
+            not self._download_container.has_focus
+            or not self._lt_handle
+            or self._pause_event.is_set()
         ):
             return
+        self._lt_handle.pause()
+        self._pause_event.set()
 
-        self.lt_handle.resume()
-        self.lt_paused = False
+    def key_r(self) -> None:
+        if (
+            not self._download_container.has_focus
+            or not self._lt_handle
+            or not self._pause_event.is_set()
+        ):
+            return
+        self._lt_handle.resume()
+        self._pause_event.clear()
 
-    # Vim bindings
-    def action_cursor_up(self) -> None:
-        table = self.query_one("#results_table", DataTable)
-        table.action_cursor_up()
-
-    def action_cursor_down(self) -> None:
-        table = self.query_one("#results_table", DataTable)
-        table.action_cursor_down()
-
-    def action_scroll_top(self) -> None:
-        table = self.query_one("#results_table", DataTable)
-        table.action_scroll_top()
-
-    def action_scroll_bottom(self) -> None:
-        table = self.query_one("#results_table", DataTable)
-        table.action_scroll_bottom()
-
-    def action_select_cursor(self) -> None:
-        table = self.query_one("#results_table", DataTable)
-        table.action_select_cursor()
-
-    def action_page_down(self) -> None:
-        table = self.query_one("#results_table", DataTable)
-        table.action_page_down()
-
-    def action_page_up(self) -> None:
-        table = self.query_one("#results_table", DataTable)
-        table.action_page_up()
-
+    # --------------------------------------------------
+    # SEARCH LOGIC
+    # --------------------------------------------------
     @on(Input.Submitted, "#search")
-    async def handle_search(self, event: Input.Submitted) -> None:
+    def handle_search(self, event: Input.Submitted) -> None:
         query = event.value
         if not query:
             return
 
-        table = cast(DataTable[None], self.query_one("#results_table", DataTable))
-        loader = self.query_one("#loader", Vertical)
-        loader_text = self.query_one("#loader #status", Static)
-
-        table.add_class("hidden")
-        table.clear()
-        loader.remove_class("hidden")
-        loader_text.update(f'Searching for: "[b]{query}[/]"')
+        self._table.add_class("hidden")
+        self._table.clear()
+        self._loader_container.remove_class("hidden")
+        self._loader_spinner.resume()
+        self._loader_status.update(f"Searching for [b]{query}[/b]...")
 
         self._perform_search(query)
 
-    @on(DataTable.RowSelected, "#results_table")
-    def handle_select(self, event: DataTable.RowSelected) -> None:
-        row_key = event.row_key
-        magnet_uri = row_key.value
-
-        self.query_one("#progressbar-and-actions", Horizontal).remove_class("hidden")
-        self.query_one("#search", Input).disabled = True
-        cast(DataTable[None], event.control).disabled = True
-        self._update_download_ui("[b $success]Fetching Metadata...[/]", 0)
-        self._download_torrent(magnet_uri)
-
-    @work(exclusive=True, thread=True)
+    @work(exclusive=True)
     async def _perform_search(self, query: str) -> None:
         indexer = self._get_indexer_instance()
         results = []
+
         if indexer:
             try:
                 results = await indexer.search(query, use_cache=self.use_cache)
             except Exception as e:
                 self.log.error(f"error during search: {e}")
-
         self.post_message(self.SearchResults(results, query))
 
     @on(SearchResults)
     def _show_search_results(self, message: SearchResults) -> None:
-        table = cast(DataTable[str], self.query_one("#results_table", DataTable))
-        loader = self.query_one("#loader", Vertical)
-        loader_text = loader.query_one(Static)
-
         if not message.results:
-            loader_text.update(f'Nothing found for "[b]{message.query}[/b]"')
+            self._loader_status.update(f"Nothing Found for [b]{message.query}[/b]")
+            self._loader_spinner.pause()
             return
 
-        loader.add_class("hidden")
-        table.remove_class("hidden")
+        self._loader_container.add_class("hidden")
+        self._table.remove_class("hidden")
+        self._table.focus()
 
-        seen_magnets: set[str] = set()
+        seen: set[str] = set()
         for idx, torrent in enumerate(message.results):
-            if torrent.magnet_uri is None:
-                continue
-            if torrent.magnet_uri in seen_magnets:
+            if torrent.magnet_uri is None or torrent.magnet_uri in seen:
                 continue
 
-            seen_magnets.add(torrent.magnet_uri)
-
-            table.add_row(
+            seen.add(torrent.magnet_uri)
+            self._table.add_row(
                 str(idx + 1),
                 torrent.title,
                 human_readable_size(torrent.size),
@@ -259,120 +244,148 @@ class SearchScreen(Screen[None]):
                 key=torrent.magnet_uri,
             )
 
-        table.focus()
+    # --------------------------------------------------
+    # SELECTION / DOWNLOAD
+    # --------------------------------------------------
+    @on(AutoResizingDataTable.RowSelected, "#results_table")
+    async def handle_select(self, event: AutoResizingDataTable.RowSelected) -> None:
+        magnet_uri = cast(str, event.row_key.value)
+        self._search_input.disabled = True
+        self._table.disabled = True
+        self._update_download_status("[b $success]Fetching Metadata...[/]")
 
-    @work(exclusive=True, thread=True)
-    async def _download_torrent(self, magnet_uri: str) -> None:
-        resolved = await self._resolve_magnet_uri_or_torrent_info(magnet_uri)
-        if resolved is None:
-            # TODO: show notify (requuires custom styling)
+        resolved = await resolve_magnet_uri(magnet_uri)
+        self._handle_magnet_uri(resolved)
+
+    def _handle_magnet_uri(self, magnet_uri: str | None) -> None:
+        if not magnet_uri:
+            self._update_download_status("[$error]Invalid magnet URI[/]")
             return
 
-        self.lt_session = lt.session()
-        self.lt_session.listen_on(6881, 6891)
+        if config.get("general.download_in_external_client"):
+            self._download_in_external_client(magnet_uri)
+        else:
+            self._download_in_libtorrent(magnet_uri)
+
+    def _download_in_external_client(self, magnet_uri: str) -> None:
+        if not webbrowser.open(magnet_uri):
+            self._update_download_status("[$error]Failed to open magnet URI[/]")
+        else:
+            self._update_download_status(
+                "[$success]Magnet URI opened in external client[/]"
+            )
+
+    # --------------------------------------------------
+    # LIBTORRENT DOWNLOAD
+    # --------------------------------------------------
+    @work(exclusive=True, thread=True)
+    def _download_in_libtorrent(self, magnet_uri: str) -> None:
+        import libtorrent as lt
+
+        self._lt_session = lt.session()
+        self._lt_session.listen_on(6881, 6891)
 
         params: dict[str, Any] = {
             "save_path": config.get("general.download_path"),
             "storage_mode": lt.storage_mode_t.storage_mode_sparse,
         }
 
-        if isinstance(resolved, str) and resolved.startswith("magnet:"):
-            self.lt_handle = lt.add_magnet_uri(self.lt_session, resolved, params)
-        else:
-            params["ti"] = resolved
-            self.lt_handle = self.lt_session.add_torrent(params)
+        self._lt_handle = lt.add_magnet_uri(self._lt_session, magnet_uri, params)
 
-        while not self.lt_handle.has_metadata():
-            time.sleep(0.5)
+        while not self._lt_handle.has_metadata():
+            if self._stop_event.is_set():
+                return
+            time.sleep(self.METADATA_INTERVAL)
 
-        torrent_info = self.lt_handle.get_torrent_info()
+        torrent_info = self._lt_handle.get_torrent_info()
         title = torrent_info.name()
         total_size = human_readable_size(torrent_info.total_size())
 
-        status_text_template = (
+        download_status_str = (
             f"[b $secondary]Title: [$primary]{title}[/$primary] - "
             "Mode: [$success]{status}[/$success] - "
             "Seeds: {seeds} - "
             "Peers: {peers} - "
         )
 
-        while not self.lt_handle.is_seed():
-            s = self.lt_handle.status()
-            seed_status = (
-                status_text_template.format(
-                    status="Paused" if self.lt_paused else "Download",
+        self._download_progressbar_and_actions.remove_class("hidden")
+        # downloading loop
+        while not self._lt_handle.is_seed():
+            if self._stop_event.is_set():
+                return
+
+            s = self._lt_handle.status()
+            msg = (
+                download_status_str.format(
+                    status="Paused" if self._pause_event.is_set() else "Download",
                     seeds=s.num_seeds,
                     peers=s.num_peers,
                 )
                 + f"Size: {total_size}[/]"
             )
 
-            self.app.call_from_thread(
-                self._update_download_ui,
-                seed_status,
-                s.progress * 100,
-            )
+            self._update_download_status(msg, s.progress * 100)
+            time.sleep(self.DOWNLOAD_SEED_INTERVAL)
 
-            time.sleep(1)
+        # seeding loop
+        seed_ratio = config.get("general.seed_ratio", None)
+        # ensure seed_ratio is a valid number, otherwise default to infinite seeding
+        if not isinstance(seed_ratio, (int, float)) or seed_ratio < 0:
+            seed_ratio = None
 
-        while True:
-            s = self.lt_handle.status()
-            seed_status = (
-                status_text_template.format(
-                    status="Paused" if self.lt_paused else "Seed",
+        while not self._stop_event.is_set():
+            s = self._lt_handle.status()
+
+            # check if seed ratio is reached
+            if seed_ratio is not None and s.total_payload_download > 0:
+                # calculate current ratio: uploaded / downloaded
+                current_ratio = s.total_payload_upload / s.total_payload_download
+                if current_ratio >= seed_ratio:
+                    self._update_download_status(
+                        f"[b $success]Seeding complete! Reached target ratio of {seed_ratio:.2f}[/]",
+                        100,
+                    )
+                    time.sleep(self.DOWNLOAD_SEED_INTERVAL)
+                    break
+
+            msg = (
+                download_status_str.format(
+                    status="Paused" if self._pause_event.is_set() else "Seed",
                     seeds=s.num_seeds,
                     peers=s.num_peers,
                 )
-                + f"Uploaded: {human_readable_size(s.total_upload)}[/]"
+                + f"Uploaded: {human_readable_size(s.total_payload_upload)}[/]"
             )
 
-            self.app.call_from_thread(self._update_download_ui, seed_status, 100)
-            time.sleep(5)
+            self._update_download_status(msg, 100)
+            time.sleep(self.DOWNLOAD_SEED_INTERVAL)
 
-    def _update_download_ui(self, status: str, progress: float) -> None:
-        self.query_one("#downloads_container #status", Static).update(status)
-        self.query_one("#downloads_container #progressbar", ProgressBar).update(
-            progress=progress
+    # --------------------------------------------------
+    # DOWNLOAD STATUS UPDATES
+    # --------------------------------------------------
+    def _update_download_status(self, message: str, progress: float = 0) -> None:
+        self.post_message(self.DownloadStatus(message, progress))
+
+    @on(DownloadStatus)
+    def on_download_status(self, message: DownloadStatus) -> None:
+        self._download_status_label.update(message.status)
+        self._download_progressbar.update(progress=message.progress)
+
+    # --------------------------------------------------
+    # HELPERS
+    # --------------------------------------------------
+    def _get_indexer_instance(self) -> BaseIndexer:
+        if self._indexer_instance_cache:
+            return self._indexer_instance_cache
+
+        name = self.indexer.name
+        indexer_cls_str = f"torrra.indexers.{name}.{name.title()}Indexer"
+
+        indexer_cls = lazy_import(indexer_cls_str)
+        assert issubclass(indexer_cls, BaseIndexer)
+        indexer_instance = indexer_cls(
+            url=self.indexer.url, api_key=self.indexer.api_key
         )
 
-    def _get_indexer_instance(self) -> JackettIndexer | ProwlarrIndexer | None:
-        if not self.indexer:
-            return
-
-        INDEXER_MAP = {"jackett": JackettIndexer, "prowlarr": ProwlarrIndexer}
-
-        indexer = INDEXER_MAP[self.indexer.name]
-        return indexer(url=self.indexer.url, api_key=self.indexer.api_key)
-
-    async def _resolve_magnet_uri_or_torrent_info(
-        self, input_uri: str
-    ) -> str | lt.torrent_info | None:
-        if input_uri.startswith("magnet:"):
-            return input_uri
-
-        try:
-            async with httpx.AsyncClient(follow_redirects=False) as client:
-                resp = await client.get(input_uri)
-                if resp.status_code in (301, 302):
-                    return resp.headers.get("location")
-
-                content_type = resp.headers.get("content-type")
-                if "application/x-bittorrent" in content_type or input_uri.endswith(
-                    ".torrent"
-                ):
-                    with tempfile.NamedTemporaryFile(
-                        suffix=".torrent", delete=False
-                    ) as tmp_file:
-                        tmp_file.write(resp.content)
-                        tmp_path = tmp_file.name
-
-                    try:
-                        return lt.torrent_info(tmp_path)
-                    finally:
-                        # cleanup the tmp torrent file
-                        os.remove(tmp_path)
-                return None
-
-        except Exception as e:
-            self.log.error(f"an unexpected error occurred: {e}")
-            return None
+        self._indexer_instance_cache = indexer_instance
+        return indexer_instance

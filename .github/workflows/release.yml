@@ -19,7 +19,7 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Install uv and setup the python version
-        uses: astral-sh/setup-uv@v6
+        uses: astral-sh/setup-uv@v7
 
       - name: Install the project
         run: uv sync --all-groups
@@ -36,6 +36,8 @@ jobs:
     environment:
       name: dockerhub
       url: https://hub.docker.com/r/stabldev/torrra
+    permissions:
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -65,8 +67,8 @@ jobs:
             ${{ vars.DOCKERHUB_USERNAME }}/torrra:latest
             ${{ vars.DOCKERHUB_USERNAME }}/torrra:${{ steps.version.outputs.version }}
 
-  build_and_release_binaries:
-    name: Build on ${{ matrix.os }}
+  build_and_attach_bin:
+    name: Build & Attach Bin on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -80,7 +82,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: "3.13"
+          python-version-file: ".python-version"
 
       - name: Install dependencies
         run: |
@@ -112,8 +114,10 @@ jobs:
 
   publish_aur:
     name: Publish to AUR
-    needs: build_and_release_binaries
+    needs: build_and_attach_bin
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v5

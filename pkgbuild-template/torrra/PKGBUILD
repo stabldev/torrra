@@ -21,7 +21,7 @@ makedepends=(
     "python-build"
     "python-installer"
     "python-wheel"
-    "python-hatchling"
+    "python-uv-build"
 )
 source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
 sha256sums=()

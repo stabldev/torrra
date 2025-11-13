@@ -27,18 +27,35 @@ torrra prowlarr --url http://localhost:9696 --api-key <your_prowlarr_api_key>
 > Replace `<your_prowlarr_api_key>` with your actual Prowlarr API key.
 > **Note:** When using Prowlarr, ensure the `"Prefer Magnet URL"` option is checked in your Prowlarr settings for optimal compatibility.
 
+## Direct Searching
+
+You can bypass the initial welcome screen and search for torrents directly from your command line using the `search` command:
+
+```bash
+torrra search "arch linux iso"
+```
+
+This command will immediately display the search results for the given query.
+
+The `search` command also supports the `--no-cache` option:
+
+```bash
+torrra search "ubuntu iso" --no-cache
+```
+
 ## Command-Line Interface (CLI)
 
 `torrra` offers a comprehensive CLI for managing configurations and launching the application with specific indexers.
 
-| Command            | Description                                                                                          |
-| :----------------- | :--------------------------------------------------------------------------------------------------- |
-| `torrra`           | Displays the help message if no subcommand is provided                                               |
-| `torrra --help`    | Shows the general help message                                                                       |
-| `torrra --version` | Displays the current installed version of `torrra`                                                   |
-| `torrra config`    | Accesses the configuration subcommands (see below)                                                   |
-| `torrra jackett`   | Initializes `torrra` using [`Jackett`](https://github.com/Jackett/Jackett) as the torrent indexer    |
-| `torrra prowlarr`  | Initializes `torrra` using [`Prowlarr`](https://github.com/Prowlarr/Prowlarr) as the torrent indexer |
+| Command                 | Description                                                                                          |
+| :---------------------- | :--------------------------------------------------------------------------------------------------- |
+| `torrra`                | Displays the help message if no subcommand is provided                                               |
+| `torrra --help`         | Shows the general help message                                                                       |
+| `torrra --version`      | Displays the current installed version of `torrra`                                                   |
+| `torrra search <query>` | Searches for a torrent directly from the command line, bypassing the welcome screen.                 |
+| `torrra config`         | Accesses the configuration subcommands (see below)                                                   |
+| `torrra jackett`        | Initializes `torrra` using [`Jackett`](https://github.com/Jackett/Jackett) as the torrent indexer    |
+| `torrra prowlarr`       | Initializes `torrra` using [`Prowlarr`](https://github.com/Prowlarr/Prowlarr) as the torrent indexer |
 
 ### `torrra config` Subcommands
 

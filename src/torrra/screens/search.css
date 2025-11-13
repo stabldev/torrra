@@ -1,59 +1,60 @@
 SearchScreen Vertical {
-    /* search input */
-    Input#search {
-        dock: top;
+  /* search input */
+  Input#search {
+    dock: top;
+  }
+  /* results data-table */
+  DataTable#results_table {
+    background: transparent;
+    border: solid $secondary-muted;
+    padding: 0 1;
+    scrollbar-size: 0 0;
+    height: 1fr;
+    &:focus {
+      border: solid $secondary;
     }
-    /* results data-table */
-    DataTable#results_table {
-        background: transparent;
-        border: solid $secondary-muted;
-        padding: 0 1;
-        scrollbar-size: 0 0;
-        height: 1fr;
-        &:focus {
-            border: solid $secondary;
-        }
-        &:disabled {
-            border: solid $secondary-muted;
-        }
-        & > .datatable--header,
-        & > .datatable--header-hover {
-            background: transparent;
-        }
+    &:disabled {
+      border: solid $secondary-muted;
     }
-    /* loading indicator and text */
-    Vertical#loader {
-        align: center middle;
-        Static#status {
-            content-align-horizontal: center;
-        }
-        LoadingIndicator#indicator {
-            height: auto;
-            content-align-horizontal: center;
-        }
+    & > .datatable--header,
+    & > .datatable--header-hover {
+      background: transparent;
     }
-    /* downloads section */
-    Container#downloads_container {
-        dock: bottom;
-        height: auto;
-        border: solid $secondary-muted;
-        padding: 0 1;
-        &:focus {
-            border: solid $secondary;
-        }
-        /* bottom section: progressbar and actions */
-        Horizontal#progressbar-and-actions {
-            height: auto;
-            ProgressBar#progressbar {
-                width: 1fr;
-                #bar {
-                    width: 90%;
-                }
-            }
-            Static#actions {
-                content-align-horizontal: right;
-                width: auto;
-            }
-        }
+  }
+  /* loading indicator and text */
+  Vertical#loader {
+    align: center middle;
+    Static#status {
+      content-align-horizontal: center;
     }
+    SpinnerWidget#spinner {
+      height: auto;
+      content-align-horizontal: center;
+      color: $secondary;
+    }
+  }
+  /* downloads section */
+  Container#downloads_container {
+    dock: bottom;
+    height: auto;
+    border: solid $secondary-muted;
+    padding: 0 1;
+    &:focus {
+      border: solid $secondary;
+    }
+    /* bottom section: progressbar and actions */
+    Horizontal#progressbar-and-actions {
+      height: auto;
+      ProgressBar#progressbar {
+        width: 1fr;
+        #bar {
+          width: 90%;
+        }
+      }
+      Static#actions {
+        content-align-horizontal: right;
+        width: auto;
+      }
+    }
+  }
 }
