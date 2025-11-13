@@ -80,11 +80,16 @@ Both the `jackett` and `prowlarr` commands support the following options:
 
 Once `torrra` is running (after specifying an indexer), you'll interact with it through its intuitive Text-User Interface (TUI). Here are the primary keyboard controls for navigation and interaction:
 
-| Key     | Action                                                                     |
-| :------ | :------------------------------------------------------------------------- |
-| `↑` `↓` | Navigate up and down through the list of search results                    |
-| `Tab`   | Move focus to the next interactive widget (e.g., search box, results list) |
-| `Enter` | Initiate the download for the currently selected torrent                   |
-| `p`     | Pause the currently active download                                        |
-| `r`     | Resume a previously paused download                                        |
-| `q`     | Quit `torrra` and exit the application                                     |
+| Key           | Action                                                                     |
+| :------------ | :------------------------------------------------------------------------- |
+| `↑` / `k`     | Navigate up through the list of search results                             |
+| `↓` / `j`     | Navigate down through the list of search results                           |
+| `Enter` / `l` | Initiate the download for the currently selected torrent                   |
+| `ctrl+u`      | Page up in the results list                                                |
+| `ctrl+d`      | Page down in the results list                                              |
+| `G`           | Scroll to the bottom of the results list                                   |
+| `gg`          | Scroll to the top of the results list (press `g` twice)                    |
+| `Tab`         | Move focus to the next interactive widget (e.g., search box, results list) |
+| `p`           | Pause the currently active download                                        |
+| `r`           | Resume a previously paused download                                        |
+| `q`           | Quit `torrra` and exit the application                                     |
