@@ -1,16 +1,10 @@
 class ConfigError(Exception):
-    """Custom error for config key issues."""
+    """Config error."""
 
     pass
 
 
-class JackettConnectionError(Exception):
-    """Raised when Jackett is unreachable or misconfigured."""
-
-    pass
-
-
-class ProwlarrConnectionError(Exception):
-    """Raised when Prowlarr is unreachable or misconfigured."""
+class IndexerError(Exception):
+    """Indexer error."""
 
     pass
