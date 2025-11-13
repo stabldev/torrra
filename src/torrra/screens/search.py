@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Any, ClassVar, cast, override
 
 from textual import on, work
 from textual.app import ComposeResult
-from textual.binding import BindingType
 from textual.containers import Container, Horizontal, Vertical
 from textual.message import Message
 from textual.screen import Screen
@@ -27,16 +26,6 @@ if TYPE_CHECKING:
 
 
 class SearchScreen(Screen[None]):
-    BINDINGS: ClassVar[list[BindingType]] = [
-        ("l", "select_cursor", "Select item"),
-        ("k", "cursor_up", "Go to previous row"),
-        ("ctrl+u", "page_up", "Scroll up"),
-        ("j", "cursor_down", "Go to next row"),
-        ("ctrl+d", "page_down", "Scroll down"),
-        ("g", "scroll_top", "Go to top"),
-        ("G", "scroll_bottom", "Go to bottom"),
-    ]
-
     CSS_PATH: ClassVar[CSSPathType | None] = get_resource_path("screens/search.css")
 
     # layout constants
@@ -49,6 +38,7 @@ class SearchScreen(Screen[None]):
         ("Source", "source_col", 6),
     ]
 
+    # class-level constants
     METADATA_INTERVAL: ClassVar[float] = 0.5
     DOWNLOAD_SEED_INTERVAL: ClassVar[float] = 1.0
 

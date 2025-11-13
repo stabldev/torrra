@@ -2,7 +2,7 @@ from typing import ClassVar
 
 from textual import work
 from textual.app import App
-from textual.binding import BindingType
+from textual.binding import Binding, BindingType
 from textual.reactive import Reactive
 from textual.types import CSSPathType
 
@@ -20,8 +20,8 @@ class TorrraApp(App[None]):
     CSS_PATH: ClassVar[CSSPathType | None] = get_resource_path("app.css")
     ENABLE_COMMAND_PALETTE: ClassVar[bool] = False
     BINDINGS: ClassVar[list[BindingType]] = [
-        ("q", "quit", "Quit"),
-        ("escape", "clear_focus", "Clear focus"),
+        Binding("q", "quit"),
+        Binding("escape", "clear_focus"),
     ]
 
     def __init__(
