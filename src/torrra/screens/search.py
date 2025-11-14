@@ -2,7 +2,8 @@ import threading
 import time
 import webbrowser
 from contextlib import suppress
-from typing import TYPE_CHECKING, Any, ClassVar, cast, override
+from typing import TYPE_CHECKING, Any, ClassVar, cast
+from typing_extensions import override
 
 from textual import on, work
 from textual.app import ComposeResult

@@ -5,7 +5,7 @@ description = "A Python tool that lets you find and download torrents without le
 readme = "README.md"
 authors = [{ name = "stabldev", email = "thestabldev@gmail.com" }]
 license = { text = "MIT" }
-requires-python = ">=3.13"
+requires-python = ">=3.10"
 keywords = [
     "torrent",
     "cli",
@@ -60,17 +60,18 @@ torrra = "torrra.__main__:cli"
 docs = [
     "myst-parser>=4.0.1",
     "qiskit-sphinx-theme>=2.0.0",
-    "sphinx>=8.2.3",
+    "sphinx>=8,<9",
     "sphinx-copybutton>=0.5.2",
 ]
 
 [dependency-groups]
 dev = ["libtorrent-stubs>=0.0.1", "textual-dev>=1.7.0"]
 
-[tool.pyright]
+[tool.basedpyright]
+pythonVersion = "3.10"
 reportUnusedCallResult = "none"
-reportExplicitAny = "none"
 reportAny = "none"
+reportExplicitAny = "none"
 reportMissingTypeStubs = "none"
 reportUnknownMemberType = "none"
 
