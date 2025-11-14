@@ -14,13 +14,17 @@ from torrra.core.exceptions import ConfigError
 CONFIG_DIR = Path(user_config_dir("torrra"))
 CONFIG_FILE = CONFIG_DIR / "config.toml"
 
+# sentinel value used for robust
+# config.get(..., default=...) value check
+_sentinel = object()
+
 
 class Config:
     def __init__(self) -> None:
         self.config: dict[str, Any] = {}
         self._load_config()
 
-    def get(self, key_path: str, default: Any | None = None) -> Any:
+    def get(self, key_path: str, default: Any | None = _sentinel) -> Any:
         keys = key_path.split(".")
         current = self.config
 
@@ -35,7 +39,7 @@ class Config:
             return current
 
         except (KeyError, TypeError):
-            if default is not None:
+            if default is not _sentinel:
                 return default
 
             if len(keys) > 1:
