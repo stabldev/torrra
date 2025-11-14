@@ -1,4 +1,5 @@
-from typing import ClassVar, override
+from typing import ClassVar
+from typing_extensions import override
 
 from textual import on
 from textual.app import ComposeResult

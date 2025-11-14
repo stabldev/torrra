@@ -1,6 +1,7 @@
 import atexit
 import hashlib
-from typing import Any, override
+from typing import Any
+from typing_extensions import override
 
 from diskcache import Cache as _Cache
 from platformdirs import user_cache_dir
