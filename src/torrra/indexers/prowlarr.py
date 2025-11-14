@@ -11,6 +11,14 @@ from torrra.indexers.base import BaseIndexer
 
 class ProwlarrIndexer(BaseIndexer):
     @override
+    def get_search_url(self) -> str:
+        return f"{self.url}/api/v1/search"
+
+    @override
+    def get_healthcheck_url(self) -> str:
+        return f"{self.url}/api/v1/health"
+
+    @override
     async def search(self, query: str, use_cache: bool = True) -> list[Torrent]:
         key = cache.make_key("prowlarr", query)
 
@@ -18,11 +26,11 @@ class ProwlarrIndexer(BaseIndexer):
             raw_data = cast(list[TorrentDict], cache.get(key))
             return [Torrent.from_dict(d) for d in raw_data]
 
-        endpoint = f"{self.url}/api/v1/search"
+        url = self.get_search_url()
         params = {"apikey": self.api_key, "query": query}
 
         async with httpx.AsyncClient(timeout=self.timeout) as client:
-            resp = await client.get(endpoint, params=params)
+            resp = await client.get(url, params=params)
             resp.raise_for_status()
             torrents = [self._normalize_result(r) for r in resp.json()]
 
@@ -33,7 +41,7 @@ class ProwlarrIndexer(BaseIndexer):
 
     @override
     async def healthcheck(self) -> bool:
-        url = f"{self.url}/api/v1/health"
+        url = self.get_healthcheck_url()
         params = {"apikey": self.api_key}
 
         async with httpx.AsyncClient(timeout=self.timeout) as client:

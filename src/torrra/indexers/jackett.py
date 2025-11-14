@@ -11,6 +11,14 @@ from torrra.indexers.base import BaseIndexer
 
 class JackettIndexer(BaseIndexer):
     @override
+    def get_search_url(self) -> str:
+        return f"{self.url}/api/v2.0/indexers/all/results"
+
+    @override
+    def get_healthcheck_url(self) -> str:
+        return f"{self.url}/api/v2.0/indexers/nonexistent_indexer/results"
+
+    @override
     async def search(self, query: str, use_cache: bool = True) -> list[Torrent]:
         key = cache.make_key("jackett", query)
 
@@ -18,11 +26,11 @@ class JackettIndexer(BaseIndexer):
             raw_data = cast(list[TorrentDict], cache.get(key))
             return [Torrent.from_dict(d) for d in raw_data]
 
-        endpoint = f"{self.url}/api/v2.0/indexers/all/results"
+        url = self.get_search_url()
         params = {"apikey": self.api_key, "query": query}
 
         async with httpx.AsyncClient(timeout=self.timeout) as client:
-            resp = await client.get(endpoint, params=params)
+            resp = await client.get(url, params=params)
             resp.raise_for_status()
             res = resp.json().get("Results", [])
             torrents = [self._normalize_result(r) for r in res]
@@ -34,7 +42,7 @@ class JackettIndexer(BaseIndexer):
 
     @override
     async def healthcheck(self) -> bool:
-        url = f"{self.url}/api/v2.0/indexers/nonexistent_indexer/results"
+        url = self.get_healthcheck_url()
         params = {"apikey": self.api_key}
 
         async with httpx.AsyncClient(timeout=self.timeout) as client:

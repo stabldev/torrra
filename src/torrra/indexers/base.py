@@ -11,6 +11,14 @@ class BaseIndexer(ABC):
         self.timeout: int = timeout
 
     @abstractmethod
+    def get_search_url(self) -> str:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_healthcheck_url(self) -> str:
+        raise NotImplementedError()
+
+    @abstractmethod
     async def search(self, query: str, use_cache: bool = True) -> list[Torrent]:
         raise NotImplementedError()
 
