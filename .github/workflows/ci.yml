@@ -8,9 +8,12 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
 jobs:
   test:
-    name: Test on Python ${{ matrix.python-version }}
+    name: Test (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -40,3 +43,11 @@ jobs:
 
       - name: Run Tests with uv
         run: uv run pytest
+
+      - name: Upload snapshot report (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: snapshot-report
+          path: "**/snapshot_report.html"
+          if-no-files-found: warn
