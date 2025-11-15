@@ -118,7 +118,6 @@ class Config:
                 "theme": "textual-dark",
                 "use_cache": True,
                 "cache_ttl": DEFAULT_CACHE_TTL,
-                "seed_ratio": None,
             }
         }
 

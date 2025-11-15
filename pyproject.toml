@@ -67,7 +67,15 @@ docs = [
 ]
 
 [dependency-groups]
-dev = ["libtorrent-stubs>=0.0.1", "textual-dev>=1.7.0"]
+dev = [
+    "libtorrent-stubs>=0.0.1",
+    "pytest>=9.0.1",
+    "pytest-asyncio>=1.3.0",
+    "pytest-cov>=7.0.0",
+    "pytest-textual-snapshot>=1.0.0",
+    "respx>=0.22.0",
+    "textual-dev>=1.7.0",
+]
 
 [tool.basedpyright]
 pythonVersion = "3.10"
@@ -76,6 +84,10 @@ reportAny = "none"
 reportExplicitAny = "none"
 reportMissingTypeStubs = "none"
 reportUnknownMemberType = "none"
+
+[tool.pytest.ini_options]
+asyncio_mode="auto"
+pythonpath="src"
 
 [build-system]
 requires = ["uv-build>=0.8.19,<0.9.9"]
