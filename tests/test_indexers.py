@@ -2,11 +2,12 @@ from httpx import Response
 import pytest
 import respx
 
+from torrra.indexers.base import BaseIndexer
 from torrra.indexers.jackett import JackettIndexer
 from torrra.indexers.prowlarr import ProwlarrIndexer
 
-MOCK_API_URL = "http://test.indexer.url"
-MOCK_API_KEY = "test_api_key"
+MOCK_API_URL = "http://mock.indexer.url"
+MOCK_API_KEY = "mock_api_key"
 
 MOCK_SEARCH_RESPONSE = {
     "jackett": {
@@ -35,13 +36,13 @@ MOCK_SEARCH_RESPONSE = {
 
 
 @pytest.fixture(params=[JackettIndexer, ProwlarrIndexer])
-def indexer(request: pytest.FixtureRequest):
+def indexer(request: pytest.FixtureRequest) -> BaseIndexer:
     return request.param(url=MOCK_API_URL, api_key=MOCK_API_KEY)
 
 
 @respx.mock
 @pytest.mark.parametrize("query", ["arch linux iso"])
-async def test_search(indexer: JackettIndexer | ProwlarrIndexer, query: str):
+async def test_search(indexer: BaseIndexer, query: str) -> None:
     indexer_name = indexer.__class__.__name__.removesuffix("Indexer").lower()
     mock_body = MOCK_SEARCH_RESPONSE[indexer_name]
 
@@ -62,7 +63,7 @@ async def test_search(indexer: JackettIndexer | ProwlarrIndexer, query: str):
 
 
 @respx.mock
-async def test_healthcheck(indexer: JackettIndexer | ProwlarrIndexer):
+async def test_healthcheck(indexer: BaseIndexer) -> None:
     url = indexer.get_healthcheck_url()
     respx.get(url).mock(Response(200))
 
