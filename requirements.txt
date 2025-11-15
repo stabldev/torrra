@@ -407,6 +407,7 @@ jinja2==3.1.6 \
     --hash=sha256:85ece4451f492d0c13c5dd7c13a64681a86afae63a5f347908daf103ce6d2f67
     # via
     #   aiohttp-jinja2
+    #   pytest-textual-snapshot
     #   textual-serve
 libtorrent==2.0.11 \
     --hash=sha256:00c626742e03447703bc726bb430a0f3e2f0661ae5a5cd06f5d7cd1b81eb92c2 \
@@ -883,12 +884,17 @@ pytest==9.0.1 \
     # via
     #   pytest-asyncio
     #   pytest-cov
+    #   pytest-textual-snapshot
+    #   syrupy
 pytest-asyncio==1.3.0 \
     --hash=sha256:611e26147c7f77640e6d0a92a38ed17c3e9848063698d5c93d5aa7aa11cebff5 \
     --hash=sha256:d7f52f36d231b80ee124cd216ffb19369aa168fc10095013c6b014a34d3ee9e5
 pytest-cov==7.0.0 \
     --hash=sha256:33c97eda2e049a0c5298e91f519302a1334c26ac65c1a483d6206fd458361af1 \
     --hash=sha256:3b8e9558b16cc1479da72058bdecf8073661c7f57f7d3c5f22a1c23507f2d861
+pytest-textual-snapshot==1.0.0 \
+    --hash=sha256:065217055ed833b8a16f2320a0613f39a0154e8d9fee63535f29f32c6414b9d7 \
+    --hash=sha256:dd3a421491a6b1987ee7b4336d7f65299524924d2b0a297e69733b73b01570e1
 respx==0.22.0 \
     --hash=sha256:3c8924caa2a50bd71aefc07aa812f2466ff489f1848c96e954a5362d17095d91 \
     --hash=sha256:631128d4c9aba15e56903fb5f66fb1eff412ce28dd387ca3a81339e52dbd3ad0
@@ -896,16 +902,22 @@ rich==14.2.0 \
     --hash=sha256:73ff50c7c0c1c77c8243079283f4edb376f0f6442433aecb8ce7e6d0b92d1fe4 \
     --hash=sha256:76bc51fe2e57d2b1be1f96c524b890b816e334ab4c1e45888799bfaab0021edd
     # via
+    #   pytest-textual-snapshot
     #   textual
     #   textual-serve
 sniffio==1.3.1 \
     --hash=sha256:2f6da418d1f1e0fddd844478f41680e794e6051915791a034ff65e5f100525a2 \
     --hash=sha256:f4324edc670a0f49750a81b895f35c3adb843cca46f0530f79fc1babb23789dc
     # via anyio
+syrupy==5.0.0 \
+    --hash=sha256:3282fe963fa5d4d3e47231b16d1d4d0f4523705e8199eeb99a22a1bc9f5942f2 \
+    --hash=sha256:c848e1a980ca52a28715cd2d2b4d434db424699c05653bd1158fb31cf56e9546
+    # via pytest-textual-snapshot
 textual==6.6.0 \
     --hash=sha256:53345166d6b0f9fd028ed0217d73b8f47c3a26679a18ba3b67616dcacb470eec \
     --hash=sha256:5a9484bd15ee8a6fd8ac4ed4849fb25ee56bed2cecc7b8a83c4cd7d5f19515e5
     # via
+    #   pytest-textual-snapshot
     #   textual-dev
     #   textual-serve
     #   torrra

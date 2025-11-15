@@ -8,6 +8,7 @@ build/
 dist/
 wheels/
 *.egg-info
+snapshot_report.html
 
 # Virtual environments
 .venv
