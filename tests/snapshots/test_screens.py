@@ -21,16 +21,18 @@ def app_factory():
 
 
 def test_search_screen_snapshot(app_factory: Any, snap_compare: Any):
+    async def run_before(pilot: Pilot[Any]):
+        await pilot.pause()
+
     app = app_factory("arch linux iso")
     # consistent theme
     app.theme = "textual-dark"
-    assert snap_compare(app)
+    assert snap_compare(app, run_before=run_before)
 
 
 def test_welcome_screen_snapshot(app_factory: Any, snap_compare: Any):
     async def run_before(pilot: Pilot[Any]):
         await pilot.press(*list("arch linux iso"))
-        await pilot.pause()
 
     app = app_factory()
     # consistent theme
