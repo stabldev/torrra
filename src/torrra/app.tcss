@@ -1,0 +1,23 @@
+/* THEME SWITCH SCREEN */
+ThemeSwitcherScreen {
+  align: center middle;
+
+  #theme-switcher-container {
+    height: auto;
+    max-width: 30;
+    max-height: 80%;
+
+    Label {
+      width: 100%;
+      text-align: center;
+    }
+
+    ListView {
+      margin-top: 1;
+      padding: 0 1;
+      height: 14;
+      background: $surface;
+      border: $secondary;
+    }
+  }
+}

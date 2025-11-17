@@ -9,6 +9,7 @@ from textual.types import CSSPathType
 from torrra._types import Indexer
 from torrra.core.config import config
 from torrra.screens.search import SearchScreen
+from torrra.screens.theme_switcher import ThemeSwitcherScreen
 from torrra.screens.welcome import WelcomeScreen
 from torrra.utils.fs import get_resource_path
 
@@ -22,6 +23,7 @@ class TorrraApp(App[None]):
     BINDINGS: ClassVar[list[BindingType]] = [
         Binding("q", "quit"),
         Binding("escape", "clear_focus"),
+        Binding("ctrl+k,t", "switch_theme"),
     ]
 
     def __init__(
@@ -69,3 +71,6 @@ class TorrraApp(App[None]):
 
     def action_clear_focus(self) -> None:
         self.set_focus(None)
+
+    def action_switch_theme(self) -> None:
+        self.push_screen(ThemeSwitcherScreen())
