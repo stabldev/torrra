@@ -19,11 +19,15 @@ class ThemeSwitcherScreen(ModalScreen[None]):
     CSS_PATH: ClassVar[CSSPathType | None] = get_resource_path("app.tcss")
     BINDINGS: list[BindingType] = [
         Binding("escape", "close_screen"),
+        Binding("k", "cursor_up"),
+        Binding("j", "cursor_down"),
     ]
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.original_theme: str = self.app.theme
+
+        self._list_view: ListView | None = None
         self._update_worker: Worker[None] | None = None
 
     @override
@@ -39,10 +43,10 @@ class ThemeSwitcherScreen(ModalScreen[None]):
             )
 
     def on_mount(self) -> None:
-        theme_list = self.query_one(ListView)
-        for i, item in enumerate(theme_list.children):
+        self._list_view = self.query_one(ListView)
+        for i, item in enumerate(self._list_view.children):
             if item.name == self.app.theme:
-                theme_list.index = i
+                self._list_view.index = i
                 break
 
     def on_list_view_highlighted(self, event: ListView.Highlighted) -> None:
@@ -52,13 +56,22 @@ class ThemeSwitcherScreen(ModalScreen[None]):
 
     def on_list_view_selected(self) -> None:
         self._cancel_update_worker()
-        config.set("general.theme", self.app.theme)
+        if self.app.theme != self.original_theme:
+            config.set("general.theme", self.app.theme)
         self.app.pop_screen()
 
     def action_close_screen(self) -> None:
         self._cancel_update_worker()
         self.app.theme = self.original_theme
         self.app.pop_screen()
+
+    def action_cursor_up(self) -> None:
+        if self._list_view is not None:
+            self._list_view.action_cursor_up()
+
+    def action_cursor_down(self) -> None:
+        if self._list_view is not None:
+            self._list_view.action_cursor_down()
 
     @work(exclusive=True)
     async def _set_theme(self, theme: str) -> None:
