@@ -90,5 +90,5 @@ asyncio_mode="auto"
 pythonpath="src"
 
 [build-system]
-requires = ["uv-build>=0.8.19,<0.9.9"]
+requires = ["uv-build>=0.8.19,<0.9.11"]
 build-backend = "uv_build"
