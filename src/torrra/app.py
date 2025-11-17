@@ -23,7 +23,7 @@ class TorrraApp(App[None]):
     BINDINGS: ClassVar[list[BindingType]] = [
         Binding("q", "quit"),
         Binding("escape", "clear_focus"),
-        Binding("ctrl+k,t", "switch_theme"),
+        Binding("ctrl+t", "switch_theme"),
     ]
 
     def __init__(

@@ -14,10 +14,13 @@ ThemeSwitcherScreen {
 
     ListView {
       margin-top: 1;
-      padding: 0 1;
       height: 14;
       background: $surface;
-      border: $secondary;
+      border: tall $secondary;
+
+      Static {
+        padding-left: 1;
+      }
     }
   }
 }
