@@ -30,6 +30,7 @@ def mock_indexer(monkeypatch: pytest.MonkeyPatch):
 @pytest.fixture
 def app():
     # start app on SearchScreen
+    # by providing a default search_query
     return TorrraApp(
         indexer=Indexer(
             name="jackett", url="http://mock.indexer.url", api_key="mock_api_key"
@@ -51,14 +52,13 @@ async def test_search_screen_search(app: TorrraApp, mock_indexer: MagicMock):
         )
     ]
 
-    async with app.run_test() as pilot:
-        # should show SearchScreen first
-        assert isinstance(pilot.app.screen, SearchScreen)
+    async with app.run_test():
+        assert isinstance(app.screen, SearchScreen)
 
         # (doesnt support generic type, so used casting)
         table = cast(
             DataTable[str],
-            pilot.app.screen.query_one("#results_table", DataTable),
+            app.screen.query_one("#results_table", DataTable),
         )
 
         # table should have results
@@ -73,15 +73,14 @@ async def test_search_screen_no_results(app: TorrraApp, mock_indexer: MagicMock)
     # ensure result is empty []
     mock_indexer.search.return_value = []
 
-    async with app.run_test() as pilot:
-        # should show SearchScreen first
-        assert isinstance(pilot.app.screen, SearchScreen)
+    async with app.run_test():
+        assert isinstance(app.screen, SearchScreen)
 
-        loader_status = pilot.app.screen.query_one("#loader #status", Static)
+        loader_status = app.screen.query_one("#loader #status", Static)
         # (doesnt support generic type, so used casting)
         table = cast(
             DataTable[str],
-            pilot.app.screen.query_one("#results_table", DataTable),
+            app.screen.query_one("#results_table", DataTable),
         )
 
         assert "Nothing Found" in str(loader_status.content)
