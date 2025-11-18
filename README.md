@@ -29,11 +29,21 @@ Other options: [`AUR`](https://aur.archlinux.org/packages/torrra), [`standalone 
 
 ## Quick Usage
 
+**1. Interactive TUI Search**
+
+Launch `torrra` with an indexer to search and download within the TUI.
+
 ```bash
 torrra jackett --url http://localhost:9117 --api-key <your_api_key>
 ```
 
-Then use the arrow keys to navigate, `Enter` to download, `p` to pause, `r` to resume, `q` to quit.
+**2. Direct Search**
+
+Or, search directly from your command line and see instant results.
+
+```bash
+torrra search "arch linux iso"
+```
 
 [See full CLI & TUI guide →](https://torrra.readthedocs.io/en/latest/usage.html)
 

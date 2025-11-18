@@ -87,6 +87,7 @@ Once `torrra` is running (after specifying an indexer), you'll interact with it 
 | `Enter` / `l` | Initiate the download for the currently selected torrent                   |
 | `ctrl+u`      | Page up in the results list                                                |
 | `ctrl+d`      | Page down in the results list                                              |
+| `ctrl+t`      | Open the theme switcher to change the application's appearance             |
 | `G`           | Scroll to the bottom of the results list                                   |
 | `gg`          | Scroll to the top of the results list (press `g` twice)                    |
 | `Tab`         | Move focus to the next interactive widget (e.g., search box, results list) |
