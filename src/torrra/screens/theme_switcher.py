@@ -1,22 +1,19 @@
 import asyncio
-from typing import Any, ClassVar
+from typing import Any
 
 from textual import work
 from textual.app import ComposeResult
 from textual.binding import Binding, BindingType
 from textual.containers import Vertical
 from textual.screen import ModalScreen
-from textual.types import CSSPathType
 from textual.widgets import Label, ListItem, ListView, Static
 from textual.worker import Worker
 from typing_extensions import override
 
 from torrra.core.config import config
-from torrra.utils.fs import get_resource_path
 
 
 class ThemeSwitcherScreen(ModalScreen[None]):
-    CSS_PATH: ClassVar[CSSPathType | None] = get_resource_path("app.tcss")
     BINDINGS: list[BindingType] = [
         Binding("escape", "close_screen"),
         Binding("k", "cursor_up"),

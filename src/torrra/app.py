@@ -18,7 +18,7 @@ class TorrraApp(App[None]):
     theme: Reactive[str]
 
     TITLE: str | None = "torrra"
-    CSS_PATH: ClassVar[CSSPathType | None] = get_resource_path("app.css")
+    CSS_PATH: ClassVar[CSSPathType | None] = get_resource_path("app.tcss")
     ENABLE_COMMAND_PALETTE: ClassVar[bool] = False
     BINDINGS: ClassVar[list[BindingType]] = [
         Binding("q", "quit"),

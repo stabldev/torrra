@@ -1,23 +1,144 @@
-/* THEME SWITCH SCREEN */
+/* ------------------------- */
+/* GLOBAL STYLES/UTILITIES   */
+/* ------------------------- */
+Input {
+  padding: 0 1;
+  margin: 0;
+  background: transparent;
+  border: solid $secondary-muted;
+  &:focus {
+    border: solid $secondary;
+  }
+}
+
+.hidden {
+  display: none;
+}
+
+/* ------------------------- */
+/* WELCOME SCREEN            */
+/* ------------------------- */
+WelcomeScreen {
+  align: center middle;
+  #welcome_container {
+    max-width: 50;
+    height: auto;
+    #banner {
+      text-align: center;
+    }
+    #subtitle {
+      color: $text-secondary;
+      text-align: center;
+    }
+    #version {
+      color: $foreground-muted;
+      text-align: center;
+    }
+    #commands_container {
+      margin-top: 1;
+      align-horizontal: center;
+      height: auto;
+      Grid {
+        width: 75%;
+        height: 4;
+        grid-size: 2;
+        grid-columns: 1fr auto;
+        Static {
+          text-align: left;
+          color: $foreground-muted;
+          &#title {
+            text-align: center;
+            column-span: 2;
+            color: $text-secondary;
+          }
+          &.key {
+            text-align: right;
+            color: $text-secondary;
+          }
+        }
+      }
+    }
+  }
+}
+
+/* ------------------------- */
+/* SEARCH SCREEN             */
+/* ------------------------- */
+SearchScreen #search_container {
+  #search {
+    dock: top;
+  }
+  #results_table {
+    background: transparent;
+    border: solid $secondary-muted;
+    padding: 0 1;
+    scrollbar-size: 0 0;
+    height: 1fr;
+    &:focus {
+      border: solid $secondary;
+    }
+    &:disabled {
+      border: solid $secondary-muted;
+    }
+    & > .datatable--header,
+    & > .datatable--header-hover {
+      background: transparent;
+    }
+  }
+  #loader {
+    align: center middle;
+    #status {
+      content-align-horizontal: center;
+    }
+    #spinner {
+      height: auto;
+      content-align-horizontal: center;
+      color: $secondary;
+    }
+  }
+
+  #downloads_container {
+    dock: bottom;
+    height: auto;
+    border: solid $secondary-muted;
+    padding: 0 1;
+    &:focus {
+      border: solid $secondary;
+    }
+    #progressbar-and-actions {
+      height: auto;
+      #progressbar {
+        width: 1fr;
+        #bar {
+          width: 90%;
+        }
+      }
+      #actions {
+        content-align-horizontal: right;
+        width: auto;
+      }
+    }
+  }
+}
+
+/* ------------------------- */
+/* THEME SWITCH SCREEN       */
+/* ------------------------- */
 ThemeSwitcherScreen {
   align: center middle;
-
   #theme-switcher-container {
     height: auto;
     max-width: 30;
     max-height: 80%;
-
     Label {
       width: 100%;
       text-align: center;
     }
-
     ListView {
       margin-top: 1;
       height: 14;
       background: $surface;
       border: tall $secondary;
-
       Static {
         padding-left: 1;
       }
