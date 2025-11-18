@@ -22,7 +22,7 @@ def test_welcome_screen_snapshot(app_factory: Any, snap_compare: Any):
     assert snap_compare(app, run_before=run_before)
 
 
-def test_theme_switcher_screen_snapshot(app_factory: Any, snap_compare: Any):
+def test_theme_selector_screen_snapshot(app_factory: Any, snap_compare: Any):
     async def run_before(pilot: Pilot[Any]):
         await pilot.press("ctrl+t")
         await pilot.pause()

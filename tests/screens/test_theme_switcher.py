@@ -5,7 +5,7 @@ from textual.widgets import ListView
 
 from torrra.app import TorrraApp
 from torrra.core.config import Config
-from torrra.screens.theme_switcher import ThemeSwitcherScreen
+from torrra.screens.theme_selector import ThemeSelectorScreen
 
 
 @pytest.fixture
@@ -15,20 +15,20 @@ def app(app_factory: Any) -> TorrraApp:
     return app
 
 
-async def test_theme_switcher_opens_and_closes_with_escape(app: TorrraApp):
+async def test_theme_selector_opens_and_closes_with_escape(app: TorrraApp):
     async with app.run_test() as pilot:
         await pilot.press("ctrl+t")
-        assert isinstance(app.screen, ThemeSwitcherScreen)
+        assert isinstance(app.screen, ThemeSelectorScreen)
         assert len(app.screen_stack) == 3  # default + welcome + theme switcher
 
         await pilot.press("escape")
         assert len(app.screen_stack) == 2  # default + welcome screen
 
 
-async def test_theme_switcher_navigation_with_j_and_k(app: TorrraApp):
+async def test_theme_selector_navigation_with_j_and_k(app: TorrraApp):
     async with app.run_test() as pilot:
         await pilot.press("ctrl+t")
-        assert isinstance(app.screen, ThemeSwitcherScreen)
+        assert isinstance(app.screen, ThemeSelectorScreen)
 
         list_view = app.screen.query_one("ListView", ListView)
         initial_index = cast(int, list_view.index)
@@ -40,10 +40,10 @@ async def test_theme_switcher_navigation_with_j_and_k(app: TorrraApp):
         assert list_view.index == initial_index
 
 
-async def test_theme_switcher_select_theme_with_enter(app: TorrraApp):
+async def test_theme_selector_select_theme_with_enter(app: TorrraApp):
     async with app.run_test() as pilot:
         await pilot.press("ctrl+t")
-        assert isinstance(app.screen, ThemeSwitcherScreen)
+        assert isinstance(app.screen, ThemeSelectorScreen)
 
         list_view = app.screen.query_one("ListView", ListView)
         target_theme = list_view.children[1].name
@@ -60,7 +60,7 @@ async def test_theme_switcher_select_theme_with_enter(app: TorrraApp):
         assert app.theme == target_theme
 
 
-async def test_theme_switcher_cancel_selection_with_escape(
+async def test_theme_selector_cancel_selection_with_escape(
     app: TorrraApp, mock_config: Config
 ):
     original_theme = app.theme
@@ -68,7 +68,7 @@ async def test_theme_switcher_cancel_selection_with_escape(
 
     async with app.run_test() as pilot:
         await pilot.press("ctrl+t")
-        assert isinstance(app.screen, ThemeSwitcherScreen)
+        assert isinstance(app.screen, ThemeSelectorScreen)
 
         list_view = app.screen.query_one("ListView", ListView)
         target_theme = list_view.children[1].name

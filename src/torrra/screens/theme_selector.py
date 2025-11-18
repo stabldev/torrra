@@ -13,7 +13,7 @@ from typing_extensions import override
 from torrra.core.config import config
 
 
-class ThemeSwitcherScreen(ModalScreen[None]):
+class ThemeSelectorScreen(ModalScreen[None]):
     BINDINGS: list[BindingType] = [
         Binding("escape", "close_screen"),
         Binding("k", "cursor_up"),

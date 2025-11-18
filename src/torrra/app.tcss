@@ -124,7 +124,7 @@ SearchScreen #search_container {
 /* ------------------------- */
 /* THEME SWITCH SCREEN       */
 /* ------------------------- */
-ThemeSwitcherScreen {
+ThemeSelectorScreen {
   align: center middle;
   #theme-switcher-container {
     height: auto;
