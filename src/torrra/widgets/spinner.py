@@ -20,6 +20,8 @@ class SpinnerWidget(Static):
 
     def resume(self) -> None:
         self.update_timer.resume()
+        self.update_spinner()
 
     def pause(self) -> None:
         self.update_timer.pause()
+        self.update_spinner()

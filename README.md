@@ -1,6 +1,6 @@
 # Torrra - “rrr”
 
-> A Python tool that lets you find and download torrents without leaving your CLI.
+> A Python tool that lets you search and download torrents without leaving your CLI.
 
 [![Python Versions](https://img.shields.io/pypi/pyversions/torrra?style=flat-square)](https://pypi.org/project/torrra/)
 [![PyPI](https://img.shields.io/pypi/v/torrra?style=flat-square)](https://pypi.org/project/torrra/)
@@ -8,7 +8,6 @@
 [![Pepy Total Downloads](https://img.shields.io/pepy/dt/torrra?style=flat-square&color=blue)](https://pypi.org/project/torrra/)
 [![Docs](https://readthedocs.org/projects/torrra/badge/?version=latest&style=flat-square)](https://torrra.readthedocs.io/)
 [![License](https://img.shields.io/github/license/stabldev/torrra?style=flat-square)](https://github.com/stabldev/torrra/blob/main/LICENSE)
-[![GitHub Issues or Pull Requests](https://img.shields.io/github/issues/stabldev/torrra?style=flat-square)](https://github.com/stabldev/torrra/issues)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square)](https://github.com/stabldev/torrra/issues)
 
 ![demo](./docs/_static/demo.gif)
@@ -21,6 +20,7 @@ _Torrra_ provides a streamlined command-line interface for torrent search and do
 
 ```bash
 pipx install torrra
+# or uv tool install torrra
 ```
 
 Other options: [`AUR`](https://aur.archlinux.org/packages/torrra), [`standalone binaries`](https://github.com/stabldev/torrra/releases), [`Homebrew`](https://github.com/Maniacsan/homebrew-torrra) or [`Docker`](https://hub.docker.com/r/stabldev/torrra).
@@ -29,13 +29,24 @@ Other options: [`AUR`](https://aur.archlinux.org/packages/torrra), [`standalone 
 
 ## Quick Usage
 
+### 1. Interactive Search
+
+Launch `torrra` with an indexer.
+
 ```bash
 torrra jackett --url http://localhost:9117 --api-key <your_api_key>
 ```
 
-Then use the arrow keys to navigate, `Enter` to download, `p` to pause, `r` to resume, `q` to quit.
+### 2. Direct Search
 
-[See full CLI & TUI guide →](https://torrra.readthedocs.io/en/latest/usage.html)
+Or, search directly from your command line and see instant results.
+
+```bash
+torrra search "arch linux iso"
+```
+
+[Full Usage guide →](https://torrra.readthedocs.io/en/latest/usage.html)\
+[See full CLI & TUI guide →](https://torrra.readthedocs.io/en/latest/usage.html#text-user-interface-tui-controls)
 
 ## Configuration
 
@@ -44,11 +55,11 @@ For persistent settings, `torrra` uses a `config.toml` file where you can config
 For example, to set up Jackett as your default indexer:
 
 ```bash
-# Set your Jackett URL and API key
+# set your Jackett URL and API key
 torrra config set indexers.jackett.url http://localhost:9117
 torrra config set indexers.jackett.api_key <your_api_key>
 
-# Set Jackett as the default indexer
+# set Jackett as the default indexer
 torrra config set indexers.default jackett
 ```
 
