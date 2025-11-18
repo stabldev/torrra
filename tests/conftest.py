@@ -1,9 +1,25 @@
 from pathlib import Path
+
 import pytest
 
-
+from torrra._types import Indexer
+from torrra.app import TorrraApp
 from torrra.core import config as config_module
 from torrra.core.config import Config
+
+
+@pytest.fixture
+def app_factory():
+    def _create_app(search_query: str | None = None):
+        return TorrraApp(
+            indexer=Indexer(
+                name="jackett", url="http://mock.indexer.url", api_key="mock_api_key"
+            ),
+            use_cache=False,
+            search_query=search_query,
+        )
+
+    return _create_app
 
 
 @pytest.fixture
