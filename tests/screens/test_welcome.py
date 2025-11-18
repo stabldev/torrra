@@ -61,7 +61,7 @@ async def test_welcome_screen_ui_composition(app: TorrraApp):
         assert pilot.app.screen.query_one("#banner")
         assert pilot.app.screen.query_one("#subtitle")
         assert pilot.app.screen.query_one("#version")
-        assert pilot.app.screen.query_one("#commands_grid #title")
+        assert pilot.app.screen.query_one("Grid #title")
 
 
 async def test_welcome_screen_version_display(app: TorrraApp):
