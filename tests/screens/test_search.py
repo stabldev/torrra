@@ -1,30 +1,13 @@
-from typing import Any, cast
-import pytest
-from unittest.mock import AsyncMock, MagicMock
+from typing import cast
+from unittest.mock import MagicMock
 
+import pytest
 from textual.coordinate import Coordinate
 from textual.widgets import DataTable, Static
 
 from torrra._types import Indexer, Torrent
 from torrra.app import TorrraApp
 from torrra.screens.search import SearchScreen
-
-
-@pytest.fixture
-def mock_indexer(monkeypatch: pytest.MonkeyPatch):
-    mock_indexer_instance = MagicMock()
-    mock_indexer_instance.search = AsyncMock(return_value=[])
-
-    # patch the method that creates the indexer to return mock instance
-    def _mock_get_indexer_instance(self: Any):  # pyright: ignore[reportUnusedParameter]
-        return mock_indexer_instance
-
-    monkeypatch.setattr(
-        "torrra.screens.search.SearchScreen._get_indexer_instance",
-        _mock_get_indexer_instance,
-    )
-    # return patched indexer for test cases
-    return mock_indexer_instance
 
 
 @pytest.fixture

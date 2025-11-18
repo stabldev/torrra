@@ -1,4 +1,6 @@
 from pathlib import Path
+from typing import Any
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -10,6 +12,9 @@ from torrra.core.config import Config
 
 @pytest.fixture
 def app_factory():
+    # returns a function to create app
+    # w/ or w/o search_query
+    # passing a search_query will show search screen instead.
     def _create_app(search_query: str | None = None):
         return TorrraApp(
             indexer=Indexer(
@@ -20,6 +25,23 @@ def app_factory():
         )
 
     return _create_app
+
+
+@pytest.fixture
+def mock_indexer(monkeypatch: pytest.MonkeyPatch):
+    mock_indexer_instance = MagicMock()
+    mock_indexer_instance.search = AsyncMock(return_value=[])
+
+    # patch the method that creates the indexer to return mock instance
+    def _mock_get_indexer_instance(self: Any):  # pyright: ignore[reportUnusedParameter]
+        return mock_indexer_instance
+
+    monkeypatch.setattr(
+        "torrra.screens.search.SearchScreen._get_indexer_instance",
+        _mock_get_indexer_instance,
+    )
+    # return patched indexer for test cases
+    return mock_indexer_instance
 
 
 @pytest.fixture

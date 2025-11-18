@@ -1,9 +1,34 @@
 from typing import Any
+from unittest.mock import MagicMock
 
 from textual.pilot import Pilot
 
+from torrra._types import Torrent
 
-def test_search_screen_snapshot(app_factory: Any, snap_compare: Any):
+
+def test_search_screen_snapshot(
+    app_factory: Any, mock_indexer: MagicMock, snap_compare: Any
+):
+    # return mock torrents as result
+    mock_indexer.search.return_value = [
+        Torrent(
+            "Arch Linux 2025.11.01",
+            1073741824,
+            850,
+            50,
+            "LinuxTacker",
+            "magnet:?xt=urn:btih:arch_new",
+        ),
+        Torrent(
+            "Arch Linux 2024.01.01",
+            838860800,
+            5,
+            15,
+            "LinuxTacker",
+            "magnet:?xt=urn:btih:arch_old",
+        ),
+    ]
+
     async def run_before(pilot: Pilot[Any]):
         await pilot.pause()
 
