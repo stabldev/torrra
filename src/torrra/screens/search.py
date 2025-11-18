@@ -10,13 +10,11 @@ from textual.app import ComposeResult
 from textual.containers import Container, Horizontal, Vertical
 from textual.message import Message
 from textual.screen import Screen
-from textual.types import CSSPathType
 from textual.widgets import Input, ProgressBar, Static
 
 from torrra._types import Indexer, Torrent
 from torrra.core.config import config
 from torrra.indexers.base import BaseIndexer
-from torrra.utils.fs import get_resource_path
 from torrra.utils.helpers import human_readable_size, lazy_import
 from torrra.utils.magnet import resolve_magnet_uri
 from torrra.widgets.data_table import AutoResizingDataTable
@@ -27,9 +25,6 @@ if TYPE_CHECKING:
 
 
 class SearchScreen(Screen[None]):
-    CSS_PATH: ClassVar[CSSPathType | None] = get_resource_path("screens/search.css")
-
-    # layout constants
     COLS: list[tuple[str, str, int]] = [
         ("No.", "no_col", 3),
         ("Title", "title_col", 25),
@@ -88,7 +83,7 @@ class SearchScreen(Screen[None]):
     # --------------------------------------------------
     @override
     def compose(self) -> ComposeResult:
-        with Vertical():
+        with Vertical(id="search_container"):
             yield Input(placeholder="Search...", id="search", value=self.search_query)
             with Vertical(id="loader"):
                 yield Static(id="status")

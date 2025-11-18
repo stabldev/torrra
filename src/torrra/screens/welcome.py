@@ -1,16 +1,13 @@
-from typing import ClassVar
 from typing_extensions import override
 
 from textual import on
 from textual.app import ComposeResult
 from textual.containers import Container, Grid
 from textual.screen import Screen
-from textual.types import CSSPathType
 from textual.widgets import Input, Static
 
 from torrra._types import Indexer
 from torrra._version import __version__
-from torrra.utils.fs import get_resource_path
 
 BANNER = """
 ▀█▀ █▀█ █▀▄ █▀▄ █▀▄ █▀█
@@ -20,8 +17,6 @@ BANNER = """
 
 
 class WelcomeScreen(Screen[str]):
-    CSS_PATH: ClassVar[CSSPathType | None] = get_resource_path("screens/welcome.css")
-
     def __init__(self, indexer: Indexer) -> None:
         super().__init__()
         self.indexer: Indexer = indexer
@@ -45,12 +40,14 @@ class WelcomeScreen(Screen[str]):
                 id="version",
             )
             with Container(id="commands_container"):
-                with Grid(id="commands_grid"):
-                    yield Static("[commands]", id="title", markup=False)
-                    yield Static("[esc]ape focus", markup=False)
-                    yield Static("esc", classes="key")
+                with Grid():
+                    yield Static("[key binds]", id="title", markup=False)
                     yield Static("[q]uit", markup=False)
                     yield Static("q", classes="key")
+                    yield Static("[esc]ape focus", markup=False)
+                    yield Static("esc", classes="key")
+                    yield Static("[t]heme switcher", markup=False)
+                    yield Static("ctrl+t", classes="key")
 
     @on(Input.Submitted, "#search")
     async def handle_search(self, event: Input.Submitted) -> None:
