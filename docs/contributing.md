@@ -48,7 +48,7 @@ Code contributions are highly appreciated! If you want to fix a bug, implement a
 1.  **Fork the Repository:** Click the "Fork" button on the [GitHub repository page](https://github.com/stabldev/torrra).
 2.  **Clone Your Fork:**
     ```bash
-    git clone [https://github.com/YOUR_USERNAME/torrra.git](https://github.com/YOUR_USERNAME/torrra.git)
+    git clone https://github.com/YOUR_USERNAME/torrra.git
     cd torrra
     ```
 3.  **Set Up Development Environment:** `torrra` uses `uv` for dependency management, which is fast and efficient.
