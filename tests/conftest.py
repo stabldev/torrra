@@ -1,3 +1,4 @@
+import asyncio
 from pathlib import Path
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
@@ -8,6 +9,15 @@ from torrra._types import Indexer
 from torrra.app import TorrraApp
 from torrra.core import config as config_module
 from torrra.core.config import Config
+
+
+@pytest.fixture
+def fast_sleep(monkeypatch: pytest.MonkeyPatch):
+    # patch asyncio sleep to almost wake up instantly
+    async def no_sleep(_duration: int):
+        return None
+
+    monkeypatch.setattr(asyncio, "sleep", no_sleep)
 
 
 @pytest.fixture
