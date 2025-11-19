@@ -99,7 +99,7 @@ docker run --rm -it \
 If you intend to contribute to `torrra` or want to run it directly from its source code, follow these steps to set up your local development environment:
 
 ```bash
-git clone [https://github.com/stabldev/torrra](https://github.com/stabldev/torrra)
+git clone https://github.com/stabldev/torrra
 cd torrra
 uv sync # or `pip install -e .` (if you prefer pip)
 uv run torrra
