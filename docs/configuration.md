@@ -20,7 +20,6 @@ Here's an example of what your `config.toml` might look like:
 ```toml
 [general]
 download_path = "/home/username/Downloads"    # The default folder where torrents will be saved
-remember_last_path = true                     # If true, torrra will reuse the last used download path.
 download_in_external_client = false           # If true, opens magnet links in an external torrent client instead of downloading the .torrent file.
 theme = "textual-dark"                        # Theme for the application (e.g., "textual-dark", "textual-light", etc.).
 use_cache = true                              # If true, search results will be cached to speed up subsequent searches.
@@ -113,10 +112,10 @@ This command would output the currently configured download path.
 To set a configuration key to a new value:
 
 ```bash
-torrra config set general.remember_last_path false
+torrra config set general.download_in_external_client true
 ```
 
-This would change the `remember_last_path` setting to `false`. Note that boolean values (`true`/`false`) should be provided as such, and strings should be enclosed in quotes if they contain spaces or special characters (though for simple paths, it might not always be necessary depending on your shell).
+This would change the download_in_external_client setting to false. Note that boolean values (true/false) should be provided as such, and strings should be enclosed in quotes if they contain spaces or special characters (though for simple paths, it might not always be necessary depending on your shell).
 
 ### Listing All Configuration Values
 
