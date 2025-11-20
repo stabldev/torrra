@@ -40,7 +40,14 @@ async def test_theme_selector_navigation_with_j_and_k(app: TorrraApp):
         assert list_view.index == initial_index
 
 
-async def test_theme_selector_select_theme_with_enter(app: TorrraApp):
+@pytest.mark.usefixtures("fast_sleep")
+async def test_theme_selector_select_theme_with_enter(
+    app: TorrraApp, mock_config: Config, monkeypatch: pytest.MonkeyPatch
+):
+    # patch config instance used by theme_selector module
+    # with mock_config
+    monkeypatch.setattr("torrra.screens.theme_selector.config", mock_config)
+
     async with app.run_test() as pilot:
         await pilot.press("ctrl+t")
         assert isinstance(app.screen, ThemeSelectorScreen)
@@ -50,7 +57,7 @@ async def test_theme_selector_select_theme_with_enter(app: TorrraApp):
 
         # navigate and wait for preview
         list_view.index = 1
-        await pilot.pause(0.6)
+        await pilot.pause()
         assert app.theme == target_theme
 
         await pilot.press("enter")
@@ -58,6 +65,7 @@ async def test_theme_selector_select_theme_with_enter(app: TorrraApp):
 
         assert len(app.screen_stack) == 2  # default + welcome screen
         assert app.theme == target_theme
+        assert mock_config.get("general.theme") == target_theme
 
 
 async def test_theme_selector_cancel_selection_with_escape(
