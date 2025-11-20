@@ -113,10 +113,10 @@ This command would output the currently configured download path.
 To set a configuration key to a new value:
 
 ```bash
-torrra config set general.remember_last_path false
+torrra config set general.download_in_external_client true
 ```
 
-This would change the `remember_last_path` setting to `false`. Note that boolean values (`true`/`false`) should be provided as such, and strings should be enclosed in quotes if they contain spaces or special characters (though for simple paths, it might not always be necessary depending on your shell).
+"This would change the download_in_external_client setting to true."
 
 ### Listing All Configuration Values
 
