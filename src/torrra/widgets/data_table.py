@@ -41,10 +41,6 @@ class AutoResizingDataTable(DataTable[T]):
         if not self.columns or not self.expand_col:
             return
 
-        # TODO: This is a bit of a hack. The 4 accounts for border and padding.
-        # It would be better to get this from the widget's styles.
-        border_and_padding = 4
-
         total_cell_padding = self.cell_padding * 2 * len(self.columns)
         expand_col_key = ColumnKey(self.expand_col)
 
@@ -52,7 +48,7 @@ class AutoResizingDataTable(DataTable[T]):
             col.width for key, col in self.columns.items() if key != expand_col_key
         )
 
-        available_width = self.size.width - border_and_padding - total_cell_padding
+        available_width = self.size.width - total_cell_padding
         expand_col_width = available_width - other_cols_width
 
         if expand_col_width > 0:
