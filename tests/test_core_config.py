@@ -66,4 +66,4 @@ def test_config_list_flattens_correctly(mock_config: Config):
     assert "new.section.key=value" in config_list
     assert "new.section.bool=true" in config_list
     # check a default value is also present
-    assert "general.remember_last_path=true" in config_list
+    assert "general.download_in_external_client=false" in config_list
