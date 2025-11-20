@@ -8,7 +8,7 @@ from textual.types import CSSPathType
 
 from torrra._types import Indexer
 from torrra.core.config import config
-from torrra.screens.search import SearchScreen
+from torrra.screens.home import HomeScreen
 from torrra.screens.theme_selector import ThemeSelectorScreen
 from torrra.screens.welcome import WelcomeScreen
 from torrra.utils.fs import get_resource_path
@@ -49,7 +49,7 @@ class TorrraApp(App[None]):
             self._show_welcome_and_search()
         else:  # direct show search screen
             await self.push_screen(
-                SearchScreen(
+                HomeScreen(
                     indexer=self.indexer,
                     search_query=self.search_query,
                     use_cache=self.use_cache,
@@ -62,7 +62,7 @@ class TorrraApp(App[None]):
             WelcomeScreen(indexer=self.indexer)
         ):  # show both screens
             await self.push_screen(
-                SearchScreen(
+                HomeScreen(
                     indexer=self.indexer,
                     search_query=search_query,
                     use_cache=self.use_cache,

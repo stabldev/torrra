@@ -4,7 +4,7 @@ from textual.widgets import Input, Static
 from torrra._types import Indexer
 from torrra._version import __version__
 from torrra.app import TorrraApp
-from torrra.screens.search import SearchScreen
+from torrra.screens.home import HomeScreen
 from torrra.screens.welcome import WelcomeScreen
 
 
@@ -29,7 +29,7 @@ async def test_welcome_screen_search_flow(app: TorrraApp):
         await pilot.press("enter")
 
         # should show SearchScreen with dismissed search_query
-        assert isinstance(app.screen, SearchScreen)
+        assert isinstance(app.screen, HomeScreen)
         assert app.screen.search_query == query
 
 

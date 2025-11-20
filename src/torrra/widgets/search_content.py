@@ -53,9 +53,6 @@ class SearchContent(Vertical):
     @override
     def compose(self) -> ComposeResult:
         yield Input(placeholder="Search...", id="search", value=self.search_query)
-        with Vertical(id="loader"):
-            yield Static(id="status")
-            yield SpinnerWidget(name="shark", id="spinner")
         yield AutoResizingDataTable(
             id="results_table",
             cursor_type="row",
@@ -64,6 +61,9 @@ class SearchContent(Vertical):
         )
         with Container(id="details_container", classes="hidden"):
             yield Static(id="details_content")
+        with Vertical(id="loader"):
+            yield Static(id="status")
+            yield SpinnerWidget(name="shark", id="spinner")
 
     # --------------------------------------------------
     # APP LIFECYCLE

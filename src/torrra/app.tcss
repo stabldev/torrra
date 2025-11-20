@@ -62,9 +62,9 @@ WelcomeScreen {
 }
 
 /* ------------------------- */
-/* SEARCH SCREEN             */
+/* HOME SCREEN               */
 /* ------------------------- */
-SearchScreen #main_layout {
+HomeScreen #main_layout {
   #sidebar {
     dock: left;
     width: auto;
@@ -97,6 +97,9 @@ SearchScreen #main_layout {
       & > .datatable--header,
       & > .datatable--header-hover {
         background: transparent;
+      }
+      & > .datatable--hover {
+        background: $primary-muted;
       }
     }
     #loader {

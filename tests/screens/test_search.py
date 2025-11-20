@@ -7,7 +7,7 @@ from textual.widgets import DataTable, Static
 
 from torrra._types import Indexer, Torrent
 from torrra.app import TorrraApp
-from torrra.screens.search import SearchScreen
+from torrra.screens.home import HomeScreen
 
 
 @pytest.fixture
@@ -36,7 +36,7 @@ async def test_search_screen_search(app: TorrraApp, mock_indexer: MagicMock):
     ]
 
     async with app.run_test():
-        assert isinstance(app.screen, SearchScreen)
+        assert isinstance(app.screen, HomeScreen)
 
         # (doesnt support generic type, so used casting)
         table = cast(
@@ -57,7 +57,7 @@ async def test_search_screen_no_results(app: TorrraApp, mock_indexer: MagicMock)
     mock_indexer.search.return_value = []
 
     async with app.run_test():
-        assert isinstance(app.screen, SearchScreen)
+        assert isinstance(app.screen, HomeScreen)
 
         loader_status = app.screen.query_one("#loader #status", Static)
         # (doesnt support generic type, so used casting)
