@@ -1,144 +1,147 @@
-from typing import Any, cast
+from typing import cast
 
 from textual import on
 from textual.app import ComposeResult
 from textual.containers import Container, Vertical
+from textual.timer import Timer
 from textual.widgets import ProgressBar, Static
 from typing_extensions import override
 
+from torrra._types import Torrent
+from torrra.core.download import DownloadManager, TorrentStatus, get_download_manager
+from torrra.core.history import HistoryManager
 from torrra.utils.helpers import human_readable_size
 from torrra.widgets.data_table import AutoResizingDataTable
-
-MOCK_DOWNLOADS = [
-    {
-        "title": "The.Big.Bang.Theory.S12E01.HDTV.x264-LOL[ettv]",
-        "status": "DL",
-        "done_percent": 69,
-        "up_speed": "0 B/s",
-        "down_speed": "1.2 MB/s",
-        "size": 350 * 1024 * 1024,
-        "seeders": 12,
-        "leechers": 4,
-        "source": "ettv",
-    },
-    {
-        "title": "Modern.Family.S10E01.HDTV.x264-SVA[eztv]",
-        "status": "SD",
-        "done_percent": 100,
-        "up_speed": "100 KB/s",
-        "down_speed": "0 B/s",
-        "size": 200 * 1024 * 1024,
-        "seeders": 20,
-        "leechers": 1,
-        "source": "eztv",
-    },
-    {
-        "title": "Game.of.Thrones.S08E01.1080p.WEB.H264-MEMENTO[rarbg]",
-        "status": "CP",
-        "done_percent": 100,
-        "up_speed": "0 B/s",
-        "down_speed": "0 B/s",
-        "size": 1500 * 1024 * 1024,
-        "seeders": 0,
-        "leechers": 0,
-        "source": "rarbg",
-    },
-    {
-        "title": "Chernobyl.S01E01.1080p.WEB.H264-METCON[rarbg]",
-        "status": "PD",
-        "done_percent": 25,
-        "up_speed": "0 B/s",
-        "down_speed": "0 B/s",
-        "size": 2200 * 1024 * 1024,
-        "seeders": 5,
-        "leechers": 2,
-        "source": "rarbg",
-    },
-]
 
 
 class DownloadsContent(Vertical):
     COLS: list[tuple[str, str, int]] = [
         ("No", "no_col", 2),
         ("Title", "title", 25),
-        ("St", "status", 2),
+        ("St.", "status", 4),
         ("Done", "done_percent", 4),
-        ("Up", "up_speed", 8),
-        ("Down", "down_speed", 8),
+        ("Up", "up_speed", 7),
+        ("Down", "down_speed", 7),
     ]
 
     def __init__(self) -> None:
         super().__init__(id="downloads_content")
-        # application states
-        self._selected_download: dict[str, Any] | None = None
-        # ui refs (cached later)
+        self._history: list[Torrent] = []
+        self._selected_torrent: Torrent | None = None
+        self._download_manager: DownloadManager = get_download_manager()
+        self._update_timer: Timer | None = None
+
+        self._table: AutoResizingDataTable[str]
         self._details_container: Container
         self._details_content: Static
         self._details_progress: ProgressBar
 
     @override
     def compose(self) -> ComposeResult:
-        yield AutoResizingDataTable(
-            id="downloads_table",
-            cursor_type="row",
-            show_cursor=True,
-        )
+        yield AutoResizingDataTable(id="downloads_table", cursor_type="row")
         with Container(id="details_container", classes="hidden"):
             yield Static(id="details_content")
-            yield ProgressBar(id="details_progress", total=100)
+            yield ProgressBar(id="details_progress", total=100, show_eta=True)
 
     def on_mount(self) -> None:
+        self._table = self.query_one(AutoResizingDataTable)
         self._details_container = self.query_one("#details_container", Container)
         self._details_content = self.query_one("#details_content", Static)
         self._details_progress = self.query_one("#details_progress", ProgressBar)
         self._details_container.can_focus = True
         self._details_container.border_title = "details"
 
-        table = self.query_one(AutoResizingDataTable[str])
-        table.expand_col = "title"
-        table.border_title = f"all ({len(MOCK_DOWNLOADS)})"
+        history_manager = HistoryManager()
+        self._history = history_manager.get_all_torrents()
+
+        self._table.expand_col = "title"
+        self._table.border_title = f"all ({len(self._history)})"
 
         for label, key, width in self.COLS:
-            table.add_column(label, width=width, key=key)
+            self._table.add_column(label, width=width, key=key)
 
-        for idx, download in enumerate(MOCK_DOWNLOADS):
-            table.add_row(
-                str(idx + 1),
-                download["title"],
-                download["status"],
-                f"{download['done_percent']}%",
-                download["down_speed"],
-                download["up_speed"],
-                key=download["title"],
-            )
+        for idx, torrent in enumerate(self._history):
+            if torrent.magnet_uri:
+                self._download_manager.add_torrent(torrent.magnet_uri)
+                self._table.add_row(
+                    str(idx + 1),
+                    torrent.title,
+                    "N/A",
+                    "0%",
+                    "0 B/s",
+                    "0 B/s",
+                    key=torrent.magnet_uri,
+                )
+        # trigger update table every second
+        self._update_timer = self.set_interval(1, self._update_table_data)
 
-    @on(AutoResizingDataTable.RowSelected, "#downloads_table")
-    def _handle_select(self, event: AutoResizingDataTable.RowSelected) -> None:
-        row_key = cast(str, event.row_key.value)
-        self._selected_download = next(
-            (d for d in MOCK_DOWNLOADS if d["title"] == row_key), None
-        )
-        if self._selected_download is None:
+    def on_unmount(self) -> None:
+        if self._update_timer:
+            self._update_timer.stop()
+
+    def _update_table_data(self) -> None:
+        for torrent in self._history:
+            if not torrent.magnet_uri:
+                continue
+
+            if status := self._download_manager.get_torrent_status(torrent.magnet_uri):
+                self._table.update_cell(
+                    torrent.magnet_uri,
+                    "status",
+                    self._download_manager.get_torrent_state_text(
+                        status["state"], short=True
+                    ),
+                )
+                self._table.update_cell(
+                    torrent.magnet_uri,
+                    "done_percent",
+                    f"{int(status['progress'])}%",
+                )
+                self._table.update_cell(
+                    torrent.magnet_uri,
+                    "up_speed",
+                    f"{human_readable_size(status['up_speed'], short=True)}/s",
+                )
+                self._table.update_cell(
+                    torrent.magnet_uri,
+                    "down_speed",
+                    f"{human_readable_size(status['down_speed'], short=True)}/s",
+                )
+
+                if (
+                    self._selected_torrent
+                    and self._selected_torrent.magnet_uri == torrent.magnet_uri
+                ):
+                    self._update_details_panel(status)
+
+    def _update_details_panel(self, status: TorrentStatus) -> None:
+        if not self._selected_torrent:
             return
 
-        status = self._get_full_status_text(self._selected_download["status"])
-        size = human_readable_size(self._selected_download["size"])
+        state_text = self._download_manager.get_torrent_state_text(status["state"])
         details = f"""
-[b]{self._selected_download["title"]}[/b]
-[b]Size:[/b] {size} - [b]Seeders:[/b] {self._selected_download["seeders"]} - [b]Leechers:[/b] {self._selected_download["leechers"]} - [b]Source:[/b] {self._selected_download["source"]}
-[b]Status:[/b] {status} - [b]Up:[/b] {self._selected_download["up_speed"]} - [b]Down:[/] {self._selected_download["down_speed"]}
+[b]{self._selected_torrent.title}[/]
+[b]Size:[/] {human_readable_size(self._selected_torrent.size)} - [b]Status:[/] {state_text} - [b]Source:[/] {self._selected_torrent.source}
+[b]S/L:[/] {status["seeders"]}/{status["leechers"]} - [b]Up:[/b] {human_readable_size(status["up_speed"])}/s - [b]Down:[/] {human_readable_size(status["down_speed"])}/s
 
 [dim]Press 'p' to pause/resume, 'd' to delete.[/dim]
 """
         self._details_content.update(details.strip())
-        self._details_progress.progress = self._selected_download["done_percent"]
-        self._details_container.remove_class("hidden")
-        self._details_container.focus()
+        self._details_progress.progress = status["progress"]
 
-    def _get_full_status_text(self, status: str) -> str:
-        return {
-            "DL": "Download",
-            "SD": "Seed",
-            "CP": "Completed",
-            "PD": "Paused",
-        }.get(status, "Unknown")
+    @on(AutoResizingDataTable.RowSelected, "#downloads_table")
+    def _handle_select(self, event: AutoResizingDataTable.RowSelected) -> None:
+        row_key = cast(str, event.row_key.value)
+        self._selected_torrent = next(
+            (d for d in self._history if d.magnet_uri == row_key), None
+        )
+
+        if self._selected_torrent and self._selected_torrent.magnet_uri:
+            if status := self._download_manager.get_torrent_status(
+                self._selected_torrent.magnet_uri
+            ):
+                self._update_details_panel(status)
+            self._details_container.remove_class("hidden")
+            self._details_container.focus()
+        else:  # selected torrent is invalid
+            self._details_container.add_class("hidden")

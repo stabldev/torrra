@@ -8,6 +8,7 @@ from textual.widgets import Input, Static
 from typing_extensions import override
 
 from torrra._types import Indexer, Torrent
+from torrra.core.history import HistoryManager
 from torrra.indexers.base import BaseIndexer
 from torrra.utils.helpers import human_readable_size, lazy_import
 from torrra.widgets.data_table import AutoResizingDataTable
@@ -100,6 +101,11 @@ class SearchContent(Vertical):
 
     def key_r(self) -> None:
         self._table.focus()
+
+    def key_d(self) -> None:
+        if self._selected_torrent and self._details_container.has_focus:
+            history_manager = HistoryManager()
+            history_manager.add_torrent(self._selected_torrent)
 
     # --------------------------------------------------
     # SEARCH LOGIC
