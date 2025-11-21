@@ -1,4 +1,3 @@
-from textual import on
 from textual.app import ComposeResult
 from textual.containers import Horizontal
 from textual.screen import Screen
@@ -18,10 +17,6 @@ class HomeScreen(Screen[None]):
         self.search_query: str = search_query
         self.use_cache: bool = use_cache
 
-        # ui refs (cached later)
-        self._sidebar: Sidebar
-        self._content_switcher: ContentSwitcher
-
     @override
     def compose(self) -> ComposeResult:
         with Horizontal(id="main_layout"):
@@ -35,11 +30,7 @@ class HomeScreen(Screen[None]):
                 )
 
     def on_mount(self) -> None:
-        self._sidebar = self.query_one(Sidebar)
-        self._sidebar.can_focus = True
+        self.query_one(Sidebar).can_focus = True  # re-enable focus
 
-        self._content_switcher = self.query_one("#content_switcher", ContentSwitcher)
-
-    @on(Sidebar.ItemSelected)
-    def _switch_content(self, event: Sidebar.ItemSelected) -> None:
-        self._content_switcher.current = event.node_id
+    def on_sidebar_item_selected(self, event: Sidebar.ItemSelected) -> None:
+        self.query_one(ContentSwitcher).current = event.node_id
