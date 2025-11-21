@@ -19,11 +19,8 @@ class SearchContent(Vertical):
         ("No.", "no_col", 3),
         ("Title", "title_col", 25),
         ("Size", "size_col", 10),
-        ("Seed", "seeders_col", 4),
+        ("S:L", "seeders_leechers_col", 6),
     ]
-
-    # class-level caches
-    _indexer_instance_cache: BaseIndexer | None = None
 
     class SearchResults(Message):
         def __init__(self, results: list[Torrent], query: str) -> None:
@@ -36,6 +33,9 @@ class SearchContent(Vertical):
         self.indexer: Indexer = indexer
         self.search_query: str = search_query
         self.use_cache: bool = use_cache
+
+        # instance-level cache
+        self._indexer_instance_cache: BaseIndexer | None = None
 
         # application states
         self._search_results_map: dict[str, Torrent] = {}
@@ -70,15 +70,15 @@ class SearchContent(Vertical):
     # --------------------------------------------------
     def on_mount(self) -> None:
         self._search_input = self.query_one("#search", Input)
-        self._search_input.border_title = "[$secondary]s[/]earch"
+        self._search_input.border_title = "search"
 
         self._table = self.query_one("#results_table", AutoResizingDataTable)
         self._table.expand_col = "title_col"
-        self._table.border_title = "[$secondary]r[/]esults"
+        self._table.border_title = "results"
 
         self._details_container = self.query_one("#details_container", Container)
         self._details_content = self.query_one("#details_content", Static)
-        self._details_container.border_title = "[$secondary]d[/]etails"
+        self._details_container.border_title = "details"
         self._details_container.can_focus = True
 
         self._loader_container = self.query_one("#loader", Vertical)
@@ -156,7 +156,7 @@ class SearchContent(Vertical):
                 str(idx + 1),
                 torrent.title,
                 human_readable_size(torrent.size),
-                str(torrent.seeders),
+                f"{str(torrent.seeders)}:{str(torrent.leechers)}",
                 key=torrent.magnet_uri,
             )
 
