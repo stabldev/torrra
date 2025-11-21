@@ -16,7 +16,7 @@ from torrra.widgets.spinner import SpinnerWidget
 
 class SearchContent(Vertical):
     COLS: list[tuple[str, str, int]] = [
-        ("No.", "no_col", 3),
+        ("No", "no_col", 2),
         ("Title", "title_col", 25),
         ("Size", "size_col", 10),
         ("S:L", "seeders_leechers_col", 6),
@@ -171,10 +171,10 @@ class SearchContent(Vertical):
             return
 
         details = f"""
-[b]{self._selected_torrent.title}[/]
-[b]Size:[/] {human_readable_size(self._selected_torrent.size)} - [b]Seeders:[/] {self._selected_torrent.seeders} - [b]Leechers:[/] {self._selected_torrent.leechers} - [b]Source:[/] {self._selected_torrent.source}
+[b]{self._selected_torrent.title}[/b]
+[b]Size:[/b] {human_readable_size(self._selected_torrent.size)} - [b]Seeders:[/b] {self._selected_torrent.seeders} - [b]Leechers:[/b] {self._selected_torrent.leechers} - [b]Source:[/b] {self._selected_torrent.source}
 
-[dim]Press "d" to download.[/dim]
+[dim]Press 'd' to download.[/dim]
 """
 
         self._details_content.update(details.strip())

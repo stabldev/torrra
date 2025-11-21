@@ -85,6 +85,14 @@ WelcomeScreen {
 /* HOME SCREEN               */
 /* ------------------------- */
 HomeScreen #main_layout {
+  #details_container {
+    padding: 0 1;
+    border: solid $secondary-muted;
+    height: auto;
+    &:focus {
+      border: solid $secondary;
+    }
+  }
   #sidebar {
     dock: left;
     width: auto;
@@ -114,14 +122,6 @@ HomeScreen #main_layout {
         color: $secondary;
       }
     }
-    #details_container {
-      padding: 0 1;
-      border: solid $secondary-muted;
-      height: auto;
-      &:focus {
-        border: solid $secondary;
-      }
-    }
     #downloads_container {
       dock: bottom;
       height: auto;
@@ -142,6 +142,13 @@ HomeScreen #main_layout {
           content-align-horizontal: right;
           width: auto;
         }
+      }
+    }
+  }
+  #downloads_content {
+    #details_progress {
+      #bar {
+        width: 1fr;
       }
     }
   }
