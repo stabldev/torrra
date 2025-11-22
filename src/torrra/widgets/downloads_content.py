@@ -9,7 +9,7 @@ from typing_extensions import override
 
 from torrra._types import TorrentRecord, TorrentStatus
 from torrra.core.download import DownloadManager, get_download_manager
-from torrra.core.torrent_manager import TorrentManager
+from torrra.core.torrent import TorrentManager
 from torrra.utils.helpers import human_readable_size
 from torrra.widgets.data_table import AutoResizingDataTable
 
