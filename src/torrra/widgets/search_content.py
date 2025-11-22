@@ -1,8 +1,9 @@
+from contextlib import suppress
 from typing import cast
 
 from textual import on, work
 from textual.app import ComposeResult
-from textual.containers import Container, Vertical
+from textual.containers import Vertical
 from textual.message import Message
 from textual.widgets import Input, Static
 from typing_extensions import override
@@ -12,7 +13,8 @@ from torrra.core.torrent import TorrentManager
 from torrra.indexers.base import BaseIndexer
 from torrra.utils.helpers import human_readable_size, lazy_import
 from torrra.widgets.data_table import AutoResizingDataTable
-from torrra.widgets.spinner import SpinnerWidget
+from torrra.widgets.details_panel import DetailsPanel
+from torrra.widgets.spinner import Spinner
 
 
 class SearchContent(Vertical):
@@ -50,53 +52,35 @@ class SearchContent(Vertical):
         # ui refs (cached later)
         self._search_input: Input
         self._table: AutoResizingDataTable[str]
-        self._details_container: Container
-        self._details_content: Static
-        self._loader_container: Vertical
-        self._loader_status: Static
-        self._loader_spinner: SpinnerWidget
+        self._details_panel: DetailsPanel
+        self._loader: Vertical
 
     @override
     def compose(self) -> ComposeResult:
-        yield Input(placeholder="Search...", id="search", value=self.search_query)
-        yield AutoResizingDataTable(
-            id="results_table",
-            cursor_type="row",
-            show_cursor=True,
-            classes="hidden",
-        )
-        with Container(id="details_container", classes="hidden"):
-            yield Static(id="details_content")
+        yield Input(placeholder="Search...", value=self.search_query)
+        yield AutoResizingDataTable(cursor_type="row", classes="hidden")
+        yield DetailsPanel()
         with Vertical(id="loader"):
-            yield Static(id="status")
-            yield SpinnerWidget(name="shark", id="spinner")
+            yield Static()
+            yield Spinner(name="shark")
 
     def on_mount(self) -> None:
-        self._search_input = self.query_one("#search", Input)
+        self._search_input = self.query_one(Input)
         self._search_input.border_title = "search"
 
-        self._table = self.query_one("#results_table", AutoResizingDataTable)
+        self._table = self.query_one(AutoResizingDataTable)
         self._table.expand_col = "title_col"
         self._table.border_title = "results"
 
-        self._details_container = self.query_one("#details_container", Container)
-        self._details_content = self.query_one("#details_content", Static)
-        self._details_container.border_title = "details"
-        self._details_container.can_focus = True
+        self._details_panel = self.query_one(DetailsPanel)
+        self._details_panel.border_title = "details"
 
-        self._loader_container = self.query_one("#loader", Vertical)
-        self._loader_status = self.query_one("#loader #status", Static)
-        self._loader_spinner = self.query_one("#spinner", SpinnerWidget)
-
+        self._loader = self.query_one("#loader", Vertical)
         # setup table
         for label, key, width in self.COLS:
             self._table.add_column(label, width=width, key=key)
-
         # send initial search
         self.post_message(Input.Submitted(self._search_input, self.search_query))
-
-    def on_show(self):
-        self._search_input.focus()
 
     def key_s(self) -> None:
         self._search_input.focus()
@@ -110,18 +94,19 @@ class SearchContent(Vertical):
             tm.add_torrent(self._selected_torrent)
             self.post_message(self.DownloadRequested(self._selected_torrent))
 
-    @on(Input.Submitted, "#search")
-    def _handle_search(self, event: Input.Submitted) -> None:
+    def on_input_submitted(self, event: Input.Submitted) -> None:
         query = event.value
         if not query:
             return
 
         self._table.add_class("hidden")
         self._table.clear()
-        self._details_container.add_class("hidden")
-        self._loader_container.remove_class("hidden")
-        self._loader_spinner.resume()
-        self._loader_status.update(f"Searching for [b]{query}[/b]...")
+        self._details_panel.add_class("hidden")
+        self._loader.remove_class("hidden")
+        cast(Spinner, self._loader.children[1]).resume()
+        cast(Static, self._loader.children[0]).update(
+            f"Searching for [b]{query}[/b]..."
+        )
 
         self._perform_search(query)
 
@@ -130,23 +115,22 @@ class SearchContent(Vertical):
         indexer = self._get_indexer_instance()
         results = []
 
-        if indexer:
-            try:
-                results = await indexer.search(query, use_cache=self.use_cache)
-            except Exception as e:
-                self.log.error(f"error during search: {e}")
+        with suppress(Exception):
+            results = await indexer.search(query, use_cache=self.use_cache)
         self.post_message(self.SearchResults(results, query))
 
     @on(SearchResults)
-    def _show_search_results(self, message: SearchResults) -> None:
+    def on_search_results(self, message: SearchResults) -> None:
         if not message.results:
-            self._loader_status.update(f"Nothing Found for [b]{message.query}[/b]")
-            self._loader_spinner.pause()
+            cast(Spinner, self._loader.children[1]).pause()
+            cast(Static, self._loader.children[0]).update(
+                f"Nothing Found for [b]{message.query}[/b]"
+            )  # show loader and exit
             return
 
-        self._loader_container.add_class("hidden")
+        self._loader.add_class("hidden")
         self._table.remove_class("hidden")
-        self._table.focus()
+        self._table.focus()  # initial focus table
         self._table.border_title = (
             f"{self._table.border_title} ({len(message.results)})"
         )
@@ -166,8 +150,13 @@ class SearchContent(Vertical):
                 key=torrent.magnet_uri,
             )
 
-    @on(AutoResizingDataTable.RowSelected, "#results_table")
-    async def _handle_select(self, event: AutoResizingDataTable.RowSelected) -> None:
+    def on_details_panel_closed(self):
+        self._selected_torrent = None
+        self._table.focus()
+
+    def on_data_table_row_selected(
+        self, event: AutoResizingDataTable.RowSelected
+    ) -> None:
         magnet_uri = cast(str, event.row_key.value)
         self._selected_torrent = self._search_results_map.get(magnet_uri)
         if not self._selected_torrent:
@@ -180,9 +169,9 @@ class SearchContent(Vertical):
 [dim]Press 'd' to download.[/dim]
 """
 
-        self._details_content.update(details.strip())
-        self._details_container.remove_class("hidden")
-        self._details_container.focus()
+        self._details_panel.update(details.strip())
+        self._details_panel.remove_class("hidden")
+        self._details_panel.focus()
 
     def _get_indexer_instance(self) -> BaseIndexer:
         if self._indexer_instance_cache:

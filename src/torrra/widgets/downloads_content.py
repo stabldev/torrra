@@ -1,10 +1,8 @@
 from typing import cast
 
-from textual import on
 from textual.app import ComposeResult
-from textual.containers import Container, Vertical
+from textual.containers import Vertical
 from textual.timer import Timer
-from textual.widgets import ProgressBar, Static
 from typing_extensions import override
 
 from torrra._types import TorrentRecord, TorrentStatus
@@ -12,6 +10,7 @@ from torrra.core.download import DownloadManager, get_download_manager
 from torrra.core.torrent import TorrentManager
 from torrra.utils.helpers import human_readable_size
 from torrra.widgets.data_table import AutoResizingDataTable
+from torrra.widgets.details_panel import DetailsPanel
 
 
 class DownloadsContent(Vertical):
@@ -32,31 +31,23 @@ class DownloadsContent(Vertical):
         self._update_timer: Timer | None = None
 
         self._table: AutoResizingDataTable[str]
-        self._details_container: Container
-        self._details_content: Static
-        self._details_progress: ProgressBar
+        self._details_panel: DetailsPanel
 
     @override
     def compose(self) -> ComposeResult:
-        yield AutoResizingDataTable(id="downloads_table", cursor_type="row")
-        with Container(id="details_container", classes="hidden"):
-            yield Static(id="details_content")
-            yield ProgressBar(id="details_progress", total=100, show_eta=True)
+        yield AutoResizingDataTable(cursor_type="row")
+        yield DetailsPanel()
 
     def on_mount(self) -> None:
         self._table = self.query_one(AutoResizingDataTable)
-
-        self._details_container = self.query_one("#details_container", Container)
-        self._details_container.can_focus = True
-        self._details_container.border_title = "details"
-
-        self._details_content = self.query_one("#details_content", Static)
-        self._details_progress = self.query_one("#details_progress", ProgressBar)
-
         self._table.expand_col = "title"
+
+        self._details_panel = self.query_one(DetailsPanel)
+        self._details_panel.border_title = "details"
+        # setup table
         for label, key, width in self.COLS:
             self._table.add_column(label, width=width, key=key)
-
+        # start prime torrents download
         self._prime_downloads()
 
     def on_show(self) -> None:
@@ -77,15 +68,10 @@ class DownloadsContent(Vertical):
                 "0 B/s",
                 key=torrent["magnet_uri"],
             )
-
-        self._table.focus()
         # run timer to update results table
         self._update_timer = self.set_interval(1, self._update_table_data)
 
     def on_hide(self) -> None:
-        self._details_container.add_class("hidden")
-        self._selected_torrent = None
-
         if self._update_timer:
             self._update_timer.stop()
 
@@ -110,11 +96,13 @@ class DownloadsContent(Vertical):
         self._table.remove_row(magnet_uri)
         self._torrents = [t for t in self._torrents if t["magnet_uri"] != magnet_uri]
         self._table.border_title = f"all ({len(self._torrents)})"
-        self._details_container.add_class("hidden")
+        self._details_panel.add_class("hidden")
         self._selected_torrent = None
 
-    @on(AutoResizingDataTable.RowSelected)
-    def on_auto_resizing_data_table_row_selected(
+    def on_details_panel_closed(self):
+        self._selected_torrent = None
+
+    def on_data_table_row_selected(
         self, event: AutoResizingDataTable.RowSelected
     ) -> None:
         row_key = cast(str, event.row_key.value)
@@ -127,10 +115,10 @@ class DownloadsContent(Vertical):
                 self._selected_torrent["magnet_uri"]
             ):
                 self._update_details_panel(status)
-            self._details_container.remove_class("hidden")
-            self._details_container.focus()
+            self._details_panel.remove_class("hidden")
+            self._details_panel.focus()
         else:  # selected torrent is invalid
-            self._details_container.add_class("hidden")
+            self._details_panel.add_class("hidden")
 
     def _prime_downloads(self) -> None:
         tm = TorrentManager()
@@ -192,6 +180,5 @@ class DownloadsContent(Vertical):
 
 [dim]Press 'p' to pause/resume, 'd' to delete.[/dim]
 """
-
-        self._details_content.update(details.strip())
-        self._details_progress.progress = status["progress"]
+        # update details panel internal widgets
+        self._details_panel.update(details.strip(), status["progress"])

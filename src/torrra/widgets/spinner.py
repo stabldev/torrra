@@ -1,15 +1,15 @@
 import time
 from typing import Any
 
-from rich.spinner import Spinner
+from rich.spinner import Spinner as _Spinner
 from textual.timer import Timer
 from textual.widgets import Static
 
 
-class SpinnerWidget(Static):
+class Spinner(Static):
     def __init__(self, name: str, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self._spinner: Spinner = Spinner(name)
+        self._spinner: _Spinner = _Spinner(name)
         self.update_timer: Timer
 
     def on_mount(self) -> None:

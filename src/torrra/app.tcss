@@ -1,6 +1,10 @@
 /* ------------------------- */
 /* GLOBAL STYLES/UTILITIES   */
 /* ------------------------- */
+.hidden {
+  display: none;
+}
+
 Input {
   padding: 0 1;
   margin: 0;
@@ -31,8 +35,13 @@ DataTable {
   }
 }
 
-.hidden {
-  display: none;
+DetailsPanel {
+  padding: 0 1;
+  border: solid $secondary-muted;
+  height: auto;
+  &:focus {
+    border: solid $secondary;
+  }
 }
 
 /* ------------------------- */
@@ -85,14 +94,6 @@ WelcomeScreen {
 /* HOME SCREEN               */
 /* ------------------------- */
 HomeScreen #main_layout {
-  #details_container {
-    padding: 0 1;
-    border: solid $secondary-muted;
-    height: auto;
-    &:focus {
-      border: solid $secondary;
-    }
-  }
   #sidebar {
     dock: left;
     width: auto;
@@ -113,10 +114,10 @@ HomeScreen #main_layout {
     }
     #loader {
       align: center middle;
-      #status {
+      Static {
         content-align-horizontal: center;
       }
-      #spinner {
+      Spinner {
         height: auto;
         content-align-horizontal: center;
         color: $secondary;
