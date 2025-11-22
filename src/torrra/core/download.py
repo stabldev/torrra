@@ -1,8 +1,8 @@
 import threading
-from typing import TypedDict
 
 import libtorrent as lt
 
+from torrra._types import TorrentStatus
 from torrra.core.config import config
 
 _instance = None
@@ -16,15 +16,6 @@ def get_download_manager() -> "DownloadManager":
             if _instance is None:
                 _instance = DownloadManager()
     return _instance
-
-
-class TorrentStatus(TypedDict):
-    state: lt.torrent_status.states
-    progress: float
-    down_speed: float
-    up_speed: float
-    seeders: int
-    leechers: int
 
 
 class DownloadManager:

@@ -1,7 +1,7 @@
 from typing import Any, cast
-from typing_extensions import override
 
 import httpx
+from typing_extensions import override
 
 from torrra._types import Torrent, TorrentDict
 from torrra.core.cache import cache
