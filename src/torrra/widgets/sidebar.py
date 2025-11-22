@@ -4,6 +4,7 @@ from textual.app import ComposeResult
 from textual.message import Message
 from textual.reactive import Reactive, reactive
 from textual.widgets import Tree
+from textual.widgets.tree import TreeNode
 from typing_extensions import override
 
 
@@ -56,3 +57,16 @@ class Sidebar(Tree[Any]):
                     node_id=node_data["id"], node_type=node_data.get("type")
                 )
             )
+
+    def select_node_by_id(self, node_id: str) -> None:
+        def _find_node(node: TreeNode[Any]) -> TreeNode[Any] | None:
+            if node.data and node.data.get("id") == node_id:
+                return node
+
+            for child in node.children:
+                if found := _find_node(child):
+                    return found
+            return None
+
+        if target_node := _find_node(self.root):
+            self.select_node(target_node)

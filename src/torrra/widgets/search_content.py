@@ -8,7 +8,6 @@ from textual.widgets import Input, Static
 from typing_extensions import override
 
 from torrra._types import Indexer, Torrent
-from torrra.core.torrent import TorrentManager
 from torrra.indexers.base import BaseIndexer
 from torrra.utils.helpers import human_readable_size, lazy_import
 from torrra.widgets.data_table import AutoResizingDataTable
@@ -27,6 +26,11 @@ class SearchContent(Vertical):
         def __init__(self, results: list[Torrent], query: str) -> None:
             self.results: list[Torrent] = results
             self.query: str = query
+            super().__init__()
+
+    class DownloadRequested(Message):
+        def __init__(self, torrent: Torrent) -> None:
+            self.torrent: Torrent = torrent
             super().__init__()
 
     def __init__(self, indexer: Indexer, search_query: str, use_cache: bool):
@@ -104,9 +108,9 @@ class SearchContent(Vertical):
 
     def key_d(self) -> None:
         if self._selected_torrent:
-            tm = TorrentManager()
-            tm.add_torrent(self._selected_torrent)
-            # TODO: do navigation
+            # tm = TorrentManager()
+            # tm.add_torrent(self._selected_torrent)
+            self.post_message(self.DownloadRequested(self._selected_torrent))
 
     # --------------------------------------------------
     # SEARCH LOGIC
