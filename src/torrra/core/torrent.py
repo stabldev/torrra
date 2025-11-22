@@ -9,9 +9,6 @@ class TorrentManager:
         init_db()
 
     def add_torrent(self, torrent: Torrent) -> None:
-        if not torrent.magnet_uri:
-            return
-
         with get_db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
@@ -36,6 +33,6 @@ class TorrentManager:
                     title=row["title"],
                     size=row["size"],
                     source=row["source"],
-                )  # iterterate overrr
+                )
                 for row in rows
             ]

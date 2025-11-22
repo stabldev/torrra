@@ -9,12 +9,12 @@ if TYPE_CHECKING:
 class TorrentDict(TypedDict):
     """Dict variant of Torrent dataclass."""
 
+    magnet_uri: str
     title: str
     size: float
     seeders: int
     leechers: int
     source: str
-    magnet_uri: str | None
 
 
 class TorrentStatus(TypedDict):
@@ -41,12 +41,12 @@ class TorrentRecord(TypedDict):
 class Torrent:
     """Torrent I/O dataclass."""
 
+    magnet_uri: str
     title: str
     size: float
     seeders: int
     leechers: int
     source: str
-    magnet_uri: str | None
 
     @classmethod
     def from_dict(cls, d: TorrentDict) -> "Torrent":
