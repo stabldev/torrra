@@ -154,7 +154,7 @@ class SearchContent(Vertical):
 
         seen: set[str] = set()
         for idx, torrent in enumerate(message.results):
-            if torrent.magnet_uri is None or torrent.magnet_uri in seen:
+            if torrent.magnet_uri in seen:
                 continue
 
             seen.add(torrent.magnet_uri)

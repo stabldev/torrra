@@ -78,5 +78,5 @@ class ProwlarrIndexer(BaseIndexer):
             seeders=r.get("seeders", 0),
             leechers=r.get("leechers", 0),
             source=r.get("indexer", "unknown"),
-            magnet_uri=r.get("magnetUrl") or r.get("downloadUrl"),
+            magnet_uri=r.get("magnetUrl") or r["downloadUrl"],
         )

@@ -57,4 +57,4 @@ class DownloadManager:
         self, state: lt.torrent_status.states, short: bool = False
     ) -> str:
         idx = 1 if short else 0
-        return self._STATE_MAP.get(state, "N/A")[idx]
+        return self._STATE_MAP.get(state, ("N/A", "N/A"))[idx]
