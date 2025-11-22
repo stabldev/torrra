@@ -20,8 +20,8 @@ class DownloadsContent(Vertical):
         ("Title", "title", 25),
         ("St.", "status", 4),
         ("Done", "done_percent", 4),
-        ("Up", "up_speed", 7),
-        ("Down", "down_speed", 7),
+        ("Up", "up_speed", 6),
+        ("Down", "down_speed", 6),
     ]
 
     def __init__(self) -> None:

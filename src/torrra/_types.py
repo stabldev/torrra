@@ -1,8 +1,7 @@
 from dataclasses import asdict, dataclass
-from typing import TYPE_CHECKING, Any, Literal, TypedDict
+from typing import Any, Literal, TypedDict
 
-if TYPE_CHECKING:
-    import libtorrent as lt
+import libtorrent as lt
 
 
 # TORRENT TYPES
