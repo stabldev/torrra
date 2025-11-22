@@ -1,10 +1,9 @@
-from typing_extensions import override
-
 from textual import on
 from textual.app import ComposeResult
 from textual.containers import Container, Grid
 from textual.screen import Screen
 from textual.widgets import Input, Static
+from typing_extensions import override
 
 from torrra._types import Indexer
 from torrra._version import __version__
@@ -43,9 +42,7 @@ class WelcomeScreen(Screen[str]):
                 with Grid():
                     yield Static("[key binds]", id="title", markup=False)
                     yield Static("[q]uit", markup=False)
-                    yield Static("q", classes="key")
-                    yield Static("[esc]ape focus", markup=False)
-                    yield Static("esc", classes="key")
+                    yield Static("ctrl+q", classes="key")
                     yield Static("[t]heme switcher", markup=False)
                     yield Static("ctrl+t", classes="key")
 

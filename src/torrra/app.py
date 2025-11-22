@@ -21,8 +21,6 @@ class TorrraApp(App[None]):
     CSS_PATH: ClassVar[CSSPathType | None] = get_resource_path("app.tcss")
     ENABLE_COMMAND_PALETTE: ClassVar[bool] = False
     BINDINGS: ClassVar[list[BindingType]] = [
-        Binding("q", "quit"),
-        Binding("escape", "clear_focus"),
         Binding("ctrl+t", "switch_theme"),
     ]
 
@@ -56,6 +54,9 @@ class TorrraApp(App[None]):
                 )
             )
 
+    def action_switch_theme(self) -> None:
+        self.push_screen(ThemeSelectorScreen())
+
     @work(exclusive=True)
     async def _show_welcome_and_search(self) -> None:
         if search_query := await self.push_screen_wait(
@@ -68,9 +69,3 @@ class TorrraApp(App[None]):
                     use_cache=self.use_cache,
                 )
             )
-
-    def action_clear_focus(self) -> None:
-        self.set_focus(None)
-
-    def action_switch_theme(self) -> None:
-        self.push_screen(ThemeSelectorScreen())
