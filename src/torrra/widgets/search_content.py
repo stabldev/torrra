@@ -67,6 +67,7 @@ class SearchContent(Vertical):
     def on_mount(self) -> None:
         self._search_input = self.query_one(Input)
         self._search_input.border_title = "search"
+        self._search_input.focus()
 
         self._table = self.query_one(AutoResizingDataTable)
         self._table.expand_col = "title_col"
@@ -166,7 +167,7 @@ class SearchContent(Vertical):
 [b]{self._selected_torrent.title}[/b]
 [b]Size:[/b] {human_readable_size(self._selected_torrent.size)} - [b]Seeders:[/b] {self._selected_torrent.seeders} - [b]Leechers:[/b] {self._selected_torrent.leechers} - [b]Source:[/b] {self._selected_torrent.source}
 
-[dim]Press 'd' to download.[/dim]
+[dim]Press 'd' to download or 'esc' to close.[/dim]
 """
 
         self._details_panel.update(details.strip())

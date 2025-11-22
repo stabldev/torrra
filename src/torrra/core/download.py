@@ -30,13 +30,15 @@ class DownloadManager:
         self.session: lt.session = lt.session({"listen_interfaces": "0.0.0.0:6881"})
         self.torrents: dict[str, lt.torrent_handle] = {}
 
-    def add_torrent(self, magnet_uri: str) -> None:
+    def add_torrent(self, magnet_uri: str, is_paused: bool = False) -> None:
         if magnet_uri in self.torrents:
             return
 
-        self.torrents[magnet_uri] = lt.add_magnet_uri(
-            self.session, magnet_uri, {"save_path": config.get("general.download_path")}
-        )
+        params = {"save_path": config.get("general.download_path")}
+        if is_paused:
+            params["flags"] = lt.torrent_flags.paused
+        # start tracking provided magnet_uri
+        self.torrents[magnet_uri] = lt.add_magnet_uri(self.session, magnet_uri, params)
 
     def remove_torrent(self, magnet_uri: str) -> None:
         handle = self.torrents.get(magnet_uri)
@@ -44,7 +46,7 @@ class DownloadManager:
             self.session.remove_torrent(handle)
             del self.torrents[magnet_uri]
 
-    def pause_or_resume(self, magnet_uri: str) -> None:
+    def toggle_pause(self, magnet_uri: str) -> None:
         handle = self.torrents.get(magnet_uri)
         if not handle or not handle.is_valid():
             return

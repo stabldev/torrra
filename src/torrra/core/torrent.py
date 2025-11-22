@@ -16,7 +16,12 @@ class TorrentManager:
                 INSERT OR IGNORE INTO torrents (magnet_uri, title, size, source)
                 VALUES (?, ?, ?, ?)
                 """,
-                (torrent.magnet_uri, torrent.title, torrent.size, torrent.source),
+                (
+                    torrent.magnet_uri,
+                    torrent.title,
+                    torrent.size,
+                    torrent.source,
+                ),
             )
             conn.commit()
 
@@ -26,11 +31,20 @@ class TorrentManager:
             cursor.execute("DELETE FROM torrents WHERE magnet_uri = ?", (magnet_uri,))
             conn.commit()
 
+    def update_torrent_paused_state(self, magnet_uri: str, is_paused: bool) -> None:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "UPDATE torrents SET is_paused = ? WHERE magnet_uri = ?",
+                (int(is_paused), magnet_uri),
+            )
+            conn.commit()
+
     def get_all_torrents(self) -> list[TorrentRecord]:
         with get_db_connection() as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
-            cursor.execute("SELECT magnet_uri, title, size, source FROM torrents")
+            cursor.execute("SELECT * FROM torrents")
             rows = cursor.fetchall()
 
             return [
@@ -39,6 +53,7 @@ class TorrentManager:
                     title=row["title"],
                     size=row["size"],
                     source=row["source"],
+                    is_paused=bool(row["is_paused"]),
                 )
                 for row in rows
             ]

@@ -58,7 +58,9 @@ class DownloadsContent(Vertical):
         self._table.border_title = f"all ({len(self._torrents)})"
 
         for idx, torrent in enumerate(self._torrents):
-            self._download_manager.add_torrent(torrent["magnet_uri"])
+            self._download_manager.add_torrent(
+                torrent["magnet_uri"], is_paused=torrent["is_paused"]
+            )
             self._table.add_row(
                 str(idx + 1),
                 torrent["title"],
@@ -80,8 +82,14 @@ class DownloadsContent(Vertical):
             self._update_timer.stop()
 
     def key_p(self) -> None:
-        if self._selected_torrent:
-            self._download_manager.pause_or_resume(self._selected_torrent["magnet_uri"])
+        if not self._selected_torrent:
+            return
+
+        magnet_uri = self._selected_torrent["magnet_uri"]
+        self._download_manager.toggle_pause(magnet_uri)
+        if status := self._download_manager.get_torrent_status(magnet_uri):
+            tm = TorrentManager()
+            tm.update_torrent_paused_state(magnet_uri, status["is_paused"])
 
     def key_d(self) -> None:
         if not self._selected_torrent:
@@ -124,7 +132,9 @@ class DownloadsContent(Vertical):
         tm = TorrentManager()
         torrents = tm.get_all_torrents()
         for torrent in torrents:
-            self._download_manager.add_torrent(torrent["magnet_uri"])
+            self._download_manager.add_torrent(
+                torrent["magnet_uri"], is_paused=torrent["is_paused"]
+            )
 
     def _update_table_data(self) -> None:
         if not self._torrents:
@@ -178,7 +188,7 @@ class DownloadsContent(Vertical):
 [b]Size:[/] {size} - [b]Status:[/] {state_text} - [b]Source:[/] {self._selected_torrent["source"]}
 [b]S/L:[/] {status["seeders"]}/{status["leechers"]} - [b]Up:[/b] {up_speed} - [b]Down:[/] {down_speed}
 
-[dim]Press 'p' to pause/resume, 'd' to delete.[/dim]
+[dim]Press 'p' to pause/resume, 'd' to delete, or 'esc' to close.[/dim]
 """
         # update details panel internal widgets
         self._details_panel.update(details.strip(), status["progress"])

@@ -26,8 +26,9 @@ def init_db() -> None:
             CREATE TABLE IF NOT EXISTS torrents (
                 magnet_uri TEXT PRIMARY KEY,
                 title TEXT,
-                size TEXT,
-                source TEXT
+                size REAL,
+                source TEXT,
+                is_paused BOOLEAN DEFAULT 0
             )
             """
         )
