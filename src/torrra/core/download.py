@@ -38,6 +38,23 @@ class DownloadManager:
             self.session, magnet_uri, {"save_path": config.get("general.download_path")}
         )
 
+    def remove_torrent(self, magnet_uri: str) -> None:
+        handle = self.torrents.get(magnet_uri)
+        if handle and handle.is_valid():
+            self.session.remove_torrent(handle)
+            del self.torrents[magnet_uri]
+
+    def pause_or_resume(self, magnet_uri: str) -> None:
+        handle = self.torrents.get(magnet_uri)
+        if not handle or not handle.is_valid():
+            return
+
+        status = handle.status()
+        if (status.flags & lt.torrent_flags.paused) != 0:
+            handle.resume()
+        else:  # if not paused
+            handle.pause()
+
     def get_torrent_status(self, magnet_uri: str) -> TorrentStatus | None:
         handle = self.torrents.get(magnet_uri)
         if not handle or not handle.is_valid():

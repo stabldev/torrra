@@ -144,3 +144,23 @@ class DownloadsContent(Vertical):
             self._details_container.focus()
         else:  # selected torrent is invalid
             self._details_container.add_class("hidden")
+
+    def key_p(self) -> None:
+        if self._selected_torrent:
+            self._download_manager.pause_or_resume(self._selected_torrent["magnet_uri"])
+
+    def key_d(self) -> None:
+        if not self._selected_torrent:
+            return
+
+        magnet_uri = self._selected_torrent["magnet_uri"]
+        self._download_manager.remove_torrent(magnet_uri)
+
+        tm = TorrentManager()
+        tm.remove_torrent(magnet_uri)
+
+        self._table.remove_row(magnet_uri)
+        self._torrents = [t for t in self._torrents if t["magnet_uri"] != magnet_uri]
+        self._table.border_title = f"all ({len(self._torrents)})"
+        self._details_container.add_class("hidden")
+        self._selected_torrent = None

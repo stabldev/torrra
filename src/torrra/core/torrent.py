@@ -20,6 +20,12 @@ class TorrentManager:
             )
             conn.commit()
 
+    def remove_torrent(self, magnet_uri: str) -> None:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM torrents WHERE magnet_uri = ?", (magnet_uri,))
+            conn.commit()
+
     def get_all_torrents(self) -> list[TorrentRecord]:
         with get_db_connection() as conn:
             conn.row_factory = sqlite3.Row
