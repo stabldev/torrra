@@ -25,6 +25,7 @@ class TorrentStatus(TypedDict):
     up_speed: float
     seeders: int
     leechers: int
+    is_paused: bool
 
 
 class TorrentRecord(TypedDict):

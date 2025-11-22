@@ -11,7 +11,7 @@ def human_readable_size(size_bytes: float, short: bool = False) -> str:
     if size_bytes < 1024:
         return f"{int(size_bytes)}B"
 
-    for unit in ["KB", "MB", "GB", "TB"]:
+    for unit in ["K", "M", "G", "T"]:
         size_bytes /= 1024.0
         if size_bytes < 1024.0:
             number = (
@@ -20,7 +20,7 @@ def human_readable_size(size_bytes: float, short: bool = False) -> str:
                 else str(int(size_bytes))
             )
             return f"{number}{unit}"
-    return f"{int(size_bytes)}PB"
+    return f"{int(size_bytes)}P"
 
 
 def lazy_import(dotted_path: str):

@@ -35,12 +35,8 @@ class HomeScreen(Screen[None]):
     def on_sidebar_item_selected(self, event: Sidebar.ItemSelected) -> None:
         self.query_one(ContentSwitcher).current = event.node_id
 
-    def on_search_content_download_requested(
-        self, event: SearchContent.DownloadRequested
-    ) -> None:
-        _ = event.torrent
+    def on_search_content_download_requested(self) -> None:
         self.query_one(ContentSwitcher).current = "downloads_content"
-        self.query_one(DownloadsContent).children[0].focus()  # focus table
         self.query_one(Sidebar).select_node_by_id(
             "downloads_content"
         )  # change currently selected sidebar item

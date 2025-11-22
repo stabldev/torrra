@@ -21,9 +21,9 @@ def get_download_manager() -> "DownloadManager":
 class DownloadManager:
     _STATE_MAP: dict[lt.torrent_status.states, tuple[str, str]] = {
         lt.torrent_status.states.downloading: ("Downloading", "DL"),
-        lt.torrent_status.states.seeding: ("Seeding", "SEED"),
-        lt.torrent_status.states.finished: ("Completed", "DONE"),
-        lt.torrent_status.states.downloading_metadata: ("Fetching", "META"),
+        lt.torrent_status.states.seeding: ("Seeding", "SE"),
+        lt.torrent_status.states.finished: ("Completed", "CD"),
+        lt.torrent_status.states.downloading_metadata: ("Fetching", "FE"),
     }
 
     def __init__(self) -> None:
@@ -68,10 +68,12 @@ class DownloadManager:
             up_speed=s.upload_rate,
             seeders=s.num_seeds,
             leechers=s.num_peers,
+            is_paused=(s.flags & lt.torrent_flags.paused) != 0,
         )
 
-    def get_torrent_state_text(
-        self, state: lt.torrent_status.states, short: bool = False
-    ) -> str:
+    def get_torrent_state_text(self, status: TorrentStatus, short: bool = False) -> str:
+        if status["is_paused"]:
+            return "Paused" if not short else "PD"
+
         idx = 1 if short else 0
-        return self._STATE_MAP.get(state, ("N/A", "N/A"))[idx]
+        return self._STATE_MAP.get(status["state"], ("N/A", "N/A"))[idx]

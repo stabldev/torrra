@@ -8,6 +8,7 @@ from textual.widgets import Input, Static
 from typing_extensions import override
 
 from torrra._types import Indexer, Torrent
+from torrra.core.torrent import TorrentManager
 from torrra.indexers.base import BaseIndexer
 from torrra.utils.helpers import human_readable_size, lazy_import
 from torrra.widgets.data_table import AutoResizingDataTable
@@ -70,9 +71,6 @@ class SearchContent(Vertical):
             yield Static(id="status")
             yield SpinnerWidget(name="shark", id="spinner")
 
-    # --------------------------------------------------
-    # APP LIFECYCLE
-    # --------------------------------------------------
     def on_mount(self) -> None:
         self._search_input = self.query_one("#search", Input)
         self._search_input.border_title = "search"
@@ -97,9 +95,9 @@ class SearchContent(Vertical):
         # send initial search
         self.post_message(Input.Submitted(self._search_input, self.search_query))
 
-    # --------------------------------------------------
-    # UI ADJUSTMENTS / SHORTCUTS
-    # --------------------------------------------------
+    def on_show(self):
+        self._search_input.focus()
+
     def key_s(self) -> None:
         self._search_input.focus()
 
@@ -108,13 +106,10 @@ class SearchContent(Vertical):
 
     def key_d(self) -> None:
         if self._selected_torrent:
-            # tm = TorrentManager()
-            # tm.add_torrent(self._selected_torrent)
+            tm = TorrentManager()
+            tm.add_torrent(self._selected_torrent)
             self.post_message(self.DownloadRequested(self._selected_torrent))
 
-    # --------------------------------------------------
-    # SEARCH LOGIC
-    # --------------------------------------------------
     @on(Input.Submitted, "#search")
     def _handle_search(self, event: Input.Submitted) -> None:
         query = event.value
@@ -171,9 +166,6 @@ class SearchContent(Vertical):
                 key=torrent.magnet_uri,
             )
 
-    # --------------------------------------------------
-    # SELECTION / DOWNLOAD
-    # --------------------------------------------------
     @on(AutoResizingDataTable.RowSelected, "#results_table")
     async def _handle_select(self, event: AutoResizingDataTable.RowSelected) -> None:
         magnet_uri = cast(str, event.row_key.value)
@@ -192,9 +184,6 @@ class SearchContent(Vertical):
         self._details_container.remove_class("hidden")
         self._details_container.focus()
 
-    # --------------------------------------------------
-    # HELPERS
-    # --------------------------------------------------
     def _get_indexer_instance(self) -> BaseIndexer:
         if self._indexer_instance_cache:
             return self._indexer_instance_cache

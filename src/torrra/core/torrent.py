@@ -13,7 +13,7 @@ class TorrentManager:
             cursor = conn.cursor()
             cursor.execute(
                 """
-                INSERT INTO torrents (magnet_uri, title, size, source)
+                INSERT OR IGNORE INTO torrents (magnet_uri, title, size, source)
                 VALUES (?, ?, ?, ?)
                 """,
                 (torrent.magnet_uri, torrent.title, torrent.size, torrent.source),
