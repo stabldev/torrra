@@ -170,7 +170,7 @@ class SearchContent(Vertical):
 [dim]Press 'd' to download or 'esc' to close.[/dim]
 """
 
-        self._details_panel.update(details.strip())
+        self._details_panel.update_content(details.strip())
         self._details_panel.remove_class("hidden")
         self._details_panel.focus()
 

@@ -42,6 +42,11 @@ DetailsPanel {
   &:focus {
     border: solid $secondary;
   }
+  ProgressBar {
+    #bar {
+      width: 1fr;
+    }
+  }
 }
 
 /* ------------------------- */
@@ -121,35 +126,6 @@ HomeScreen #main_layout {
         height: auto;
         content-align-horizontal: center;
         color: $secondary;
-      }
-    }
-    #downloads_container {
-      dock: bottom;
-      height: auto;
-      border: solid $secondary-muted;
-      padding: 0 1;
-      &:focus {
-        border: solid $secondary;
-      }
-      #progressbar-and-actions {
-        height: auto;
-        #progressbar {
-          width: 1fr;
-          #bar {
-            width: 90%;
-          }
-        }
-        #actions {
-          content-align-horizontal: right;
-          width: auto;
-        }
-      }
-    }
-  }
-  #downloads_content {
-    #details_progress {
-      #bar {
-        width: 1fr;
       }
     }
   }

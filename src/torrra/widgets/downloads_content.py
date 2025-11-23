@@ -36,7 +36,7 @@ class DownloadsContent(Vertical):
     @override
     def compose(self) -> ComposeResult:
         yield AutoResizingDataTable(cursor_type="row")
-        yield DetailsPanel()
+        yield DetailsPanel(show_progress_bar=True)
 
     def on_mount(self) -> None:
         self._table = self.query_one(AutoResizingDataTable)
@@ -184,11 +184,11 @@ class DownloadsContent(Vertical):
         down_speed = f"{human_readable_size(status['down_speed'])}/s"
 
         details = f"""
-[b]{self._selected_torrent["title"]}[/]
-[b]Size:[/] {size} - [b]Status:[/] {state_text} - [b]Source:[/] {self._selected_torrent["source"]}
-[b]S/L:[/] {status["seeders"]}/{status["leechers"]} - [b]Up:[/b] {up_speed} - [b]Down:[/] {down_speed}
+[b]{self._selected_torrent["title"]}[/b]
+[b]Size:[/b] {size} - [b]Status:[/b] {state_text} - [b]Source:[/b] {self._selected_torrent["source"]}
+[b]S/L:[/b] {status["seeders"]}/{status["leechers"]} - [b]Up:[/b] {up_speed} - [b]Down:[/b] {down_speed}
 
 [dim]Press 'p' to pause/resume, 'd' to delete, or 'esc' to close.[/dim]
 """
         # update details panel internal widgets
-        self._details_panel.update(details.strip(), status["progress"])
+        self._details_panel.update_content(details.strip(), status["progress"])

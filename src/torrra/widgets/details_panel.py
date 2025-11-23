@@ -20,7 +20,7 @@ class DetailsPanel(Vertical):
     def compose(self) -> ComposeResult:
         yield Static()
         if self.show_progress_bar:
-            yield ProgressBar()
+            yield ProgressBar(total=100)
 
     def on_mount(self) -> None:
         self._content_widget = self.query_one(Static)
@@ -33,7 +33,7 @@ class DetailsPanel(Vertical):
         self.add_class("hidden")
         self.post_message(self.Closed())
 
-    def update(self, content: str, progress: float | None = None) -> None:
+    def update_content(self, content: str, progress: float | None = None) -> None:
         self._content_widget.update(content)
         if self._progress_bar and progress is not None:
             self._progress_bar.progress = progress
