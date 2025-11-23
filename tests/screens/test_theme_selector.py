@@ -46,7 +46,10 @@ async def test_theme_selector_select_theme_with_enter(
 ):
     # patch config instance used by theme_selector module
     # with mock_config
-    monkeypatch.setattr("torrra.screens.theme_selector.config", mock_config)
+    monkeypatch.setattr(
+        "torrra.screens.theme_selector.get_config",
+        lambda: mock_config,
+    )
 
     async with app.run_test() as pilot:
         await pilot.press("ctrl+t")

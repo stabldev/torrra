@@ -47,7 +47,7 @@ def mock_indexer(monkeypatch: pytest.MonkeyPatch):
         return mock_indexer_instance
 
     monkeypatch.setattr(
-        "torrra.screens.search.SearchScreen._get_indexer_instance",
+        "torrra.widgets.search.SearchContent._get_indexer_instance",
         _mock_get_indexer_instance,
     )
     # return patched indexer for test cases
