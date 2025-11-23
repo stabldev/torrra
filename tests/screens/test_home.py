@@ -7,7 +7,7 @@ from textual.widgets import DataTable, Static
 
 from torrra._types import Indexer, Torrent
 from torrra.app import TorrraApp
-from torrra.screens.search import SearchScreen
+from torrra.screens.home import HomeScreen
 
 
 @pytest.fixture
@@ -23,27 +23,24 @@ def app():
     )
 
 
-async def test_search_screen_search(app: TorrraApp, mock_indexer: MagicMock):
+async def test_home_screen_search(app: TorrraApp, mock_indexer: MagicMock):
     mock_indexer.search.return_value = [
         Torrent(
-            "Arch Linux ISO (Mock)",
-            840499200,
-            523,
-            17,
-            "MockIndexer",
-            "magnet:?xt=urn:btih:mock",
+            magnet_uri="magnet:?xt=urn:btih:mock",
+            title="Arch Linux ISO (Mock)",
+            size=840499200,
+            seeders=523,
+            leechers=17,
+            source="MockIndexer",
         )
     ]
 
     async with app.run_test():
-        assert isinstance(app.screen, SearchScreen)
+        assert isinstance(app.screen, HomeScreen)
 
-        # (doesnt support generic type, so used casting)
         table = cast(
-            DataTable[str],
-            app.screen.query_one("#results_table", DataTable),
+            DataTable[str], app.screen.query_one("SearchContent DataTable", DataTable)
         )
-
         # table should have results
         assert not table.has_class("hidden")
 
@@ -52,19 +49,15 @@ async def test_search_screen_search(app: TorrraApp, mock_indexer: MagicMock):
         assert table.get_cell_at(Coordinate(0, 1)) == "Arch Linux ISO (Mock)"
 
 
-async def test_search_screen_no_results(app: TorrraApp, mock_indexer: MagicMock):
+async def test_home_screen_search_no_results(app: TorrraApp, mock_indexer: MagicMock):
     # ensure result is empty []
     mock_indexer.search.return_value = []
 
     async with app.run_test():
-        assert isinstance(app.screen, SearchScreen)
+        assert isinstance(app.screen, HomeScreen)
 
-        loader_status = app.screen.query_one("#loader #status", Static)
-        # (doesnt support generic type, so used casting)
-        table = cast(
-            DataTable[str],
-            app.screen.query_one("#results_table", DataTable),
-        )
+        loader_status = app.screen.query_one("#loader Static", Static)
+        table = app.screen.query_one("SearchContent DataTable")
 
         assert "Nothing Found" in str(loader_status.content)
         assert table.has_class("hidden")

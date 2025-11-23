@@ -6,26 +6,26 @@ from textual.pilot import Pilot
 from torrra._types import Torrent
 
 
-def test_search_screen_snapshot(
+def test_home_screen_snapshot(
     app_factory: Any, mock_indexer: MagicMock, snap_compare: Any
 ):
     # return mock torrents as result
     mock_indexer.search.return_value = [
         Torrent(
-            "Arch Linux 2025.11.01",
-            1073741824,
-            850,
-            50,
-            "LinuxTacker",
-            "magnet:?xt=urn:btih:arch_new",
+            magnet_uri="magnet:?xt=urn:btih:arch_new",
+            title="Arch Linux 2025.11.01",
+            size=1073741824,
+            seeders=850,
+            leechers=50,
+            source="LinuxTacker",
         ),
         Torrent(
-            "Arch Linux 2024.01.01",
-            838860800,
-            5,
-            15,
-            "LinuxTacker",
-            "magnet:?xt=urn:btih:arch_old",
+            magnet_uri="magnet:?xt=urn:btih:arch_old",
+            title="Arch Linux 2024.01.01",
+            size=838860800,
+            seeders=5,
+            leechers=15,
+            source="LinuxTacker",
         ),
     ]
 

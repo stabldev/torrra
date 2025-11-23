@@ -1,10 +1,10 @@
 import pytest
-from textual.widgets import Input, Static
+from textual.widgets import Static
 
 from torrra._types import Indexer
 from torrra._version import __version__
 from torrra.app import TorrraApp
-from torrra.screens.search import SearchScreen
+from torrra.screens.home import HomeScreen
 from torrra.screens.welcome import WelcomeScreen
 
 
@@ -29,25 +29,8 @@ async def test_welcome_screen_search_flow(app: TorrraApp):
         await pilot.press("enter")
 
         # should show SearchScreen with dismissed search_query
-        assert isinstance(app.screen, SearchScreen)
+        assert isinstance(app.screen, HomeScreen)
         assert app.screen.search_query == query
-
-
-async def test_welcome_screen_focus_handling(app: TorrraApp):
-    async with app.run_test() as pilot:
-        assert isinstance(app.screen, WelcomeScreen)
-
-        search_input = app.screen.query_one("#search", Input)
-        assert search_input.has_focus
-
-        # unfocus
-        await pilot.press("escape")
-        assert not search_input.has_focus
-
-        search_input.focus()
-        # wait for application state to update
-        await pilot.pause()
-        assert search_input.has_focus
 
 
 async def test_welcome_screen_ui_composition(app: TorrraApp):

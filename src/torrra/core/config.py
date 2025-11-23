@@ -1,11 +1,11 @@
 import ast
-import tomllib
 from contextlib import suppress
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, cast
 
 import tomli_w
+import tomllib
 from platformdirs import user_config_dir, user_downloads_dir
 
 from torrra.core.constants import DEFAULT_CACHE_TTL
@@ -17,6 +17,11 @@ CONFIG_FILE = CONFIG_DIR / "config.toml"
 # sentinel value used for robust
 # config.get(..., default=...) value check
 _sentinel = object()
+
+
+@lru_cache
+def get_config() -> "Config":
+    return Config()
 
 
 class Config:
@@ -124,12 +129,3 @@ class Config:
         CONFIG_DIR.mkdir(parents=True, exist_ok=True)
         with open(CONFIG_FILE, "wb") as f:
             tomli_w.dump(self.config, f)
-
-
-@lru_cache
-def get_config() -> Config:
-    return Config()
-
-
-# cached Config() instance
-config = get_config()

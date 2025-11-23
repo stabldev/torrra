@@ -10,7 +10,7 @@ from textual.widgets import Label, ListItem, ListView, Static
 from textual.worker import Worker
 from typing_extensions import override
 
-from torrra.core.config import config
+from torrra.core.config import get_config
 
 
 class ThemeSelectorScreen(ModalScreen[None]):
@@ -54,7 +54,7 @@ class ThemeSelectorScreen(ModalScreen[None]):
     def on_list_view_selected(self) -> None:
         self._cancel_update_worker()
         if self.app.theme != self.original_theme:
-            config.set("general.theme", self.app.theme)
+            get_config().set("general.theme", self.app.theme)
         self.app.pop_screen()
 
     def action_close_screen(self) -> None:

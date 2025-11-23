@@ -76,11 +76,11 @@ def config():
 @config.command(name="get", help="Get a config value.")
 @click.argument("key")
 def config_get(key: str):
-    from torrra.core.config import config
+    from torrra.core.config import get_config
     from torrra.core.exceptions import ConfigError
 
     try:
-        click.echo(config.get(key))
+        click.echo(get_config().get(key))
     except ConfigError as e:
         click.secho(e, fg="red", err=True)
 
@@ -89,22 +89,22 @@ def config_get(key: str):
 @click.argument("key")
 @click.argument("value")
 def config_set(key: str, value: str):
-    from torrra.core.config import config
+    from torrra.core.config import get_config
     from torrra.core.exceptions import ConfigError
 
     try:
-        config.set(key, value)
+        get_config().set(key, value)
     except ConfigError as e:
         click.secho(e, fg="red", err=True)
 
 
 @config.command(name="list", help="List all configurations.")
 def config_list():
-    from torrra.core.config import config
+    from torrra.core.config import get_config
     from torrra.core.exceptions import ConfigError
 
     try:
-        click.echo("\n".join(config.list()))
+        click.echo("\n".join(get_config().list()))
     except ConfigError as e:
         click.secho(e, fg="red", err=True)
 
