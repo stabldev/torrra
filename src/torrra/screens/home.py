@@ -60,9 +60,9 @@ class HomeScreen(Screen[None]):
 
     def on_search_content_download_requested(self) -> None:
         self.query_one(ContentSwitcher).current = "downloads_content"
-        self.query_one(Sidebar).select_node_by_group_id(
-            "downloads_content"
-        )  # change currently selected sidebar item
+        self.query_one(Sidebar).select_node_by_group_id("downloads_content")
+
+        self._downloads_content.focus_table()
 
     def _update_downloads_data(self) -> None:
         dm = get_download_manager()

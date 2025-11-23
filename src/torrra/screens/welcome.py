@@ -1,4 +1,3 @@
-from textual import on
 from textual.app import ComposeResult
 from textual.containers import Container, Grid
 from textual.screen import Screen
@@ -46,9 +45,6 @@ class WelcomeScreen(Screen[str]):
                     yield Static("[t]heme switcher", markup=False)
                     yield Static("ctrl+t", classes="key")
 
-    @on(Input.Submitted, "#search")
-    async def handle_search(self, event: Input.Submitted) -> None:
-        query = event.value
-
-        if query and query.strip():
+    async def on_input_submitted(self, event: Input.Submitted) -> None:
+        if query := event.value.strip():
             self.dismiss(query)

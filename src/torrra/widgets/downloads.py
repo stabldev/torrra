@@ -113,6 +113,9 @@ class DownloadsContent(Vertical):
         else:  # selected torrent is invalid
             self._details_panel.add_class("hidden")
 
+    def focus_table(self) -> None:
+        self._table.focus()
+
     def update_table_data(self, statuses: dict[str, TorrentStatus | None]) -> None:
         if not self._torrents:
             return
