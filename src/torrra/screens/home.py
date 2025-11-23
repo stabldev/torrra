@@ -56,11 +56,11 @@ class HomeScreen(Screen[None]):
         self.set_interval(1, self._update_downloads_data)
 
     def on_sidebar_item_selected(self, event: Sidebar.ItemSelected) -> None:
-        self.query_one(ContentSwitcher).current = event.node_id
+        self.query_one(ContentSwitcher).current = event.group_id
 
     def on_search_content_download_requested(self) -> None:
         self.query_one(ContentSwitcher).current = "downloads_content"
-        self.query_one(Sidebar).select_node_by_id(
+        self.query_one(Sidebar).select_node_by_group_id(
             "downloads_content"
         )  # change currently selected sidebar item
 

@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, ClassVar
 
 from textual.app import ComposeResult
 from textual.message import Message
@@ -9,10 +9,17 @@ from typing_extensions import override
 
 
 class Sidebar(Tree[Any]):
+    DOWNLOADS_GROUP: ClassVar[list[str]] = [
+        "Downloading",
+        "Seeding",
+        "Paused",
+        "Completed",
+    ]
+
     class ItemSelected(Message):
-        def __init__(self, node_id: str, node_type: str | None = None) -> None:
-            self.node_id: str = node_id
-            self.node_type: str | None = node_type
+        def __init__(self, group_id: str, group_type: str | None = None) -> None:
+            self.group_id: str = group_id
+            self.group_type: str | None = group_type
             super().__init__()
 
     def __init__(self, id: str) -> None:
@@ -22,75 +29,41 @@ class Sidebar(Tree[Any]):
         self.guide_depth: int = 3
         self.can_focus: bool = False  # re-enable focus later
 
-        self._downloads_node: TreeNode[Any]
-        self._downloading_node: TreeNode[Any]
-        self._seeding_node: TreeNode[Any]
-        self._paused_node: TreeNode[Any]
-        self._completed_node: TreeNode[Any]
+        self._downloads_root_node: TreeNode[Any]
+        self._downloads_nodes: dict[str, TreeNode[Any]] = {}
 
     @override
     def compose(self) -> ComposeResult:
         root = self.root
         # NODES
         search = root.add("Search", allow_expand=False)
-        search.data = {"id": "search_content"}
+        search.data = {"group_id": "search_content"}
 
-        self._downloads_node = root.add(
-            "Downloads (0)",
-            data={"id": "downloads_content", "category": "downloads"},
-            expand=True,
-            allow_expand=False,
-        )
+        downloads_node = root.add("Downloads (0)", expand=True, allow_expand=False)
+        downloads_node.data = {"group_id": "downloads_content"}
 
-        download_items = [
-            ("Downloading (0)", "downloading"),
-            ("Seeding (0)", "seeding"),
-            ("Paused (0)", "paused"),
-            ("Completed (0)", "completed"),
-        ]
+        for item in self.DOWNLOADS_GROUP:
+            node = downloads_node.add(f"{item} (0)", allow_expand=False)
+            node.data = {**downloads_node.data, "group_type": item}
 
-        for label, download_type in download_items:
-            node = self._downloads_node.add(
-                label,
-                data={"id": "downloads_content", "type": download_type},
-                allow_expand=False,
-            )
+            self._downloads_nodes[item] = node
+        self._downloads_root_node = downloads_node
 
-            if download_type == "downloading":
-                self._downloading_node = node
-            elif download_type == "seeding":
-                self._seeding_node = node
-            elif download_type == "paused":
-                self._paused_node = node
-            elif download_type == "completed":
-                self._completed_node = node
-
-        self.select_node(search)  # default select "search" node
+        self.select_node(search)  # default
         return super().compose()
 
-    def update_download_counts(self, counts: dict[str, int]) -> None:
-        total_downloads = sum(counts.values())
-
-        self._downloads_node.set_label(f"Downloads ({total_downloads})")
-        self._downloading_node.set_label(
-            f"Downloading ({counts.get('Downloading', 0)})"
-        )
-        self._seeding_node.set_label(f"Seeding ({counts.get('Seeding', 0)})")
-        self._paused_node.set_label(f"Paused ({counts.get('Paused', 0)})")
-        self._completed_node.set_label(f"Completed ({counts.get('Completed', 0)})")
-
     def on_tree_node_selected(self, event: Tree.NodeSelected[dict[str, str]]) -> None:
-        node_data = event.node.data
-        if node_data and "id" in node_data:
+        node_data = event.node.data or {}
+        if group_id := node_data.get("group_id"):
             self.post_message(
                 self.ItemSelected(
-                    node_id=node_data["id"], node_type=node_data.get("type")
+                    group_id=group_id, group_type=node_data.get("group_type")
                 )
             )
 
-    def select_node_by_id(self, node_id: str) -> None:
+    def select_node_by_group_id(self, group_id: str) -> None:
         def _find_node(node: TreeNode[Any]) -> TreeNode[Any] | None:
-            if node.data and node.data.get("id") == node_id:
+            if node.data and node.data.get("group_id") == group_id:
                 return node
 
             for child in node.children:
@@ -100,3 +73,11 @@ class Sidebar(Tree[Any]):
 
         if target_node := _find_node(self.root):
             self.select_node(target_node)
+
+    def update_download_counts(self, counts: dict[str, int]) -> None:
+        total = sum(counts.values())
+        self._downloads_root_node.set_label(f"Downloads ({total})")
+
+        for item in self.DOWNLOADS_GROUP:
+            count = counts.get(item, 0)
+            self._downloads_nodes[item].set_label(f"{item} ({count})")
