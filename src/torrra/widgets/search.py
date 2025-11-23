@@ -83,7 +83,10 @@ class SearchContent(Vertical):
         # send initial search
         self.post_message(Input.Submitted(self._search_input, self.search_query))
 
-    def key_d(self) -> None:
+    def key_enter(self) -> None:
+        if not self._details_panel.has_focus:
+            return
+
         if self._selected_torrent:
             tm = get_torrent_manager()
             tm.add_torrent(self._selected_torrent)
@@ -161,7 +164,7 @@ class SearchContent(Vertical):
 [b]{self._selected_torrent.title}[/b]
 [b]Size:[/b] {human_readable_size(self._selected_torrent.size)} - [b]Seeders:[/b] {self._selected_torrent.seeders} - [b]Leechers:[/b] {self._selected_torrent.leechers} - [b]Source:[/b] {self._selected_torrent.source}
 
-[dim]Press 'd' to download or 'esc' to close.[/dim]
+[dim]Press 'enter' to download or 'esc' to close.[/dim]
 """
 
         self._details_panel.update_content(details.strip())
