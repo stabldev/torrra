@@ -103,7 +103,7 @@ class DownloadsContent(Vertical):
             (d for d in self._torrents if d["magnet_uri"] == row_key), None
         )
 
-        if self._selected_torrent and self._selected_torrent["magnet_uri"]:
+        if self._selected_torrent:
             if status := self._dm.get_torrent_status(
                 self._selected_torrent["magnet_uri"]
             ):
@@ -168,4 +168,7 @@ class DownloadsContent(Vertical):
 [dim]Press 'p' to pause/resume, 'd' to delete, or 'esc' to close.[/dim]
 """
         # update details panel internal widgets
-        self._details_panel.update_content(details.strip(), status["progress"])
+        self._details_panel.update_content(
+            details.strip(),
+            progress=status["progress"],
+        )

@@ -1,4 +1,3 @@
-import threading
 from typing import ClassVar
 
 from textual import work
@@ -60,7 +59,6 @@ class TorrraApp(App[None]):
 
     @work(exclusive=True)
     async def _show_welcome_and_search(self) -> None:
-        print(f"_show_welcome_and_search is {threading.current_thread().name}")
         if search_query := await self.push_screen_wait(
             WelcomeScreen(indexer=self.indexer)
         ):  # show both screens

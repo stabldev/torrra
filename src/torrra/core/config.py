@@ -1,5 +1,4 @@
 import ast
-import threading
 from contextlib import suppress
 from functools import lru_cache
 from pathlib import Path
@@ -31,7 +30,6 @@ class Config:
         self._load_config()
 
     def get(self, key_path: str, default: Any | None = _sentinel) -> Any:
-        print(f"Config accessed from thread: {threading.current_thread().name}")
         keys = key_path.split(".")
         current = self.config
 

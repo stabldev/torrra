@@ -83,12 +83,6 @@ class SearchContent(Vertical):
         # send initial search
         self.post_message(Input.Submitted(self._search_input, self.search_query))
 
-    def key_s(self) -> None:
-        self._search_input.focus()
-
-    def key_r(self) -> None:
-        self._table.focus()
-
     def key_d(self) -> None:
         if self._selected_torrent:
             tm = get_torrent_manager()
