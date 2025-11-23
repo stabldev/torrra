@@ -7,8 +7,8 @@ from typing_extensions import override
 from torrra._types import Indexer, TorrentStatus
 from torrra.core.download import get_download_manager
 from torrra.core.torrent import get_torrent_manager
-from torrra.widgets.downloads_content import DownloadsContent
-from torrra.widgets.search_content import SearchContent
+from torrra.widgets.downloads import DownloadsContent
+from torrra.widgets.search import SearchContent
 from torrra.widgets.sidebar import Sidebar
 
 
