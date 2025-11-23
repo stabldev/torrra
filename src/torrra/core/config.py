@@ -1,11 +1,12 @@
 import ast
-import tomllib
+import threading
 from contextlib import suppress
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, cast
 
 import tomli_w
+import tomllib
 from platformdirs import user_config_dir, user_downloads_dir
 
 from torrra.core.constants import DEFAULT_CACHE_TTL
@@ -19,12 +20,18 @@ CONFIG_FILE = CONFIG_DIR / "config.toml"
 _sentinel = object()
 
 
+@lru_cache
+def get_config() -> "Config":
+    return Config()
+
+
 class Config:
     def __init__(self) -> None:
         self.config: dict[str, Any] = {}
         self._load_config()
 
     def get(self, key_path: str, default: Any | None = _sentinel) -> Any:
+        print(f"Config accessed from thread: {threading.current_thread().name}")
         keys = key_path.split(".")
         current = self.config
 
@@ -125,12 +132,3 @@ class Config:
         CONFIG_DIR.mkdir(parents=True, exist_ok=True)
         with open(CONFIG_FILE, "wb") as f:
             tomli_w.dump(self.config, f)
-
-
-@lru_cache
-def get_config() -> Config:
-    return Config()
-
-
-# cached Config() instance
-config = get_config()

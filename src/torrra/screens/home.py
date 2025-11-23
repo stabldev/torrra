@@ -80,7 +80,7 @@ class HomeScreen(Screen[None]):
             state_text = dm.get_torrent_state_text(status)
             if state_text in ("Downloading", "Fetching"):
                 counts["Downloading"] += 1
-            else:  # dynamiccc
+            elif state_text in counts:
                 counts[state_text] += 1
 
         self._sidebar.update_download_counts(counts)

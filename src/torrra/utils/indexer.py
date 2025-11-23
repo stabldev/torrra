@@ -4,7 +4,7 @@ from typing import cast
 import click
 
 from torrra._types import Indexer, IndexerName
-from torrra.core.config import config
+from torrra.core.config import get_config
 from torrra.core.exceptions import ConfigError, IndexerError
 from torrra.indexers.base import BaseIndexer
 from torrra.utils.helpers import lazy_import
@@ -19,6 +19,7 @@ def run_with_indexer(
     no_cache: bool,
     search_query: str | None = None,
 ) -> None:
+    config = get_config()
     # validate command args
     if (url is None) != (api_key is None):
         click.secho(
@@ -80,6 +81,7 @@ def run_with_indexer(
 def run_with_default_indexer(
     *, no_cache: bool, search_query: str | None = None
 ) -> None:
+    config = get_config()
     try:
         default_indexer = config.get("indexers.default")
         if not default_indexer:

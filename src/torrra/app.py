@@ -1,3 +1,4 @@
+import threading
 from typing import ClassVar
 
 from textual import work
@@ -7,7 +8,7 @@ from textual.reactive import Reactive
 from textual.types import CSSPathType
 
 from torrra._types import Indexer
-from torrra.core.config import config
+from torrra.core.config import get_config
 from torrra.screens.home import HomeScreen
 from torrra.screens.theme_selector import ThemeSelectorScreen
 from torrra.screens.welcome import WelcomeScreen
@@ -33,7 +34,7 @@ class TorrraApp(App[None]):
         self.search_query: str | None = search_query
 
         # load theme from config file
-        theme = config.get("general.theme", "textual-dark")
+        theme = get_config().get("general.theme", "textual-dark")
         if theme not in self.available_themes:
             error_message = (
                 f"invalid theme '{theme}' configured.\n"
@@ -59,6 +60,7 @@ class TorrraApp(App[None]):
 
     @work(exclusive=True)
     async def _show_welcome_and_search(self) -> None:
+        print(f"_show_welcome_and_search is {threading.current_thread().name}")
         if search_query := await self.push_screen_wait(
             WelcomeScreen(indexer=self.indexer)
         ):  # show both screens

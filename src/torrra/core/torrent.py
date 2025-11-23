@@ -1,26 +1,17 @@
 import sqlite3
-import threading
+from functools import lru_cache
 
 from torrra._types import Torrent, TorrentRecord
 from torrra.core.db import get_db_connection, init_db
 
-_instance = None
-_lock = threading.Lock()
 
-
+@lru_cache
 def get_torrent_manager() -> "TorrentManager":
-    global _instance
-    if _instance is None:
-        with _lock:
-            if _instance is None:
-                _instance = TorrentManager()
-    return _instance
+    init_db()
+    return TorrentManager()
 
 
 class TorrentManager:
-    def __init__(self) -> None:
-        init_db()
-
     def add_torrent(self, torrent: Torrent) -> None:
         with get_db_connection() as conn:
             cursor = conn.cursor()

@@ -1,21 +1,14 @@
-import threading
+from functools import lru_cache
 
 import libtorrent as lt
 
 from torrra._types import TorrentStatus
-from torrra.core.config import config
-
-_instance = None
-_lock = threading.Lock()
+from torrra.core.config import get_config
 
 
+@lru_cache
 def get_download_manager() -> "DownloadManager":
-    global _instance
-    if _instance is None:
-        with _lock:
-            if _instance is None:
-                _instance = DownloadManager()
-    return _instance
+    return DownloadManager()
 
 
 class DownloadManager:
@@ -34,7 +27,7 @@ class DownloadManager:
         if magnet_uri in self.torrents:
             return
 
-        params = {"save_path": config.get("general.download_path")}
+        params = {"save_path": get_config().get("general.download_path")}
         if is_paused:
             params["flags"] = lt.torrent_flags.paused
         # start tracking provided magnet_uri
