@@ -2,12 +2,11 @@ from typing import cast
 
 from textual.app import ComposeResult
 from textual.containers import Vertical
-from textual.timer import Timer
 from typing_extensions import override
 
 from torrra._types import TorrentRecord, TorrentStatus
 from torrra.core.download import DownloadManager, get_download_manager
-from torrra.core.torrent import TorrentManager
+from torrra.core.torrent import get_torrent_manager
 from torrra.utils.helpers import human_readable_size
 from torrra.widgets.data_table import AutoResizingDataTable
 from torrra.widgets.details_panel import DetailsPanel
@@ -27,8 +26,8 @@ class DownloadsContent(Vertical):
         super().__init__(id="downloads_content")
         self._torrents: list[TorrentRecord] = []
         self._selected_torrent: TorrentRecord | None = None
-        self._download_manager: DownloadManager = get_download_manager()
-        self._update_timer: Timer | None = None
+
+        self._dm: DownloadManager = get_download_manager()
 
         self._table: AutoResizingDataTable[str]
         self._details_panel: DetailsPanel
@@ -47,20 +46,16 @@ class DownloadsContent(Vertical):
         # setup table
         for label, key, width in self.COLS:
             self._table.add_column(label, width=width, key=key)
-        # start prime torrents download
-        self._prime_downloads()
 
     def on_show(self) -> None:
-        tm = TorrentManager()
+        tm = get_torrent_manager()
         self._torrents = tm.get_all_torrents()
 
         self._table.clear()
         self._table.border_title = f"all ({len(self._torrents)})"
 
         for idx, torrent in enumerate(self._torrents):
-            self._download_manager.add_torrent(
-                torrent["magnet_uri"], is_paused=torrent["is_paused"]
-            )
+            self._dm.add_torrent(torrent["magnet_uri"], is_paused=torrent["is_paused"])
             self._table.add_row(
                 str(idx + 1),
                 torrent["title"],
@@ -70,25 +65,15 @@ class DownloadsContent(Vertical):
                 "0 B/s",
                 key=torrent["magnet_uri"],
             )
-        # run timer to update results table
-        self._update_timer = self.set_interval(1, self._update_table_data)
-
-    def on_hide(self) -> None:
-        if self._update_timer:
-            self._update_timer.stop()
-
-    def on_unmount(self) -> None:
-        if self._update_timer:
-            self._update_timer.stop()
 
     def key_p(self) -> None:
         if not self._selected_torrent:
             return
 
         magnet_uri = self._selected_torrent["magnet_uri"]
-        self._download_manager.toggle_pause(magnet_uri)
-        if status := self._download_manager.get_torrent_status(magnet_uri):
-            tm = TorrentManager()
+        self._dm.toggle_pause(magnet_uri)
+        if status := self._dm.get_torrent_status(magnet_uri):
+            tm = get_torrent_manager()
             tm.update_torrent_paused_state(magnet_uri, status["is_paused"])
 
     def key_d(self) -> None:
@@ -96,9 +81,9 @@ class DownloadsContent(Vertical):
             return
 
         magnet_uri = self._selected_torrent["magnet_uri"]
-        self._download_manager.remove_torrent(magnet_uri)
+        self._dm.remove_torrent(magnet_uri)
 
-        tm = TorrentManager()
+        tm = get_torrent_manager()
         tm.remove_torrent(magnet_uri)
 
         self._table.remove_row(magnet_uri)
@@ -119,7 +104,7 @@ class DownloadsContent(Vertical):
         )
 
         if self._selected_torrent and self._selected_torrent["magnet_uri"]:
-            if status := self._download_manager.get_torrent_status(
+            if status := self._dm.get_torrent_status(
                 self._selected_torrent["magnet_uri"]
             ):
                 self._update_details_panel(status)
@@ -128,27 +113,19 @@ class DownloadsContent(Vertical):
         else:  # selected torrent is invalid
             self._details_panel.add_class("hidden")
 
-    def _prime_downloads(self) -> None:
-        tm = TorrentManager()
-        torrents = tm.get_all_torrents()
-        for torrent in torrents:
-            self._download_manager.add_torrent(
-                torrent["magnet_uri"], is_paused=torrent["is_paused"]
-            )
-
-    def _update_table_data(self) -> None:
+    def update_table_data(self, statuses: dict[str, TorrentStatus | None]) -> None:
         if not self._torrents:
             return
 
         for torrent in self._torrents:
-            status = self._download_manager.get_torrent_status(torrent["magnet_uri"])
+            status = statuses.get(torrent["magnet_uri"])
             if not status:
                 continue
 
             self._table.update_cell(
                 torrent["magnet_uri"],
                 "status",
-                self._download_manager.get_torrent_state_text(status, short=True),
+                self._dm.get_torrent_state_text(status, short=True),
             )
             self._table.update_cell(
                 torrent["magnet_uri"],
@@ -178,7 +155,7 @@ class DownloadsContent(Vertical):
         if not self._selected_torrent:
             return
 
-        state_text = self._download_manager.get_torrent_state_text(status)
+        state_text = self._dm.get_torrent_state_text(status)
         size = human_readable_size(float(self._selected_torrent["size"]))
         up_speed = f"{human_readable_size(status['up_speed'])}/s"
         down_speed = f"{human_readable_size(status['down_speed'])}/s"

@@ -9,7 +9,7 @@ from textual.widgets import Input, Static
 from typing_extensions import override
 
 from torrra._types import Indexer, Torrent
-from torrra.core.torrent import TorrentManager
+from torrra.core.torrent import get_torrent_manager
 from torrra.indexers.base import BaseIndexer
 from torrra.utils.helpers import human_readable_size, lazy_import
 from torrra.widgets.data_table import AutoResizingDataTable
@@ -91,7 +91,7 @@ class SearchContent(Vertical):
 
     def key_d(self) -> None:
         if self._selected_torrent:
-            tm = TorrentManager()
+            tm = get_torrent_manager()
             tm.add_torrent(self._selected_torrent)
             self.post_message(self.DownloadRequested(self._selected_torrent))
 
