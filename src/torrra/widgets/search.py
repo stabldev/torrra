@@ -12,6 +12,7 @@ from torrra._types import Indexer, Torrent
 from torrra.core.torrent import get_torrent_manager
 from torrra.indexers.base import BaseIndexer
 from torrra.utils.helpers import human_readable_size, lazy_import
+from torrra.utils.magnet import resolve_magnet_uri
 from torrra.widgets.data_table import AutoResizingDataTable
 from torrra.widgets.details_panel import DetailsPanel
 from torrra.widgets.spinner import Spinner
@@ -83,11 +84,22 @@ class SearchContent(Vertical):
         # send initial search
         self.post_message(Input.Submitted(self._search_input, self.search_query))
 
-    def key_enter(self) -> None:
+    async def key_enter(self) -> None:
         if not self._details_panel.has_focus:
             return
 
         if self._selected_torrent:
+            # uri returned from the indexer
+            # might not be a proper magnet uri, resolve anyways
+            raw_magnet_uri = self._selected_torrent.magnet_uri
+            resolved_magnet_uri = await resolve_magnet_uri(raw_magnet_uri)
+
+            if resolved_magnet_uri is None:
+                return
+
+            # update with resolved magnet_uri
+            self._selected_torrent.magnet_uri = resolved_magnet_uri
+
             tm = get_torrent_manager()
             tm.add_torrent(self._selected_torrent)
             self.post_message(self.DownloadRequested(self._selected_torrent))
