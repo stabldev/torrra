@@ -9,7 +9,7 @@
 project = "Torrra"
 copyright = "2025, stabldev"
 author = "stabldev"
-release = "1.3.5"
+release = "2.0.0"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
