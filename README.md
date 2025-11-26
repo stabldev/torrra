@@ -6,13 +6,14 @@
 [![PyPI](https://img.shields.io/pypi/v/torrra?style=flat-square)](https://pypi.org/project/torrra/)
 [![AUR Version](https://img.shields.io/aur/version/torrra?style=flat-square)](https://aur.archlinux.org/packages/torrra)
 [![Pepy Total Downloads](https://img.shields.io/pepy/dt/torrra?style=flat-square&color=blue)](https://pypi.org/project/torrra/)
+[![CI Status](https://img.shields.io/github/actions/workflow/status/stabldev/torrra/ci.yml?style=flat-square)](https://github.com/stabldev/torrra/actions/workflows/ci.yml)
 [![Docs](https://readthedocs.org/projects/torrra/badge/?version=latest&style=flat-square)](https://torrra.readthedocs.io/)
 [![License](https://img.shields.io/github/license/stabldev/torrra?style=flat-square)](https://github.com/stabldev/torrra/blob/main/LICENSE)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square)](https://github.com/stabldev/torrra/issues)
 
 ![demo](./docs/_static/demo.gif)
 
-_Torrra_ provides a streamlined command-line interface for torrent search and downloads, powered by Jackett/Prowlarr and Libtorrent. Built with Textual, it offers a beautiful TUI with pause/resume support - all without leaving your terminal.
+_Torrra_ provides a streamlined command-line interface for torrent search and downloads, powered by Jackett/Prowlarr and Libtorrent. Built with Textual, it offers a beautiful 
+TUI with pause/resume support - all without leaving your terminal.
 
 **Full documentation**: https://torrra.readthedocs.io/en/latest/
 
@@ -94,3 +95,10 @@ Whether it's reporting a bug, submitting a feature request, or writing code, we 
 ## License
 
 [MIT](LICENSE) © 2025 ^\_^ [`@stabldev`](https://github.com/stabldev)
+
+## Like my work?
+
+This project needs a ⭐ from you. Don't forget to leave a ⭐\
+If you found this helpful, consider supporting me with a coffee.
+
+[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/stabldev)
