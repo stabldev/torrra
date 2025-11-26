@@ -1,3 +1,4 @@
+import webbrowser
 from contextlib import suppress
 from typing import cast
 
@@ -9,6 +10,7 @@ from textual.widgets import Input, Static
 from typing_extensions import override
 
 from torrra._types import Indexer, Torrent
+from torrra.core.config import get_config
 from torrra.core.torrent import get_torrent_manager
 from torrra.indexers.base import BaseIndexer
 from torrra.utils.helpers import human_readable_size, lazy_import
@@ -100,9 +102,12 @@ class SearchContent(Vertical):
             # update with resolved magnet_uri
             self._selected_torrent.magnet_uri = resolved_magnet_uri
 
-            tm = get_torrent_manager()
-            tm.add_torrent(self._selected_torrent)
-            self.post_message(self.DownloadRequested(self._selected_torrent))
+            if get_config().get("general.download_in_external_client", False):
+                webbrowser.open(resolved_magnet_uri)
+            else:  # continue with libtorrent
+                tm = get_torrent_manager()
+                tm.add_torrent(self._selected_torrent)
+                self.post_message(self.DownloadRequested(self._selected_torrent))
 
     def on_input_submitted(self, event: Input.Submitted) -> None:
         query = event.value
