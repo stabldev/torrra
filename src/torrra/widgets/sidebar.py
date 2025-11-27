@@ -1,19 +1,26 @@
 from typing import Any, ClassVar
 
 from textual.app import ComposeResult
+from textual.binding import Binding, BindingType
 from textual.message import Message
 from textual.reactive import Reactive, reactive
 from textual.widgets import Tree
 from textual.widgets.tree import TreeNode
 from typing_extensions import override
 
+DOWNLOADS_GROUP: list[str] = [
+    "Downloading",
+    "Seeding",
+    "Paused",
+    "Completed",
+]
+
 
 class Sidebar(Tree[Any]):
-    DOWNLOADS_GROUP: ClassVar[list[str]] = [
-        "Downloading",
-        "Seeding",
-        "Paused",
-        "Completed",
+    BINDINGS: ClassVar[list[BindingType]] = [
+        Binding("k", "cursor_up"),
+        Binding("j", "cursor_down"),
+        Binding("l", "select_cursor"),
     ]
 
     class ItemSelected(Message):
@@ -42,7 +49,7 @@ class Sidebar(Tree[Any]):
         downloads_node = root.add("Downloads (0)", expand=True, allow_expand=False)
         downloads_node.data = {"group_id": "downloads_content"}
 
-        for item in self.DOWNLOADS_GROUP:
+        for item in DOWNLOADS_GROUP:
             node = downloads_node.add(f"{item} (0)", allow_expand=False)
             node.data = {**downloads_node.data, "group_type": item}
 
@@ -78,6 +85,6 @@ class Sidebar(Tree[Any]):
         total = sum(counts.values())
         self._downloads_root_node.set_label(f"Downloads ({total})")
 
-        for item in self.DOWNLOADS_GROUP:
+        for item in DOWNLOADS_GROUP:
             count = counts.get(item, 0)
             self._downloads_nodes[item].set_label(f"{item} ({count})")
