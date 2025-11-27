@@ -108,7 +108,7 @@ class SearchContent(Vertical):
                     tran_user = get_config().get("general.transmission_user", "")
                     tran_pass = get_config().get("general.transmission_pass", "")
 
-                    _ = subprocess.run(
+                    tran_result = subprocess.run(
                         [
                             "transmission-remote",
                             "--auth",
@@ -119,6 +119,13 @@ class SearchContent(Vertical):
                         capture_output=True,
                         text=True,
                     )
+                    details = f"""
+[b]{self._selected_torrent.title}[/b]
+[b]Size:[/b] {human_readable_size(self._selected_torrent.size)} - [b]Seeders:[/b] {self._selected_torrent.seeders} - [b]Leechers:[/b] {self._selected_torrent.leechers} - [b]Source:[/b] {self._selected_torrent.source}
+
+[b]Tranmission message:[/b] [dim]{tran_result.stdout.strip()}[/dim]
+"""
+                    self._details_panel.update_content(details.strip())
                 else:
                     webbrowser.open(resolved_magnet_uri)
             else:  # continue with libtorrent
