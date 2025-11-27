@@ -9,7 +9,6 @@ from textual.types import CSSPathType
 from torrra._types import Indexer
 from torrra.core.config import get_config
 from torrra.screens.home import HomeScreen
-from torrra.screens.theme_selector import ThemeSelectorScreen
 from torrra.screens.welcome import WelcomeScreen
 from torrra.utils.fs import get_resource_path
 
@@ -55,7 +54,11 @@ class TorrraApp(App[None]):
             )
 
     def action_switch_theme(self) -> None:
-        self.push_screen(ThemeSelectorScreen())
+        # self.push_screen(ThemeSelectorScreen())
+        self.notify(
+            "arch linux 2025 11 iso (821MB)",
+            title="Opened in transmission-remote",
+        )
 
     @work(exclusive=True)
     async def _show_welcome_and_search(self) -> None:
