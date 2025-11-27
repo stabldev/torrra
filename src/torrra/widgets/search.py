@@ -108,7 +108,7 @@ class SearchContent(Vertical):
                     tran_user = get_config().get("general.transmission_user", "")
                     tran_pass = get_config().get("general.transmission_pass", "")
 
-                    tran_result = subprocess.run(
+                    _ = subprocess.run(
                         [
                             "transmission-remote",
                             "--auth",
