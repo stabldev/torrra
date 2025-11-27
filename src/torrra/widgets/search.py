@@ -107,8 +107,18 @@ class SearchContent(Vertical):
                 if get_config().get("general.use_transmission", False):
                     tran_user = get_config().get("general.transmission_user", "")
                     tran_pass = get_config().get("general.transmission_pass", "")
-                    
-                    tran_result = subprocess.run(["transmission-remote", "--auth", tran_user+":"+tran_pass, "-a", resolved_magnet_uri], capture_output=True, text=True)
+
+                    tran_result = subprocess.run(
+                        [
+                            "transmission-remote",
+                            "--auth",
+                            tran_user + ":" + tran_pass,
+                            "-a",
+                            resolved_magnet_uri,
+                        ],
+                        capture_output=True,
+                        text=True,
+                    )
                 else:
                     webbrowser.open(resolved_magnet_uri)
             else:  # continue with libtorrent
