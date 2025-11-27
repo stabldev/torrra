@@ -119,6 +119,9 @@ class Config:
             "general": {
                 "download_path": user_downloads_dir(),
                 "download_in_external_client": False,
+                "use_transmission": False,
+                "transmission_user": "",
+                "transmission_pass": "",
                 "theme": "textual-dark",
                 "use_cache": True,
                 "cache_ttl": DEFAULT_CACHE_TTL,

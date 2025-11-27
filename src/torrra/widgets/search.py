@@ -1,4 +1,5 @@
 import webbrowser
+import subprocess
 from contextlib import suppress
 from typing import cast
 
@@ -103,7 +104,13 @@ class SearchContent(Vertical):
             self._selected_torrent.magnet_uri = resolved_magnet_uri
 
             if get_config().get("general.download_in_external_client", False):
-                webbrowser.open(resolved_magnet_uri)
+                if get_config().get("general.use_transmission", False):
+                    tran_user = get_config().get("general.transmission_user", "")
+                    tran_pass = get_config().get("general.transmission_pass", "")
+                    
+                    tran_result = subprocess.run(["transmission-remote", "--auth", tran_user+":"+tran_pass, "-a", resolved_magnet_uri], capture_output=True, text=True)
+                else:
+                    webbrowser.open(resolved_magnet_uri)
             else:  # continue with libtorrent
                 tm = get_torrent_manager()
                 tm.add_torrent(self._selected_torrent)
