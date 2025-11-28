@@ -2,10 +2,11 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 from torrra._types import Torrent
+from torrra.core.constants import DEFAULT_TIMEOUT
 
 
 class BaseIndexer(ABC):
-    def __init__(self, url: str, api_key: str, timeout: int = 10):
+    def __init__(self, url: str, api_key: str, timeout: int = DEFAULT_TIMEOUT):
         self.url: str = url.rstrip("/")
         self.api_key: str = api_key
         self.timeout: int = timeout
