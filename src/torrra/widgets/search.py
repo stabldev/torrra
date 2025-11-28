@@ -200,7 +200,9 @@ class SearchContent(Vertical):
         indexer_cls = lazy_import(indexer_cls_str)
         assert issubclass(indexer_cls, BaseIndexer)
         indexer_instance = indexer_cls(
-            url=self.indexer.url, api_key=self.indexer.api_key, timeout= get_config().get("general.timeout", DEFAULT_TIMEOUT)
+            url=self.indexer.url,
+            api_key=self.indexer.api_key,
+            timeout=get_config().get("general.timeout", DEFAULT_TIMEOUT),
         )
 
         self._indexer_instance_cache = indexer_instance
