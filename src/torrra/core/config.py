@@ -8,7 +8,7 @@ import tomli_w
 import tomllib
 from platformdirs import user_config_dir, user_downloads_dir
 
-from torrra.core.constants import DEFAULT_CACHE_TTL
+from torrra.core.constants import DEFAULT_CACHE_TTL, DEFAULT_TIMEOUT
 from torrra.core.exceptions import ConfigError
 
 CONFIG_DIR = Path(user_config_dir("torrra"))
@@ -120,6 +120,7 @@ class Config:
                 "download_path": user_downloads_dir(),
                 "download_in_external_client": False,
                 "theme": "textual-dark",
+                "timeout": DEFAULT_TIMEOUT,
                 "use_cache": True,
                 "cache_ttl": DEFAULT_CACHE_TTL,
             }
