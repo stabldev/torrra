@@ -28,7 +28,7 @@ class DownloadsContent(Vertical):
         self._selected_torrent: TorrentRecord | None = None
 
         self._dm: DownloadManager = get_download_manager()
-        self._torrent_manager: TorrentManager = get_torrent_manager()
+        self._tm: TorrentManager = get_torrent_manager()
 
         self._table: AutoResizingDataTable[str]
         self._details_panel: DetailsPanel
@@ -49,8 +49,7 @@ class DownloadsContent(Vertical):
             self._table.add_column(label, width=width, key=key)
 
     def on_show(self) -> None:
-        tm = get_torrent_manager()
-        self._torrents = tm.get_all_torrents()
+        self._torrents = self._tm.get_all_torrents()
 
         self._table.clear()
         self._table.border_title = f"all ({len(self._torrents)})"
@@ -77,8 +76,7 @@ class DownloadsContent(Vertical):
 
         self._dm.toggle_pause(magnet_uri)
         if status := self._dm.get_torrent_status(magnet_uri):
-            tm = get_torrent_manager()
-            tm.update_torrent_paused_state(magnet_uri, status["is_paused"])
+            self._tm.update_torrent_paused_state(magnet_uri, status["is_paused"])
             if status["is_paused"]:
                 self.notify(
                     f"Paused download of [b]{short_title}[/b]",
@@ -96,9 +94,7 @@ class DownloadsContent(Vertical):
 
         magnet_uri = self._selected_torrent["magnet_uri"]
         self._dm.remove_torrent(magnet_uri)
-
-        tm = get_torrent_manager()
-        tm.remove_torrent(magnet_uri)
+        self._tm.remove_torrent(magnet_uri)
 
         self._table.remove_row(magnet_uri)
         self._torrents = [t for t in self._torrents if t["magnet_uri"] != magnet_uri]
@@ -169,14 +165,14 @@ class DownloadsContent(Vertical):
 
             # check if torrent is already downloaded/notified
             # if not, send notification and update record
-            if status["progress"] == 100:
+            if status["progress"] == 100 and not torrent["is_notified"]:
                 title = torrent["title"]
                 short_title = (title[:50] + "...") if len(title) > 40 else title
                 self.notify(
                     f"Finished downloading [b]{short_title}[/b]",
                     title="Download Finished",
                 )
-                self._torrent_manager.update_torrent_is_notified(torrent["magnet_uri"])
+                self._tm.update_torrent_is_notified(torrent["magnet_uri"])
                 torrent["is_notified"] = True
 
             if (
