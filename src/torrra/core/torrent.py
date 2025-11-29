@@ -44,6 +44,15 @@ class TorrentManager:
             )
             conn.commit()
 
+    def update_torrent_is_notified(self, magnet_uri: str) -> None:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "UPDATE torrents SET is_notified = 1 WHERE magnet_uri = ?",
+                (magnet_uri,),
+            )
+            conn.commit()
+
     def get_all_torrents(self) -> list[TorrentRecord]:
         with get_db_connection() as conn:
             conn.row_factory = sqlite3.Row
@@ -58,6 +67,7 @@ class TorrentManager:
                     size=row["size"],
                     source=row["source"],
                     is_paused=bool(row["is_paused"]),
+                    is_notified=bool(row["is_notified"]),
                 )
                 for row in rows
             ]

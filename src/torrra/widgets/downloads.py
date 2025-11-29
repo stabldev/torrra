@@ -6,7 +6,7 @@ from typing_extensions import override
 
 from torrra._types import TorrentRecord, TorrentStatus
 from torrra.core.download import DownloadManager, get_download_manager
-from torrra.core.torrent import get_torrent_manager
+from torrra.core.torrent import TorrentManager, get_torrent_manager
 from torrra.utils.helpers import human_readable_size
 from torrra.widgets.data_table import AutoResizingDataTable
 from torrra.widgets.details_panel import DetailsPanel
@@ -28,6 +28,7 @@ class DownloadsContent(Vertical):
         self._selected_torrent: TorrentRecord | None = None
 
         self._dm: DownloadManager = get_download_manager()
+        self._torrent_manager: TorrentManager = get_torrent_manager()
 
         self._table: AutoResizingDataTable[str]
         self._details_panel: DetailsPanel
@@ -71,10 +72,23 @@ class DownloadsContent(Vertical):
             return
 
         magnet_uri = self._selected_torrent["magnet_uri"]
+        title = self._selected_torrent["title"]
+        short_title = (title[:40] + "...") if len(title) > 40 else title
+
         self._dm.toggle_pause(magnet_uri)
         if status := self._dm.get_torrent_status(magnet_uri):
             tm = get_torrent_manager()
             tm.update_torrent_paused_state(magnet_uri, status["is_paused"])
+            if status["is_paused"]:
+                self.notify(
+                    f"Paused download of [b]{short_title}[/b]",
+                    title="Download Paused",
+                )
+            else:
+                self.notify(
+                    f"Resumed download of [b]{short_title}[/b]",
+                    title="Download Resumed",
+                )
 
     def key_d(self) -> None:
         if not self._selected_torrent:
@@ -90,6 +104,13 @@ class DownloadsContent(Vertical):
         self._torrents = [t for t in self._torrents if t["magnet_uri"] != magnet_uri]
         self._table.border_title = f"all ({len(self._torrents)})"
         self._details_panel.add_class("hidden")
+
+        title = self._selected_torrent["title"]
+        short_title = (title[:40] + "...") if len(title) > 40 else title
+        self.notify(
+            f"Removed [b]{short_title}[/b] and its data",
+            title="Torrent Removed",
+        )
         self._selected_torrent = None
 
     def on_details_panel_closed(self):
@@ -145,6 +166,18 @@ class DownloadsContent(Vertical):
                 "down_speed",
                 f"{human_readable_size(status['down_speed'], short=True)}/s",
             )
+
+            # check if torrent is already downloaded/notified
+            # if not, send notification and update record
+            if status["progress"] == 100 and not torrent["is_notified"]:
+                title = torrent["title"]
+                short_title = (title[:40] + "...") if len(title) > 40 else title
+                self.notify(
+                    f"Finished downloading [b]{short_title}[/b]",
+                    title="Download Finished",
+                )
+                self._torrent_manager.update_torrent_is_notified(torrent["magnet_uri"])
+                torrent["is_notified"] = True
 
             if (
                 self._selected_torrent

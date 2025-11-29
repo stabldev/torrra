@@ -1,5 +1,4 @@
 import webbrowser
-from contextlib import suppress
 from typing import cast
 
 from textual import on, work
@@ -107,6 +106,12 @@ class SearchContent(Vertical):
             else:  # continue with libtorrent
                 tm = get_torrent_manager()
                 tm.add_torrent(self._selected_torrent)
+                title = self._selected_torrent.title
+                short_title = (title[:30] + "...") if len(title) > 30 else title
+                self.notify(
+                    f"Started downloading [b]{short_title}[/b]",
+                    title="Download Started",
+                )
                 self.post_message(self.DownloadRequested(self._selected_torrent))
 
     def on_input_submitted(self, event: Input.Submitted) -> None:
@@ -130,9 +135,16 @@ class SearchContent(Vertical):
         indexer = self._get_indexer_instance()
         results = []
 
-        with suppress(Exception):
+        try:
             results = await indexer.search(query, use_cache=self.use_cache)
-        self.post_message(self.SearchResults(results, query))
+            self.post_message(self.SearchResults(results, query))
+        except Exception:
+            self.notify(
+                "Search failed, check indexer settings",
+                title="Search Failed",
+                severity="error",
+            )
+            self.post_message(self.SearchResults([], query))
 
     @on(SearchResults)
     def on_search_results(self, message: SearchResults) -> None:

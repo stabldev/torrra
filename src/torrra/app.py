@@ -9,6 +9,7 @@ from textual.types import CSSPathType
 from torrra._types import Indexer
 from torrra.core.config import get_config
 from torrra.screens.home import HomeScreen
+from torrra.screens.theme_selector import ThemeSelectorScreen
 from torrra.screens.welcome import WelcomeScreen
 from torrra.utils.fs import get_resource_path
 
@@ -34,11 +35,10 @@ class TorrraApp(App[None]):
         # load theme from config file
         theme = get_config().get("general.theme", "textual-dark")
         if theme not in self.available_themes:
-            error_message = (
+            raise RuntimeError(
                 f"invalid theme '{theme}' configured.\n"
-                f"available themes: {', '.join(sorted(self.available_themes))}"
+                + f"available themes: {', '.join(sorted(self.available_themes))}"
             )
-            raise RuntimeError(error_message)
         self.theme = theme
 
     async def on_mount(self) -> None:
@@ -54,11 +54,7 @@ class TorrraApp(App[None]):
             )
 
     def action_switch_theme(self) -> None:
-        # self.push_screen(ThemeSelectorScreen())
-        self.notify(
-            "arch linux 2025 11 iso (821MB)",
-            title="Opened in transmission-remote",
-        )
+        self.push_screen(ThemeSelectorScreen())
 
     @work(exclusive=True)
     async def _show_welcome_and_search(self) -> None:
