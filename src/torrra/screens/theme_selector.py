@@ -55,6 +55,10 @@ class ThemeSelectorScreen(ModalScreen[None]):
         self._cancel_update_worker()
         if self.app.theme != self.original_theme:
             get_config().set("general.theme", self.app.theme)
+            self.notify(
+                f"Switched to [b]{self.app.theme}[/b] theme",
+                title="Theme Changed",
+            )
         self.app.pop_screen()
 
     def action_close_screen(self) -> None:

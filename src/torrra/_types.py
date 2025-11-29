@@ -36,6 +36,7 @@ class TorrentRecord(TypedDict):
     size: float
     source: str
     is_paused: bool
+    is_notified: bool
 
 
 @dataclass

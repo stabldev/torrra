@@ -35,11 +35,10 @@ class TorrraApp(App[None]):
         # load theme from config file
         theme = get_config().get("general.theme", "textual-dark")
         if theme not in self.available_themes:
-            error_message = (
+            raise RuntimeError(
                 f"invalid theme '{theme}' configured.\n"
-                f"available themes: {', '.join(sorted(self.available_themes))}"
+                + f"available themes: {', '.join(sorted(self.available_themes))}"
             )
-            raise RuntimeError(error_message)
         self.theme = theme
 
     async def on_mount(self) -> None:
