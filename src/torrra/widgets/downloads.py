@@ -73,7 +73,7 @@ class DownloadsContent(Vertical):
 
         magnet_uri = self._selected_torrent["magnet_uri"]
         title = self._selected_torrent["title"]
-        short_title = (title[:40] + "...") if len(title) > 40 else title
+        short_title = (title[:50] + "...") if len(title) > 40 else title
 
         self._dm.toggle_pause(magnet_uri)
         if status := self._dm.get_torrent_status(magnet_uri):
@@ -106,7 +106,7 @@ class DownloadsContent(Vertical):
         self._details_panel.add_class("hidden")
 
         title = self._selected_torrent["title"]
-        short_title = (title[:40] + "...") if len(title) > 40 else title
+        short_title = (title[:50] + "...") if len(title) > 40 else title
         self.notify(
             f"Removed [b]{short_title}[/b] and its data",
             title="Torrent Removed",
@@ -169,9 +169,9 @@ class DownloadsContent(Vertical):
 
             # check if torrent is already downloaded/notified
             # if not, send notification and update record
-            if status["progress"] == 100 and not torrent["is_notified"]:
+            if status["progress"] == 100:
                 title = torrent["title"]
-                short_title = (title[:40] + "...") if len(title) > 40 else title
+                short_title = (title[:50] + "...") if len(title) > 40 else title
                 self.notify(
                     f"Finished downloading [b]{short_title}[/b]",
                     title="Download Finished",
