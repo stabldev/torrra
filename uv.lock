@@ -1764,12 +1764,18 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+all = [
+    { name = "transmission-rpc" },
+]
 docs = [
     { name = "myst-parser" },
     { name = "qiskit-sphinx-theme" },
     { name = "sphinx", version = "8.1.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "sphinx", version = "8.2.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "sphinx-copybutton" },
+]
+transmission = [
+    { name = "transmission-rpc" },
 ]
 
 [package.dev-dependencies]
@@ -1797,8 +1803,10 @@ requires-dist = [
     { name = "sphinx-copybutton", marker = "extra == 'docs'", specifier = ">=0.5.2" },
     { name = "textual", specifier = ">=6.5.0" },
     { name = "tomli-w", specifier = ">=1.2.0" },
+    { name = "torrra", extras = ["transmission"], marker = "extra == 'all'" },
+    { name = "transmission-rpc", marker = "extra == 'transmission'", specifier = ">=4.3.0" },
 ]
-provides-extras = ["docs"]
+provides-extras = ["docs", "transmission", "all"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -1809,6 +1817,19 @@ dev = [
     { name = "pytest-textual-snapshot", specifier = ">=1.0.0" },
     { name = "respx", specifier = ">=0.22.0" },
     { name = "textual-dev", specifier = ">=1.7.0" },
+]
+
+[[package]]
+name = "transmission-rpc"
+version = "7.0.11"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "requests" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/68/b8/dc4debf525c3bb8a676f4fd0ab8534845e3b067c78a81ad05ac39014d849/transmission_rpc-7.0.11.tar.gz", hash = "sha256:5872322e60b42e368bc9c4724773aea4593113cb19bd2da589f0ffcdabe57963", size = 113744, upload-time = "2024-08-20T22:41:07.485Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/9f/4c/6319bcb1026e3f78c9cbcc9c24de77a76f09954e67ffc5ebfc29f7ce4b90/transmission_rpc-7.0.11-py3-none-any.whl", hash = "sha256:94fd008b54640dd9fff14d7ae26848f901e9d130a70950b8930f9b395988914f", size = 28231, upload-time = "2024-08-20T22:41:05.777Z" },
 ]
 
 [[package]]
