@@ -1,4 +1,3 @@
-import webbrowser
 from typing import cast
 
 from textual import on, work
@@ -10,6 +9,7 @@ from typing_extensions import override
 
 from torrra._types import Indexer, Torrent
 from torrra.core.config import get_config
+from torrra.core.constants import DEFAULT_TIMEOUT
 from torrra.core.torrent import get_torrent_manager
 from torrra.indexers.base import BaseIndexer
 from torrra.utils.helpers import human_readable_size, lazy_import
@@ -17,8 +17,6 @@ from torrra.utils.magnet import resolve_magnet_uri
 from torrra.widgets.data_table import AutoResizingDataTable
 from torrra.widgets.details_panel import DetailsPanel
 from torrra.widgets.spinner import Spinner
-
-from torrra.core.constants import DEFAULT_TIMEOUT
 
 
 class SearchContent(Vertical):
@@ -104,7 +102,7 @@ class SearchContent(Vertical):
             self._selected_torrent.magnet_uri = resolved_magnet_uri
 
             if get_config().get("general.download_in_external_client", False):
-                webbrowser.open(resolved_magnet_uri)
+                self.app.open_url(resolved_magnet_uri)
             else:  # continue with libtorrent
                 tm = get_torrent_manager()
                 tm.add_torrent(self._selected_torrent)
