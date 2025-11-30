@@ -60,6 +60,8 @@ repository = "https://github.com/stabldev/torrra"
 torrra = "torrra.__main__:cli"
 
 [project.optional-dependencies]
+all = ["torrra[transmission]"]
+transmission = ["transmission-rpc>=4.3.0"]
 docs = [
     "myst-parser>=4.0.1",
     "qiskit-sphinx-theme>=2.0.0",
