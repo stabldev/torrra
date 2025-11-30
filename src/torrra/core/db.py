@@ -1,5 +1,5 @@
 import sqlite3
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from pathlib import Path
 
 from platformdirs import user_data_dir
@@ -28,8 +28,14 @@ def init_db() -> None:
                 title TEXT,
                 size REAL,
                 source TEXT,
-                is_paused BOOLEAN DEFAULT 0
+                is_paused BOOLEAN DEFAULT 0,
+                is_notified BOOLEAN DEFAULT 0
             )
             """
         )
+        # migration code
+        with suppress(sqlite3.OperationalError):
+            cursor.execute(
+                "ALTER TABLE torrents ADD COLUMN is_notified BOOLEAN DEFAULT 0"
+            )
         conn.commit()

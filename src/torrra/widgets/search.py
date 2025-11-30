@@ -1,6 +1,3 @@
-import webbrowser
-import subprocess
-from contextlib import suppress
 from typing import cast
 
 from textual import on, work
@@ -12,6 +9,7 @@ from typing_extensions import override
 
 from torrra._types import Indexer, Torrent
 from torrra.core.config import get_config
+from torrra.core.constants import DEFAULT_TIMEOUT
 from torrra.core.torrent import get_torrent_manager
 from torrra.indexers.base import BaseIndexer
 from torrra.utils.helpers import human_readable_size, lazy_import
@@ -127,10 +125,16 @@ class SearchContent(Vertical):
 """
                     self._details_panel.update_content(details.strip())
                 else:
-                    webbrowser.open(resolved_magnet_uri)
+                    self.app.open_url(resolved_magnet_uri)
             else:  # continue with libtorrent
                 tm = get_torrent_manager()
                 tm.add_torrent(self._selected_torrent)
+                title = self._selected_torrent.title
+                short_title = (title[:30] + "...") if len(title) > 30 else title
+                self.notify(
+                    f"Started downloading [b]{short_title}[/b]",
+                    title="Download Started",
+                )
                 self.post_message(self.DownloadRequested(self._selected_torrent))
 
     def on_input_submitted(self, event: Input.Submitted) -> None:
@@ -154,9 +158,16 @@ class SearchContent(Vertical):
         indexer = self._get_indexer_instance()
         results = []
 
-        with suppress(Exception):
+        try:
             results = await indexer.search(query, use_cache=self.use_cache)
-        self.post_message(self.SearchResults(results, query))
+            self.post_message(self.SearchResults(results, query))
+        except Exception:
+            self.notify(
+                "Search failed, check indexer settings",
+                title="Search Failed",
+                severity="error",
+            )
+            self.post_message(self.SearchResults([], query))
 
     @on(SearchResults)
     def on_search_results(self, message: SearchResults) -> None:
@@ -222,7 +233,9 @@ class SearchContent(Vertical):
         indexer_cls = lazy_import(indexer_cls_str)
         assert issubclass(indexer_cls, BaseIndexer)
         indexer_instance = indexer_cls(
-            url=self.indexer.url, api_key=self.indexer.api_key
+            url=self.indexer.url,
+            api_key=self.indexer.api_key,
+            timeout=get_config().get("general.timeout", DEFAULT_TIMEOUT),
         )
 
         self._indexer_instance_cache = indexer_instance

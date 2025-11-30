@@ -35,7 +35,7 @@ class AutoResizingDataTable(DataTable[T]):
 
     def on_resize(self) -> None:
         self._resize_columns()
-        self.refresh()
+        self.refresh(layout=True)
 
     def _resize_columns(self) -> None:
         if not self.columns or not self.expand_col:

@@ -1,6 +1,6 @@
 [project]
 name = "torrra"
-version = "2.0.1"
+version = "2.0.2"
 description = "A Python tool that lets you find and download torrents without leaving your CLI."
 readme = "README.md"
 authors = [{ name = "stabldev", email = "thestabldev@gmail.com" }]
@@ -91,5 +91,5 @@ asyncio_mode="auto"
 pythonpath="src"
 
 [build-system]
-requires = ["uv-build>=0.8.19,<0.9.12"]
-build-backend = "uv_build"
+requires = ["hatchling"]
+build-backend = "hatchling.build"

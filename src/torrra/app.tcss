@@ -49,6 +49,12 @@ DetailsPanel {
   }
 }
 
+Toast {
+  width: auto;
+  padding: 0 1;
+  background: $surface;
+}
+
 /* ------------------------- */
 /* WELCOME SCREEN            */
 /* ------------------------- */
