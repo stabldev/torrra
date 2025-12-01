@@ -1,12 +1,12 @@
 repos:
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.9.11
+    rev: 0.9.13
     hooks:
       - id: uv-lock
       - id: uv-export
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.14.6
+    rev: v0.14.7
     hooks:
       - id: ruff-check
         args: [--fix]
