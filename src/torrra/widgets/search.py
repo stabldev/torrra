@@ -1,3 +1,4 @@
+import subprocess
 from typing import cast
 
 from textual import on, work
@@ -101,12 +102,13 @@ class SearchContent(Vertical):
             # update with resolved magnet_uri
             self._selected_torrent.magnet_uri = resolved_magnet_uri
 
-            if get_config().get("general.download_in_external_client", False):
-                if get_config().get("general.use_transmission", False):
-                    tran_user = get_config().get("general.transmission_user", "")
-                    tran_pass = get_config().get("general.transmission_pass", "")
+            config = get_config()
+            if config.get("general.download_in_external_client", False):
+                if config.get("general.use_transmission", False):
+                    tran_user = config.get("general.transmission_user", "")
+                    tran_pass = config.get("general.transmission_pass", "")
 
-                    tran_result = subprocess.run(
+                    subprocess.run(
                         [
                             "transmission-remote",
                             "--auth",
@@ -117,15 +119,16 @@ class SearchContent(Vertical):
                         capture_output=True,
                         text=True,
                     )
-                    details = f"""
-[b]{self._selected_torrent.title}[/b]
-[b]Size:[/b] {human_readable_size(self._selected_torrent.size)} - [b]Seeders:[/b] {self._selected_torrent.seeders} - [b]Leechers:[/b] {self._selected_torrent.leechers} - [b]Source:[/b] {self._selected_torrent.source}
-
-[b]Tranmission message:[/b] [dim]{tran_result.stdout.strip()}[/dim]
-"""
-                    self._details_panel.update_content(details.strip())
+                    self.notify(
+                        "Opened in [b]transmission-remote[/b]",
+                        title="Torrent Opened",
+                    )
                 else:
                     self.app.open_url(resolved_magnet_uri)
+                    self.notify(
+                        "Opened in default magnet: handler",
+                        title="Torrent Opened",
+                    )
             else:  # continue with libtorrent
                 tm = get_torrent_manager()
                 tm.add_torrent(self._selected_torrent)
