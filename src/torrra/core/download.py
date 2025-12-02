@@ -27,11 +27,14 @@ class DownloadManager:
         if magnet_uri in self.torrents:
             return
 
-        params = {"save_path": get_config().get("general.download_path")}
+        # Parse the magnet URI into torrent parameters (modern libtorrent 2.x API)
+        atp = lt.parse_magnet_uri(magnet_uri)       
+        atp.save_path = get_config().get("general.download_path")
         if is_paused:
-            params["flags"] = lt.torrent_flags.paused
-        # start tracking provided magnet_uri
-        self.torrents[magnet_uri] = lt.add_magnet_uri(self.session, magnet_uri, params)
+            atp.flags |= lt.torrent_flags.paused
+        
+        # Add the torrent to the session and start tracking
+        self.torrents[magnet_uri] = self.session.add_torrent(atp)
 
     def remove_torrent(self, magnet_uri: str) -> None:
         handle = self.torrents.get(magnet_uri)
