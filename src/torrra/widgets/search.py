@@ -163,12 +163,12 @@ class SearchContent(Vertical):
             results = await indexer.search(query, use_cache=self.use_cache)
             self.post_message(self.SearchResults(results or [], query))
         except Exception:
-            self.post_message(self.SearchResults([], query))
             self.notify(
                 "Search failed, check indexer settings",
                 title="Search Failed",
                 severity="error",
-            )
+            )  # post empty results just to stop spinners
+            self.post_message(self.SearchResults([], query))
 
     @on(SearchResults)
     def on_search_results(self, message: SearchResults) -> None:
