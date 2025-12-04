@@ -20,7 +20,7 @@ class ProwlarrIndexer(BaseIndexer):
         return f"{self.url}/api/v1/health"
 
     @override
-    async def search(self, query: str, use_cache: bool = True) -> list[Torrent]:
+    async def search(self, query: str, use_cache: bool = True) -> list[Torrent] | None:
         key = cache.make_key("prowlarr", query)
 
         if use_cache and key in cache:
