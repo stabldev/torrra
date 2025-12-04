@@ -10,7 +10,7 @@ from typing_extensions import override
 
 from torrra._types import Indexer, Torrent
 from torrra.core.config import get_config
-from torrra.core.constants import DEFAULT_TIMEOUT
+from torrra.core.constants import DEFAULT_MAX_RETRIES, DEFAULT_TIMEOUT
 from torrra.core.torrent import get_torrent_manager
 from torrra.indexers.base import BaseIndexer
 from torrra.utils.helpers import human_readable_size, lazy_import
@@ -158,19 +158,17 @@ class SearchContent(Vertical):
 
     @work(exclusive=True)
     async def _perform_search(self, query: str) -> None:
-        indexer = self._get_indexer_instance()
-        results = []
-
         try:
+            indexer = self._get_indexer_instance()
             results = await indexer.search(query, use_cache=self.use_cache)
-            self.post_message(self.SearchResults(results, query))
+            self.post_message(self.SearchResults(results or [], query))
         except Exception:
+            self.post_message(self.SearchResults([], query))
             self.notify(
                 "Search failed, check indexer settings",
                 title="Search Failed",
                 severity="error",
             )
-            self.post_message(self.SearchResults([], query))
 
     @on(SearchResults)
     def on_search_results(self, message: SearchResults) -> None:
@@ -239,6 +237,7 @@ class SearchContent(Vertical):
             url=self.indexer.url,
             api_key=self.indexer.api_key,
             timeout=get_config().get("general.timeout", DEFAULT_TIMEOUT),
+            max_retries=get_config().get("general.max_retries", DEFAULT_MAX_RETRIES),
         )
 
         self._indexer_instance_cache = indexer_instance

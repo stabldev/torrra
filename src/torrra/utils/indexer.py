@@ -5,6 +5,7 @@ import click
 
 from torrra._types import Indexer, IndexerName
 from torrra.core.config import get_config
+from torrra.core.constants import DEFAULT_MAX_RETRIES, DEFAULT_TIMEOUT
 from torrra.core.exceptions import ConfigError, IndexerError
 from torrra.indexers.base import BaseIndexer
 from torrra.utils.helpers import lazy_import
@@ -50,7 +51,11 @@ def run_with_indexer(
     async def healthcheck_indexer():
         try:
             assert issubclass(indexer_cls, BaseIndexer)
-            return await indexer_cls(url, api_key).healthcheck()
+            timeout = config.get("general.timeout", DEFAULT_TIMEOUT)
+            max_retries = config.get("general.max_retries", DEFAULT_MAX_RETRIES)
+            return await indexer_cls(
+                url, api_key, timeout=timeout, max_retries=max_retries
+            ).healthcheck()
         except IndexerError as e:
             click.secho(str(e), fg="red", err=True)
             return False

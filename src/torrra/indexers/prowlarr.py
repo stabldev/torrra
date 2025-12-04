@@ -1,3 +1,4 @@
+import asyncio
 from typing import Any, cast
 
 import httpx
@@ -29,15 +30,22 @@ class ProwlarrIndexer(BaseIndexer):
         url = self.get_search_url()
         params = {"apikey": self.api_key, "query": query}
 
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
-            resp = await client.get(url, params=params)
-            resp.raise_for_status()
-            torrents = [self._normalize_result(r) for r in resp.json()]
+        for i in range(self.max_retries):
+            try:
+                async with httpx.AsyncClient(timeout=self.timeout) as client:
+                    resp = await client.get(url, params=params)
+                    resp.raise_for_status()
 
-        if use_cache:
-            cache.set(key, [t.to_dict() for t in torrents])
+                torrents = [self._normalize_result(r) for r in resp.json()]
+                if use_cache and torrents:
+                    cache.set(key, [t.to_dict() for t in torrents])
 
-        return torrents
+                return torrents
+            except httpx.TimeoutException:
+                if i < self.max_retries - 1:
+                    await asyncio.sleep(0.5 * 2**i)  # exponential backoff
+                else:  # raise error on final attempt
+                    raise
 
     @override
     async def healthcheck(self) -> bool:
