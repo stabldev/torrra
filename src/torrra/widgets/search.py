@@ -182,9 +182,7 @@ class SearchContent(Vertical):
         self._loader.add_class("hidden")
         self._table.remove_class("hidden")
         self._table.focus()  # initial focus table
-        self._table.border_title = (
-            f"{self._table.border_title} ({len(message.results)})"
-        )
+        self._table.border_title = f"results ({len(message.results)})"
 
         seen: set[str] = set()
         for idx, torrent in enumerate(message.results):
