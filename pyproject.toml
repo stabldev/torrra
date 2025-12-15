@@ -78,13 +78,9 @@ dev = [
     "textual-dev>=1.7.0",
 ]
 
-[tool.basedpyright]
-pythonVersion = "3.10"
-reportUnusedCallResult = "none"
-reportAny = "none"
-reportExplicitAny = "none"
-reportMissingTypeStubs = "none"
-reportUnknownMemberType = "none"
+
+[tool.ty.environment]
+python-version = "3.10"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

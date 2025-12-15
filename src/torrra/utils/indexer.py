@@ -35,8 +35,14 @@ def run_with_indexer(
         try:
             url = config.get(f"indexers.{name}.url")
             api_key = config.get(f"indexers.{name}.api_key")
-        except ConfigError as e:
-            click.secho(f"{e}\ncheck your configuration file.", fg="red", err=True)
+        except ConfigError:
+            message = (
+                f"Indexer '{name}' is not configured.\n"
+                "Please set it in your configuration file, or provide --url and --api-key.\n"
+                "For more details, see the documentation: "
+                "https://torrra.readthedocs.io/en/latest/configuration.html"
+            )
+            click.secho(message, fg="red", err=True)
             return
 
     click.secho(f"connecting to {name} server at {url}", fg="cyan")
@@ -88,12 +94,25 @@ def run_with_default_indexer(
 ) -> None:
     config = get_config()
     try:
-        default_indexer = config.get("indexers.default")
-        if not default_indexer:
-            raise ConfigError("no default indexer specified under [indexers.default].")
+        # use a default of None to prevent ConfigError from config.get
+        default_indexer = config.get("indexers.default", None)
+        if default_indexer is None:  # Explicitly check if the key was not found
+            raise ConfigError(
+                "Default indexer is not configured. Please set it in your configuration file.\n"
+                "For more details, see the documentation: "
+                "https://torrra.readthedocs.io/en/latest/configuration.html"
+            )
 
-        url = config.get(f"indexers.{default_indexer}.url")
-        api_key = config.get(f"indexers.{default_indexer}.api_key")
+        try:
+            url = config.get(f"indexers.{default_indexer}.url")
+            api_key = config.get(f"indexers.{default_indexer}.api_key")
+        except ConfigError:
+            raise ConfigError(
+                f"Default indexer '{default_indexer}' is not configured properly. "
+                "Please make sure 'url' and 'api_key' are set.\n"
+                "For more details, see the documentation: "
+                "https://torrra.readthedocs.io/en/latest/configuration.html"
+            )
 
         run_with_indexer(
             name=cast(IndexerName, default_indexer),
@@ -104,4 +123,6 @@ def run_with_default_indexer(
             search_query=search_query,
         )
     except ConfigError as e:
-        click.secho(f"{e}\ncheck your configuration file.", fg="red", err=True)
+        # the specific error message for default indexer is now raised within the try block
+        # so, we just print the error message from the exception
+        click.secho(str(e), fg="red", err=True)
