@@ -12,3 +12,4 @@ snapshot_report.html
 
 # Virtual environments
 .venv
+venv_fix/
