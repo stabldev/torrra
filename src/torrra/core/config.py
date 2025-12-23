@@ -5,7 +5,10 @@ from pathlib import Path
 from typing import Any, cast
 
 import tomli_w
-import tomllib
+try:
+    import tomllib  # Python 3.11+
+except ModuleNotFoundError:
+    import tomli as tomllib  # Python 3.10
 from platformdirs import user_config_dir, user_downloads_dir
 
 from torrra.core.constants import (
