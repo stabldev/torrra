@@ -13,6 +13,7 @@ depends=(
     "python-click"
     "python-diskcache"
     "python-httpx"
+    "python-tomli"
     "python-platformdirs"
     "python-textual"
     "python-tomli-w"

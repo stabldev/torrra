@@ -1,5 +1,8 @@
 import ast
-import tomllib
+try:
+    import tomllib  # Python 3.11+
+except ModuleNotFoundError:  # pragma: no cover - exercised only on 3.10
+    import tomli as tomllib  # Python 3.10 fallback
 from contextlib import suppress
 from functools import lru_cache
 from pathlib import Path
