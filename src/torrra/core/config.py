@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any, cast
 
 import tomli_w
+
 try:
     import tomllib  # Python 3.11+
 except ModuleNotFoundError:
