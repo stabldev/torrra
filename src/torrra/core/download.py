@@ -25,7 +25,20 @@ class DownloadManager:
 
     def add_torrent(self, magnet_uri: str, is_paused: bool = False) -> None:
         if magnet_uri in self.torrents:
-            return
+            # Torrent already exists, update paused state if needed
+            handle = self.torrents[magnet_uri]
+            if not handle.is_valid():
+                # If handle is invalid, remove it and add the torrent fresh
+                del self.torrents[magnet_uri]
+            else:
+                # Check current paused state and update if different
+                current_status = handle.status()
+                is_currently_paused = (
+                    current_status.flags & lt.torrent_flags.paused
+                ) != 0
+                if is_currently_paused != is_paused:
+                    handle.pause() if is_paused else handle.resume()
+                return
 
         # Parse the magnet URI into torrent parameters (modern libtorrent 2.x API)
         atp = lt.parse_magnet_uri(magnet_uri)
