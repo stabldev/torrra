@@ -22,6 +22,9 @@ class DownloadManager:
     def __init__(self) -> None:
         self.session: lt.session = lt.session({"listen_interfaces": "0.0.0.0:6881"})
         self.torrents: dict[str, lt.torrent_handle] = {}
+        self._metadata_updated: set[str] = (
+            set()
+        )  # Track torrents whose metadata has been updated
 
     def add_torrent(self, magnet_uri: str, is_paused: bool = False) -> None:
         if magnet_uri in self.torrents:
@@ -92,14 +95,26 @@ class DownloadManager:
     def check_metadata_updates(self) -> None:
         from torrra.core.torrent import get_torrent_manager
 
-        for magnet_uri, handle in self.torrents.items():
-            if handle.is_valid() and handle.has_metadata():
-                torrent_info = handle.torrent_file()
-                if torrent_info:
-                    title = torrent_info.name()
-                    size = torrent_info.total_size()
+        tm = get_torrent_manager()
 
-                    # Update the database with the actual metadata
-                    get_torrent_manager().update_torrent_metadata(
-                        magnet_uri, title, size
-                    )
+        for magnet_uri, handle in self.torrents.items():
+            # Only check for metadata if we haven't updated it yet
+            if (
+                magnet_uri not in self._metadata_updated
+                and handle.is_valid()
+                and handle.has_metadata()
+            ):
+                # Get the torrent info
+                try:
+                    torrent_info = handle.torrent_file()
+                    if torrent_info:
+                        title = torrent_info.name()
+                        size = torrent_info.total_size()
+
+                        # Update the database with the actual metadata
+                        tm.update_torrent_metadata(magnet_uri, title, size)
+                        # Mark this torrent as having its metadata updated
+                        self._metadata_updated.add(magnet_uri)
+                except (AttributeError, RuntimeError):
+                    # Skip if metadata is not fully available yet
+                    continue
