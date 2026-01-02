@@ -1,3 +1,4 @@
+import asyncio
 from typing import Any, cast
 
 import httpx
@@ -19,7 +20,7 @@ class JackettIndexer(BaseIndexer):
         return f"{self.url}/api/v2.0/indexers/nonexistent_indexer/results"
 
     @override
-    async def search(self, query: str, use_cache: bool = True) -> list[Torrent]:
+    async def search(self, query: str, use_cache: bool = True) -> list[Torrent] | None:
         key = cache.make_key("jackett", query)
 
         if use_cache and key in cache:
@@ -29,16 +30,22 @@ class JackettIndexer(BaseIndexer):
         url = self.get_search_url()
         params = {"apikey": self.api_key, "query": query}
 
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
-            resp = await client.get(url, params=params)
-            resp.raise_for_status()
-            res = resp.json().get("Results", [])
-            torrents = [self._normalize_result(r) for r in res]
+        for i in range(self.max_retries):
+            try:
+                async with httpx.AsyncClient(timeout=self.timeout) as client:
+                    resp = await client.get(url, params=params)
+                    resp.raise_for_status()
 
-        if use_cache and torrents:
-            cache.set(key, [t.to_dict() for t in torrents])
+                torrents = [self._normalize_result(r) for r in resp.json()["Results"]]
+                if use_cache and torrents:
+                    cache.set(key, [t.to_dict() for t in torrents])
 
-        return torrents
+                return torrents
+            except httpx.TimeoutException:
+                if i < self.max_retries - 1:
+                    await asyncio.sleep(0.5 * 2**i)  # exponential backoff
+                else:  # raise error on final attempt
+                    raise
 
     @override
     async def healthcheck(self) -> bool:

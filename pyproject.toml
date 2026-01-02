@@ -1,6 +1,6 @@
 [project]
 name = "torrra"
-version = "2.0.2"
+version = "2.0.5"
 description = "A Python tool that lets you find and download torrents without leaving your CLI."
 readme = "README.md"
 authors = [{ name = "stabldev", email = "thestabldev@gmail.com" }]
@@ -80,17 +80,12 @@ dev = [
     "textual-dev>=1.7.0",
 ]
 
-[tool.basedpyright]
-pythonVersion = "3.10"
-reportUnusedCallResult = "none"
-reportAny = "none"
-reportExplicitAny = "none"
-reportMissingTypeStubs = "none"
-reportUnknownMemberType = "none"
+[tool.ty.environment]
+python-version = "3.10"
 
 [tool.pytest.ini_options]
-asyncio_mode="auto"
-pythonpath="src"
+asyncio_mode = "auto"
+pythonpath = "src"
 
 [build-system]
 requires = ["hatchling"]

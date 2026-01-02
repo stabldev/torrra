@@ -1,3 +1,4 @@
+import subprocess
 from typing import cast
 
 from textual import on, work
@@ -128,18 +129,16 @@ class SearchContent(Vertical):
 
     @work(exclusive=True)
     async def _perform_search(self, query: str) -> None:
-        indexer = self._get_indexer_instance()
-        results = []
-
         try:
+            indexer = self._get_indexer_instance()
             results = await indexer.search(query, use_cache=self.use_cache)
-            self.post_message(self.SearchResults(results, query))
+            self.post_message(self.SearchResults(results or [], query))
         except Exception:
             self.notify(
                 "Search failed, check indexer settings",
                 title="Search Failed",
                 severity="error",
-            )
+            )  # post empty results just to stop spinners
             self.post_message(self.SearchResults([], query))
 
     @on(SearchResults)
@@ -154,9 +153,7 @@ class SearchContent(Vertical):
         self._loader.add_class("hidden")
         self._table.remove_class("hidden")
         self._table.focus()  # initial focus table
-        self._table.border_title = (
-            f"{self._table.border_title} ({len(message.results)})"
-        )
+        self._table.border_title = f"results ({len(message.results)})"
 
         seen: set[str] = set()
         for idx, torrent in enumerate(message.results):
@@ -209,6 +206,7 @@ class SearchContent(Vertical):
             url=self.indexer.url,
             api_key=self.indexer.api_key,
             timeout=get_config().get("general.timeout", DEFAULT_TIMEOUT),
+            max_retries=get_config().get("general.max_retries", DEFAULT_MAX_RETRIES),
         )
 
         self._indexer_instance_cache = indexer_instance

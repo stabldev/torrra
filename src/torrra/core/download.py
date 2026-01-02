@@ -25,13 +25,29 @@ class DownloadManager:
 
     def add_torrent(self, magnet_uri: str, is_paused: bool = False) -> None:
         if magnet_uri in self.torrents:
-            return
+            # Torrent already exists, update paused state if needed
+            handle = self.torrents[magnet_uri]
+            if not handle.is_valid():
+                # If handle is invalid, remove it and add the torrent fresh
+                del self.torrents[magnet_uri]
+            else:
+                # Check current paused state and update if different
+                current_status = handle.status()
+                is_currently_paused = (
+                    current_status.flags & lt.torrent_flags.paused
+                ) != 0
+                if is_currently_paused != is_paused:
+                    handle.pause() if is_paused else handle.resume()
+                return
 
-        params = {"save_path": get_config().get("general.download_path")}
+        # Parse the magnet URI into torrent parameters (modern libtorrent 2.x API)
+        atp = lt.parse_magnet_uri(magnet_uri)
+        atp.save_path = get_config().get("general.download_path")
         if is_paused:
-            params["flags"] = lt.torrent_flags.paused
-        # start tracking provided magnet_uri
-        self.torrents[magnet_uri] = lt.add_magnet_uri(self.session, magnet_uri, params)
+            atp.flags |= lt.torrent_flags.paused
+
+        # Add the torrent to the session and start tracking
+        self.torrents[magnet_uri] = self.session.add_torrent(atp)
 
     def remove_torrent(self, magnet_uri: str) -> None:
         handle = self.torrents.get(magnet_uri)
