@@ -96,7 +96,10 @@ def run_with_indexer(
 
 
 def run_with_default_indexer(
-    *, no_cache: bool, search_query: str | None = None, direct_download: str | None = None
+    *,
+    no_cache: bool,
+    search_query: str | None = None,
+    direct_download: str | None = None,
 ) -> None:
     config = get_config()
     try:
