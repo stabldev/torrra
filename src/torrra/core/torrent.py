@@ -53,6 +53,15 @@ class TorrentManager:
             )
             conn.commit()
 
+    def update_torrent_metadata(self, magnet_uri: str, title: str, size: int) -> None:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "UPDATE torrents SET title = ?, size = ? WHERE magnet_uri = ?",
+                (title, size, magnet_uri),
+            )
+            conn.commit()
+
     def get_all_torrents(self) -> list[TorrentRecord]:
         with get_db_connection() as conn:
             conn.row_factory = sqlite3.Row

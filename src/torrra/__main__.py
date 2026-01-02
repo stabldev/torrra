@@ -16,6 +16,31 @@ def cli(ctx: click.Context, no_cache: bool) -> None:
 
 
 # --------------------------------------------------
+# DOWNLOAD
+# --------------------------------------------------
+@cli.command(help="Download a torrent directly from magnet URI.")
+@click.argument("magnet_uri")
+@click.option("--no-cache", is_flag=True, help="Disable caching mechanism.")
+def download(magnet_uri: str, no_cache: bool) -> None:
+    import re
+    from torrra.utils.indexer import run_with_default_indexer
+
+    # Validate magnet URI format
+    if not magnet_uri.startswith("magnet:?xt="):
+        # Also allow URLs that might redirect to torrent files
+        if not re.match(r"^https?://", magnet_uri):
+            click.secho(
+                "Invalid magnet URI. Must start with 'magnet:?xt=' or be a valid URL.",
+                fg="red",
+                err=True,
+            )
+            return
+
+    # detect indexer from config and execute with direct download
+    run_with_default_indexer(no_cache=no_cache, direct_download=magnet_uri)
+
+
+# --------------------------------------------------
 # SEARCH
 # --------------------------------------------------
 @cli.command(help="Search for a torrent.")

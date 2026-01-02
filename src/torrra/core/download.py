@@ -88,3 +88,18 @@ class DownloadManager:
 
         idx = 1 if short else 0
         return self._STATE_MAP.get(status["state"], ("N/A", "N/A"))[idx]
+
+    def check_metadata_updates(self) -> None:
+        from torrra.core.torrent import get_torrent_manager
+
+        for magnet_uri, handle in self.torrents.items():
+            if handle.is_valid() and handle.has_metadata():
+                torrent_info = handle.torrent_file()
+                if torrent_info:
+                    title = torrent_info.name()
+                    size = torrent_info.total_size()
+
+                    # Update the database with the actual metadata
+                    get_torrent_manager().update_torrent_metadata(
+                        magnet_uri, title, size
+                    )

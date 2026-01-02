@@ -19,6 +19,7 @@ def run_with_indexer(
     api_key: str | None,
     no_cache: bool,
     search_query: str | None = None,
+    direct_download: str | None = None,
 ) -> None:
     config = get_config()
     # validate command args
@@ -83,14 +84,19 @@ def run_with_indexer(
             use_cache = False
 
         indexer = Indexer(name, url, api_key)
-        app = TorrraApp(indexer, use_cache=use_cache, search_query=search_query)
+        app = TorrraApp(
+            indexer,
+            use_cache=use_cache,
+            search_query=search_query,
+            direct_download=direct_download,
+        )
         app.run()
     except RuntimeError as e:
         click.secho(str(e), fg="red", err=True)
 
 
 def run_with_default_indexer(
-    *, no_cache: bool, search_query: str | None = None
+    *, no_cache: bool, search_query: str | None = None, direct_download: str | None = None
 ) -> None:
     config = get_config()
     try:
@@ -121,6 +127,7 @@ def run_with_default_indexer(
             api_key=api_key,
             no_cache=no_cache,
             search_query=search_query,
+            direct_download=direct_download,
         )
     except ConfigError as e:
         # the specific error message for default indexer is now raised within the try block
