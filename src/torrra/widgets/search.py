@@ -1,4 +1,3 @@
-import subprocess
 from typing import cast
 
 from textual import on, work
