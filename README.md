@@ -35,20 +35,27 @@ Other options: [`AUR`](https://aur.archlinux.org/packages/torrra), [`standalone 
 Launch `torrra` with an indexer.
 
 ```bash
-torrra jackett --url http://localhost:9117 --api-key <your_api_key>
+torrra # if default indexer is configured
+# or torrra jackett
+# or torrra jackett --url http://localhost:9117 --api-key <your_api_key>
 ```
+
+> Replace `<your_jackett_api_key>` with your actual Jackett API key.
 
 ### 2. Direct Search
 
-Or, search directly from your command line and see instant results.
+You can bypass the initial welcome screen and search\
+for torrents directly from your command line using the `search` command:
 
 ```bash
 torrra search "arch linux iso"
+# or torrra search "arch linux iso" --no-cache
 ```
 
 ### 3. Direct Download
 
-Download torrents directly from magnet URIs or .torrent files without searching:
+You can download torrents directly from `magnet URIs` or `.torrent` files\
+without searching using the `download` command:
 
 ```bash
 torrra download "magnet:?xt=urn:btih:..."
@@ -76,7 +83,7 @@ torrra config set indexers.default jackett
 Now you can simply run `torrra` to start searching:
 
 ```bash
-torrra
+torrra # default indexer will be used
 ```
 
 [Learn more about configuration →](https://torrra.readthedocs.io/en/latest/configuration.html)
