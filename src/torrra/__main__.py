@@ -10,6 +10,7 @@ from torrra._version import __version__
 def cli(ctx: click.Context, no_cache: bool) -> None:
     if ctx.invoked_subcommand is None:
         from torrra.utils.indexer import run_with_default_indexer
+
         # detect indexer from config and execute
         run_with_default_indexer(no_cache=no_cache)
 
