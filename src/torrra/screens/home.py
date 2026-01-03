@@ -13,11 +13,18 @@ from torrra.widgets.sidebar import Sidebar
 
 
 class HomeScreen(Screen[None]):
-    def __init__(self, indexer: Indexer, search_query: str, use_cache: bool):
+    def __init__(
+        self,
+        indexer: Indexer,
+        search_query: str,
+        use_cache: bool,
+        direct_download: str | None = None,
+    ):
         super().__init__()
         self.indexer: Indexer = indexer
         self.search_query: str = search_query
         self.use_cache: bool = use_cache
+        self.direct_download: str | None = direct_download
 
         self._sidebar: Sidebar
         self._content_switcher: ContentSwitcher
@@ -25,9 +32,13 @@ class HomeScreen(Screen[None]):
 
     @override
     def compose(self) -> ComposeResult:
+        initial_content = (
+            "downloads_content" if self.direct_download else "search_content"
+        )
+
         with Horizontal(id="main_layout"):
             yield Sidebar(id="sidebar")
-            with ContentSwitcher(initial="search_content", id="content_switcher"):
+            with ContentSwitcher(initial=initial_content, id="content_switcher"):
                 yield DownloadsContent()
                 yield SearchContent(
                     indexer=self.indexer,
@@ -51,6 +62,14 @@ class HomeScreen(Screen[None]):
                 is_paused=torrent["is_paused"],
             )
 
+        # Handle direct download if provided
+        if self.direct_download:
+            import asyncio
+            from torrra.utils.direct_download import handle_direct_download
+
+            asyncio.create_task(handle_direct_download(self, str(self.direct_download)))
+            # start_direct_download(self, str(self.direct_download))
+
         # start timer to update data on both sidebar
         # and downloads content table
         self.set_interval(1, self._update_downloads_data)
@@ -66,6 +85,10 @@ class HomeScreen(Screen[None]):
 
     def _update_downloads_data(self) -> None:
         dm = get_download_manager()
+
+        # Check for metadata updates
+        dm.check_metadata_updates()
+
         magnet_uris = list(dm.torrents.keys())
 
         counts = {"Downloading": 0, "Seeding": 0, "Paused": 0, "Completed": 0}

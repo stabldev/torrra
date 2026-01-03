@@ -137,7 +137,27 @@ class DownloadsContent(Vertical):
         if not self._torrents:
             return
 
+        # First, update the torrent list from the database to catch metadata updates
+        updated_torrents = self._tm.get_all_torrents()
+        torrent_map = {t["magnet_uri"]: t for t in updated_torrents}
+
         for torrent in self._torrents:
+            # Update the local torrent record if it was updated in the database
+            if torrent["magnet_uri"] in torrent_map:
+                db_torrent = torrent_map[torrent["magnet_uri"]]
+                # Update the local record if title or size changed
+                if (
+                    torrent["title"] != db_torrent["title"]
+                    or torrent["size"] != db_torrent["size"]
+                ):
+                    torrent.update(
+                        {"title": db_torrent["title"], "size": db_torrent["size"]}
+                    )
+                    # Update the table title
+                    self._table.update_cell(
+                        torrent["magnet_uri"], "title", db_torrent["title"]
+                    )
+
             status = statuses.get(torrent["magnet_uri"])
             if not status:
                 continue
@@ -187,14 +207,25 @@ class DownloadsContent(Vertical):
         if not self._selected_torrent:
             return
 
+        # Get the most up-to-date torrent info from the database
+        updated_torrents = self._tm.get_all_torrents()
+        current_torrent = next(
+            (
+                t
+                for t in updated_torrents
+                if t["magnet_uri"] == self._selected_torrent["magnet_uri"]
+            ),
+            self._selected_torrent,
+        )
+
         state_text = self._dm.get_torrent_state_text(status)
-        size = human_readable_size(float(self._selected_torrent["size"]))
+        size = human_readable_size(float(current_torrent["size"]))
         up_speed = f"{human_readable_size(status['up_speed'])}/s"
         down_speed = f"{human_readable_size(status['down_speed'])}/s"
 
         details = f"""
-[b]{self._selected_torrent["title"]}[/b]
-[b]Size:[/b] {size} - [b]Status:[/b] {state_text} - [b]Source:[/b] {self._selected_torrent["source"]}
+[b]{current_torrent["title"]}[/b]
+[b]Size:[/b] {size} - [b]Status:[/b] {state_text} - [b]Source:[/b] {current_torrent["source"]}
 [b]S/L:[/b] {status["seeders"]}/{status["leechers"]} - [b]Up:[/b] {up_speed} - [b]Down:[/b] {down_speed}
 
 [dim]Press 'p' to pause/resume, 'd' to delete, or 'esc' to close.[/dim]
