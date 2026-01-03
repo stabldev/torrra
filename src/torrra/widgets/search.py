@@ -81,10 +81,6 @@ class SearchContent(Vertical):
 
         self._loader = self.query_one("#loader", Vertical)
         # setup table
-
-        # for label, key, width in self.COLS:
-        #     self._table.add_column(label, width=width, key=key)
-
         for col in self.COLS:
             self._table.add_column(col.label, width=col.width, key=col.key)
 
