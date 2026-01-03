@@ -25,12 +25,17 @@ class TorrraApp(App[None]):
     ]
 
     def __init__(
-        self, indexer: Indexer, use_cache: bool, search_query: str | None
+        self,
+        indexer: Indexer,
+        use_cache: bool,
+        search_query: str | None,
+        direct_download: str | None = None,
     ) -> None:
         super().__init__()
         self.indexer: Indexer = indexer
         self.use_cache: bool = use_cache
         self.search_query: str | None = search_query
+        self.direct_download: str | None = direct_download
 
         # load theme from config file
         theme = get_config().get("general.theme", "textual-dark")
@@ -42,7 +47,17 @@ class TorrraApp(App[None]):
         self.theme = theme
 
     async def on_mount(self) -> None:
-        if not (self.search_query and self.search_query.strip()):
+        if self.direct_download:
+            # Direct download mode - go straight to home screen with downloads tab
+            await self.push_screen(
+                HomeScreen(
+                    indexer=self.indexer,
+                    search_query=self.search_query or "",
+                    use_cache=self.use_cache,
+                    direct_download=self.direct_download,
+                )
+            )
+        elif not (self.search_query and self.search_query.strip()):
             self._show_welcome_and_search()
         else:  # direct show search screen
             await self.push_screen(
@@ -50,6 +65,7 @@ class TorrraApp(App[None]):
                     indexer=self.indexer,
                     search_query=self.search_query,
                     use_cache=self.use_cache,
+                    direct_download=None,
                 )
             )
 
@@ -66,5 +82,6 @@ class TorrraApp(App[None]):
                     indexer=self.indexer,
                     search_query=search_query,
                     use_cache=self.use_cache,
+                    direct_download=None,
                 )
             )

@@ -22,10 +22,26 @@ class DownloadManager:
     def __init__(self) -> None:
         self.session: lt.session = lt.session({"listen_interfaces": "0.0.0.0:6881"})
         self.torrents: dict[str, lt.torrent_handle] = {}
+        self._metadata_updated: set[str] = (
+            set()
+        )  # Track torrents whose metadata has been updated
 
     def add_torrent(self, magnet_uri: str, is_paused: bool = False) -> None:
         if magnet_uri in self.torrents:
-            return
+            # Torrent already exists, update paused state if needed
+            handle = self.torrents[magnet_uri]
+            if not handle.is_valid():
+                # If handle is invalid, remove it and add the torrent fresh
+                del self.torrents[magnet_uri]
+            else:
+                # Check current paused state and update if different
+                current_status = handle.status()
+                is_currently_paused = (
+                    current_status.flags & lt.torrent_flags.paused
+                ) != 0
+                if is_currently_paused != is_paused:
+                    handle.pause() if is_paused else handle.resume()
+                return
 
         # Parse the magnet URI into torrent parameters (modern libtorrent 2.x API)
         atp = lt.parse_magnet_uri(magnet_uri)
@@ -75,3 +91,30 @@ class DownloadManager:
 
         idx = 1 if short else 0
         return self._STATE_MAP.get(status["state"], ("N/A", "N/A"))[idx]
+
+    def check_metadata_updates(self) -> None:
+        from torrra.core.torrent import get_torrent_manager
+
+        tm = get_torrent_manager()
+
+        for magnet_uri, handle in self.torrents.items():
+            # Only check for metadata if we haven't updated it yet
+            if (
+                magnet_uri not in self._metadata_updated
+                and handle.is_valid()
+                and handle.has_metadata()
+            ):
+                # Get the torrent info
+                try:
+                    torrent_info = handle.torrent_file()
+                    if torrent_info:
+                        title = torrent_info.name()
+                        size = torrent_info.total_size()
+
+                        # Update the database with the actual metadata
+                        tm.update_torrent_metadata(magnet_uri, title, size)
+                        # Mark this torrent as having its metadata updated
+                        self._metadata_updated.add(magnet_uri)
+                except (AttributeError, RuntimeError):
+                    # Skip if metadata is not fully available yet
+                    continue
