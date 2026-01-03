@@ -12,7 +12,7 @@
 
 ![demo](./docs/_static/demo.gif)
 
-_Torrra_ provides a streamlined command-line interface for torrent search and downloads, powered by Jackett/Prowlarr and Libtorrent. Built with Textual, it offers a beautiful 
+_Torrra_ provides a streamlined command-line interface for torrent search and downloads, powered by Jackett/Prowlarr and Libtorrent. Built with Textual, it offers a beautiful
 TUI with pause/resume support - all without leaving your terminal.
 
 **Full documentation**: https://torrra.readthedocs.io/en/latest/
@@ -44,6 +44,15 @@ Or, search directly from your command line and see instant results.
 
 ```bash
 torrra search "arch linux iso"
+```
+
+### 3. Direct Download
+
+Download torrents directly from magnet URIs or .torrent files without searching:
+
+```bash
+torrra download "magnet:?xt=urn:btih:..."
+# or torrra download "/path/to/file.torrent"
 ```
 
 [Full Usage guide →](https://torrra.readthedocs.io/en/latest/usage.html)\
