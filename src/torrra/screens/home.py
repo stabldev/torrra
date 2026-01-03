@@ -65,40 +65,10 @@ class HomeScreen(Screen[None]):
         # Handle direct download if provided
         if self.direct_download:
             import asyncio
-            from torrra.utils.magnet import resolve_magnet_uri
-            from torrra._types import Torrent
+            from torrra.utils.direct_download import handle_direct_download
 
-            # It's a magnet URI or URL, resolve it
-            async def handle_direct_download():
-                magnet_uri = await resolve_magnet_uri(str(self.direct_download))
-                if magnet_uri:
-                    # Add to download manager
-                    dm.add_torrent(magnet_uri, is_paused=False)
-
-                    # Create a basic torrent record to add to the database
-                    # For direct downloads, we'll use the magnet URI as the title initially
-                    # The actual title will be updated when the torrent metadata is available
-                    tm.add_torrent(
-                        Torrent(
-                            magnet_uri=magnet_uri,
-                            title=magnet_uri.split("&")[0]
-                            if magnet_uri.startswith("magnet:")
-                            else str(self.direct_download),
-                            size=0,  # Size will be updated when metadata is available
-                            source="Direct Download",
-                            seeders=0,
-                            leechers=0,
-                        )
-                    )
-
-                    # Switch to downloads content and select the new torrent
-                    self._content_switcher.current = "downloads_content"
-                    self._sidebar.select_node_by_group_id("downloads_content")
-                else:
-                    self.app.notify("Failed to resolve magnet URI", severity="error")
-
-            # Run the async function
-            asyncio.create_task(handle_direct_download())
+            asyncio.create_task(handle_direct_download(self, str(self.direct_download)))
+            # start_direct_download(self, str(self.direct_download))
 
         # start timer to update data on both sidebar
         # and downloads content table
