@@ -30,7 +30,9 @@ def download(magnet_uri_or_file: str, no_cache: bool) -> None:
     # Validate input - can be magnet URI, URL, or local torrent file
     is_magnet = magnet_uri_or_file.startswith("magnet:?xt=")
     is_url = re.match(r"^https?://", magnet_uri_or_file)
-    is_local_file = os.path.isfile(magnet_uri_or_file) and magnet_uri_or_file.endswith('.torrent')
+    is_local_file = os.path.isfile(magnet_uri_or_file) and magnet_uri_or_file.endswith(
+        ".torrent"
+    )
 
     if not (is_magnet or is_url or is_local_file):
         click.secho(
