@@ -1,5 +1,5 @@
 from dataclasses import asdict, dataclass
-from typing import Any, Literal, TypedDict
+from typing import Any, Literal, NamedTuple, TypedDict
 
 import libtorrent as lt
 
@@ -69,3 +69,13 @@ class Indexer:
     name: IndexerName
     url: str
     api_key: str
+
+
+# TABLE TYPES
+class TableColumn(NamedTuple):
+    """Table column definition."""
+
+    label: str
+    key: str
+    width: int
+    sortable: bool
