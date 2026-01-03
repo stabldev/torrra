@@ -1,5 +1,5 @@
 import subprocess
-from typing import cast
+from typing import ClassVar, cast
 
 from textual import on, work
 from textual.app import ComposeResult
@@ -8,7 +8,7 @@ from textual.message import Message
 from textual.widgets import Input, Static
 from typing_extensions import override
 
-from torrra._types import Indexer, Torrent
+from torrra._types import Indexer, TableColumn, Torrent
 from torrra.core.config import get_config
 from torrra.core.constants import DEFAULT_MAX_RETRIES, DEFAULT_TIMEOUT
 from torrra.core.torrent import get_torrent_manager
@@ -21,11 +21,11 @@ from torrra.widgets.spinner import Spinner
 
 
 class SearchContent(Vertical):
-    COLS: list[tuple[str, str, int]] = [
-        ("No", "no_col", 2),
-        ("Title", "title_col", 25),
-        ("Size", "size_col", 10),
-        ("S:L", "seeders_leechers_col", 6),
+    COLS: ClassVar[list[TableColumn]] = [
+        TableColumn("No", "no_col", 2, sortable=False),
+        TableColumn("Title", "title_col", 25, sortable=False),
+        TableColumn("Size", "size_col", 10, sortable=False),
+        TableColumn("Seeders", "seeders_col", 6, sortable=True),
     ]
 
     class SearchResults(Message):
@@ -81,8 +81,13 @@ class SearchContent(Vertical):
 
         self._loader = self.query_one("#loader", Vertical)
         # setup table
-        for label, key, width in self.COLS:
-            self._table.add_column(label, width=width, key=key)
+
+        # for label, key, width in self.COLS:
+        #     self._table.add_column(label, width=width, key=key)
+
+        for col in self.COLS:
+            self._table.add_column(col.label, width=col.width, key=col.key)
+
         # send initial search
         self.post_message(Input.Submitted(self._search_input, self.search_query))
 
@@ -116,6 +121,7 @@ class SearchContent(Vertical):
                             "-a",
                             resolved_magnet_uri,
                         ],
+                        check=False,
                         capture_output=True,
                         text=True,
                     )
@@ -149,8 +155,8 @@ class SearchContent(Vertical):
         self._table.clear()
         self._details_panel.add_class("hidden")
         self._loader.remove_class("hidden")
-        cast(Spinner, self._loader.children[1]).resume()
-        cast(Static, self._loader.children[0]).update(
+        cast("Spinner", self._loader.children[1]).resume()
+        cast("Static", self._loader.children[0]).update(
             f"Searching for [b]{query}[/b]..."
         )
 
@@ -173,8 +179,8 @@ class SearchContent(Vertical):
     @on(SearchResults)
     def on_search_results(self, message: SearchResults) -> None:
         if not message.results:
-            cast(Spinner, self._loader.children[1]).pause()
-            cast(Static, self._loader.children[0]).update(
+            cast("Spinner", self._loader.children[1]).pause()
+            cast("Static", self._loader.children[0]).update(
                 f"Nothing Found for [b]{message.query}[/b]"
             )  # show loader and exit
             return
@@ -195,7 +201,7 @@ class SearchContent(Vertical):
                 str(idx + 1),
                 torrent.title,
                 human_readable_size(torrent.size),
-                f"{str(torrent.seeders)}:{str(torrent.leechers)}",
+                f"{torrent.seeders!s}:{torrent.leechers!s}",
                 key=torrent.magnet_uri,
             )
 
@@ -206,7 +212,7 @@ class SearchContent(Vertical):
     def on_data_table_row_selected(
         self, event: AutoResizingDataTable.RowSelected
     ) -> None:
-        magnet_uri = cast(str, event.row_key.value)
+        magnet_uri = cast("str", event.row_key.value)
         self._selected_torrent = self._search_results_map.get(magnet_uri)
         if not self._selected_torrent:
             return
