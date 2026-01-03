@@ -49,6 +49,7 @@ dependencies = [
     "platformdirs>=4.5.0",
     "textual>=6.5.0",
     "tomli-w>=1.2.0",
+    "tomli; python_version < '3.11'",
 ]
 
 [project.urls]
