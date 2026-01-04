@@ -15,6 +15,7 @@ depends=(
     "python-httpx"
     "python-platformdirs"
     "python-textual"
+    "python-tomli"
     "python-tomli-w"
 )
 makedepends=(

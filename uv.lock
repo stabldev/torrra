@@ -1750,7 +1750,7 @@ wheels = [
 
 [[package]]
 name = "torrra"
-version = "2.0.5"
+version = "2.0.6"
 source = { editable = "." }
 dependencies = [
     { name = "click" },
@@ -1760,6 +1760,7 @@ dependencies = [
     { name = "libtorrent-windows-dll" },
     { name = "platformdirs" },
     { name = "textual" },
+    { name = "tomli", marker = "python_full_version < '3.11'" },
     { name = "tomli-w" },
 ]
 
@@ -1796,6 +1797,7 @@ requires-dist = [
     { name = "sphinx", marker = "extra == 'docs'", specifier = ">=8,<9" },
     { name = "sphinx-copybutton", marker = "extra == 'docs'", specifier = ">=0.5.2" },
     { name = "textual", specifier = ">=6.5.0" },
+    { name = "tomli", marker = "python_full_version < '3.11'" },
     { name = "tomli-w", specifier = ">=1.2.0" },
 ]
 provides-extras = ["docs"]
