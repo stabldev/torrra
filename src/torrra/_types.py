@@ -1,5 +1,5 @@
 from dataclasses import asdict, dataclass
-from typing import Any, Literal, NamedTuple, TypedDict
+from typing import Any, Literal, TypedDict
 
 import libtorrent as lt
 
