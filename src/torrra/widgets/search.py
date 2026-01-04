@@ -57,7 +57,7 @@ class SearchContent(Vertical):
         self._table: AutoResizingDataTable[str]
         self._details_panel: DetailsPanel
         self._loader: Vertical
-        self._sorts: set[str] = set()
+        self._current_sorts: set[str] = set()
 
     @override
     def compose(self) -> ComposeResult:
@@ -90,8 +90,9 @@ class SearchContent(Vertical):
         self.post_message(Input.Submitted(self._search_input, self.search_query))
 
     def sort_reverse(self, sort_type: str) -> bool:
-        reverse = sort_type in self._sorts
-        self._sorts ^= {sort_type}  # toggle sort direction (ascending/descending)
+        # toggle sort direction
+        reverse = sort_type in self._current_sorts
+        self._current_sorts ^= {sort_type}  # toggle membership
         return reverse
 
     @on(AutoResizingDataTable.HeaderSelected)
@@ -103,18 +104,20 @@ class SearchContent(Vertical):
             "title_col": lambda x: x.title.lower(),
             "ratio_col": lambda x: x.seeders / x.leechers
             if x.leechers > 0
-            else float("inf"),
+            else float("inf"),  # inifinty ensures 0-leecher torrents sort to top
         }
 
         if col_key not in sort_map:
             return
 
-        # toggle direction
-        reverse = self.sort_reverse(col_key)
+        # ↑ ascending  (reverse = True)
+        # ↓ descending (reverse = False)
 
-        #
+        is_descending = self.sort_reverse(col_key)
         sorted_results = sorted(
-            self._search_results_map.values(), key=sort_map[col_key], reverse=reverse
+            self._search_results_map.values(),
+            key=sort_map[col_key],
+            reverse=is_descending,
         )
 
         # refresh table
