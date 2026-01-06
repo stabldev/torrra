@@ -25,7 +25,7 @@ class SearchContent(Vertical):
         ("No", "no_col", 2),
         ("Title", "title_col", 25),
         ("Size", "size_col", 10),
-        ("S:L", "seeders_leechers_col", 6),
+        ("S:L", "ratio_col", 6),
     ]
 
     class SearchResults(Message):
@@ -57,6 +57,7 @@ class SearchContent(Vertical):
         self._table: AutoResizingDataTable[str]
         self._details_panel: DetailsPanel
         self._loader: Vertical
+        self._current_sorts: set[str] = set()
 
     @override
     def compose(self) -> ComposeResult:
@@ -80,11 +81,55 @@ class SearchContent(Vertical):
         self._details_panel.border_title = "details"
 
         self._loader = self.query_one("#loader", Vertical)
+
         # setup table
         for label, key, width in self.COLS:
             self._table.add_column(label, width=width, key=key)
+
         # send initial search
         self.post_message(Input.Submitted(self._search_input, self.search_query))
+
+    def sort_reverse(self, sort_type: str) -> bool:
+        # toggle sort direction
+        reverse = sort_type in self._current_sorts
+        self._current_sorts ^= {sort_type}  # toggle membership
+        return reverse
+
+    @on(AutoResizingDataTable.HeaderSelected)
+    def on_header_selected(self, event: AutoResizingDataTable.HeaderSelected) -> None:
+        col_key = event.column_key.value
+
+        # define sorting logic per column key
+        sort_map = {
+            "title_col": lambda x: x.title.lower(),
+            "ratio_col": lambda x: x.seeders / x.leechers
+            if x.leechers > 0
+            else float("inf"),  # inifinty ensures 0-leecher torrents sort to top
+        }
+
+        if col_key not in sort_map:
+            return
+
+        # ↑ ascending  (reverse = True)
+        # ↓ descending (reverse = False)
+
+        is_descending = self.sort_reverse(col_key)
+        sorted_results = sorted(
+            self._search_results_map.values(),
+            key=sort_map[col_key],
+            reverse=is_descending,
+        )
+
+        # refresh table
+        self._table.clear()
+        for idx, torrent in enumerate(sorted_results):
+            self._table.add_row(
+                str(idx + 1),
+                torrent.title,
+                human_readable_size(torrent.size),
+                f"{torrent.seeders}:{torrent.leechers}",
+                key=torrent.magnet_uri,
+            )
 
     async def key_enter(self) -> None:
         if not self._details_panel.has_focus:
@@ -116,6 +161,7 @@ class SearchContent(Vertical):
                             "-a",
                             resolved_magnet_uri,
                         ],
+                        check=False,
                         capture_output=True,
                         text=True,
                     )
@@ -149,8 +195,8 @@ class SearchContent(Vertical):
         self._table.clear()
         self._details_panel.add_class("hidden")
         self._loader.remove_class("hidden")
-        cast(Spinner, self._loader.children[1]).resume()
-        cast(Static, self._loader.children[0]).update(
+        cast("Spinner", self._loader.children[1]).resume()
+        cast("Static", self._loader.children[0]).update(
             f"Searching for [b]{query}[/b]..."
         )
 
@@ -173,8 +219,8 @@ class SearchContent(Vertical):
     @on(SearchResults)
     def on_search_results(self, message: SearchResults) -> None:
         if not message.results:
-            cast(Spinner, self._loader.children[1]).pause()
-            cast(Static, self._loader.children[0]).update(
+            cast("Spinner", self._loader.children[1]).pause()
+            cast("Static", self._loader.children[0]).update(
                 f"Nothing Found for [b]{message.query}[/b]"
             )  # show loader and exit
             return
@@ -195,7 +241,7 @@ class SearchContent(Vertical):
                 str(idx + 1),
                 torrent.title,
                 human_readable_size(torrent.size),
-                f"{str(torrent.seeders)}:{str(torrent.leechers)}",
+                f"{torrent.seeders!s}:{torrent.leechers!s}",
                 key=torrent.magnet_uri,
             )
 
@@ -206,7 +252,7 @@ class SearchContent(Vertical):
     def on_data_table_row_selected(
         self, event: AutoResizingDataTable.RowSelected
     ) -> None:
-        magnet_uri = cast(str, event.row_key.value)
+        magnet_uri = cast("str", event.row_key.value)
         self._selected_torrent = self._search_results_map.get(magnet_uri)
         if not self._selected_torrent:
             return
