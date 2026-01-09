@@ -18,6 +18,9 @@ depends=(
     "python-tomli"
     "python-tomli-w"
 )
+optdepends=(
+    "python-transmission-rpc: for Transmission downloader support"
+)
 makedepends=(
     "python-build"
     "python-hatchling"

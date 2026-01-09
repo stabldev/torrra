@@ -1,4 +1,3 @@
-import subprocess
 from typing import cast
 
 from textual import on, work
@@ -10,8 +9,8 @@ from typing_extensions import override
 
 from torrra._types import Indexer, Torrent
 from torrra.core.config import get_config
-from torrra.core.constants import DEFAULT_MAX_RETRIES, DEFAULT_TIMEOUT
-from torrra.core.torrent import get_torrent_manager
+from torrra.core.constants import DEFAULT_TIMEOUT
+from torrra.downloaders import get_downloader
 from torrra.indexers.base import BaseIndexer
 from torrra.utils.helpers import human_readable_size, lazy_import
 from torrra.utils.magnet import resolve_magnet_uri
@@ -102,43 +101,14 @@ class SearchContent(Vertical):
             # update with resolved magnet_uri
             self._selected_torrent.magnet_uri = resolved_magnet_uri
 
-            config = get_config()
-            if config.get("general.download_in_external_client", False):
-                if config.get("general.use_transmission", False):
-                    tran_user = config.get("general.transmission_user", "")
-                    tran_pass = config.get("general.transmission_pass", "")
+            downloader = get_downloader()
+            downloader.send_magnet(resolved_magnet_uri, torrent=self._selected_torrent)
 
-                    subprocess.run(
-                        [
-                            "transmission-remote",
-                            "--auth",
-                            tran_user + ":" + tran_pass,
-                            "-a",
-                            resolved_magnet_uri,
-                        ],
-                        capture_output=True,
-                        text=True,
-                    )
-                    self.notify(
-                        "Opened in [b]transmission-remote[/b]",
-                        title="Torrent Opened",
-                    )
-                else:
-                    self.app.open_url(resolved_magnet_uri)
-                    self.notify(
-                        "Opened in default magnet: handler",
-                        title="Torrent Opened",
-                    )
-            else:  # continue with libtorrent
-                tm = get_torrent_manager()
-                tm.add_torrent(self._selected_torrent)
-                title = self._selected_torrent.title
-                short_title = (title[:30] + "...") if len(title) > 30 else title
-                self.notify(
-                    f"Started downloading [b]{short_title}[/b]",
-                    title="Download Started",
-                )
-                self.post_message(self.DownloadRequested(self._selected_torrent))
+            self.notify(
+                f"Magnet sent to {downloader.__class__.__name__}",
+                title="Download Started",
+            )
+            self.post_message(self.DownloadRequested(self._selected_torrent))
 
     def on_input_submitted(self, event: Input.Submitted) -> None:
         query = event.value
