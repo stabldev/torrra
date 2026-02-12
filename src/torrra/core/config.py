@@ -126,16 +126,29 @@ class Config:
         self.config = {
             "general": {
                 "download_path": user_downloads_dir(),
-                "download_in_external_client": False,
-                "use_transmission": False,
-                "transmission_user": "",
-                "transmission_pass": "",
                 "theme": "textual-dark",
                 "timeout": DEFAULT_TIMEOUT,
                 "max_retries": DEFAULT_MAX_RETRIES,
                 "use_cache": True,
                 "cache_ttl": DEFAULT_CACHE_TTL,
-            }
+            },
+            "download": {
+                "client": "internal",  # internal, transmission, qbittorrent
+            },
+            "downloaders": {
+                "transmission": {
+                    "host": "localhost",
+                    "port": 9091,
+                    "username": "your_username",
+                    "password": "your_password",
+                },
+                "qbittorrent": {
+                    "host": "localhost",
+                    "port": 8080,
+                    "username": "your_username",
+                    "password": "your_password",
+                },
+            },
         }
 
     def _save_config(self) -> None:

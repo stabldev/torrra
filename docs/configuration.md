@@ -19,25 +19,38 @@ Here's an example of what your `config.toml` might look like:
 
 ```toml
 [general]
-download_path = "/home/username/Downloads"    # The default folder where torrents will be saved
-download_in_external_client = false           # If true, opens magnet links in an external torrent client instead of downloading the .torrent file.
-theme = "textual-dark"                        # Theme for the application (e.g., "textual-dark", "textual-light", etc.).
-timeout = 10                                  # The timeout in seconds for requests to indexers.
-max_retries = 3                               # The maximum number of times to retry a request to an indexer if it times out.
-use_cache = true                              # If true, search results will be cached to speed up subsequent searches.
-cache_ttl = 300                               # The time in seconds that search results will be cached.
-seed_ratio = 1.5                              # Target upload/download ratio. Seeding stops when reached. Omit or set None for infinite seeding.
+download_path = "/home/user/Downloads"    # Default folder for saved torrents
+theme = "textual-dark"                        # Application theme
+use_cache = true                              # Cache search results
+cache_ttl = 300                               # Cache time-to-live in seconds
+seed_ratio = 1.5                              # Seeding ratio limit
+
+[download]
+client = "internal"                           # "internal", "transmission", or "qbittorrent"
+
+[downloaders.transmission]
+host = "localhost"
+port = 9091
+username = "your_username"
+password = "your_password"
+
+[downloaders.qbittorrent]
+host = "localhost"
+port = 8080
+username = "your_username"
+password = "your_password"
 
 [indexers]
-default = "jackett"                           # The name of the default indexer to use if none is specified at runtime
+default = "jackett"                           # Default indexer
 
 [indexers.jackett]
-url = "http://localhost:9117"                 # Base URL of the Jackett instance
-api_key = "your-jackett-api-key"              # API key for authentication
+url = "http://localhost:9117"                 # Jackett URL
+api_key = "your-jackett-api-key"              # Jackett API key
 
 [indexers.prowlarr]
-url = "http://localhost:9696"                 # Base URL of the Prowlarr instance
-api_key = "your-prowlarr-api-key"             # API key for authentication
+url = "http://localhost:9696"                 # Prowlarr URL
+api_key = "your-prowlarr-api-key"             # Prowlarr API key
+
 ```
 
 You can create or edit this file manually with a text editor.
@@ -114,10 +127,10 @@ This command would output the currently configured download path.
 To set a configuration key to a new value:
 
 ```bash
-torrra config set general.download_in_external_client true
+torrra config set download.client transmission
 ```
 
-This would change the download_in_external_client setting to false. Note that boolean values (true/false) should be provided as such, and strings should be enclosed in quotes if they contain spaces or special characters (though for simple paths, it might not always be necessary depending on your shell).
+This would change the download client to "transmission". Note that boolean values (true/false) should be provided as such, and strings should be enclosed in quotes if they contain spaces or special characters (though for simple paths, it might not always be necessary depending on your shell).
 
 ### Listing All Configuration Values
 
