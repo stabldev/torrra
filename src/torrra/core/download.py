@@ -40,7 +40,12 @@ class DownloadManager:
                     current_status.flags & lt.torrent_flags.paused
                 ) != 0
                 if is_currently_paused != is_paused:
-                    handle.pause() if is_paused else handle.resume()
+                    if is_paused:
+                        handle.unset_flags(lt.torrent_flags.auto_managed)
+                        handle.pause()
+                    else:
+                        handle.set_flags(lt.torrent_flags.auto_managed)
+                        handle.resume()
                 return
 
         # Parse the magnet URI into torrent parameters (modern libtorrent 2.x API)
@@ -48,6 +53,9 @@ class DownloadManager:
         atp.save_path = get_config().get("general.download_path")
         if is_paused:
             atp.flags |= lt.torrent_flags.paused
+            atp.flags &= ~lt.torrent_flags.auto_managed
+        else:
+            atp.flags |= lt.torrent_flags.auto_managed
 
         # Add the torrent to the session and start tracking
         self.torrents[magnet_uri] = self.session.add_torrent(atp)
@@ -65,8 +73,10 @@ class DownloadManager:
 
         status = handle.status()
         if (status.flags & lt.torrent_flags.paused) != 0:
+            handle.set_flags(lt.torrent_flags.auto_managed)
             handle.resume()
         else:  # if not paused
+            handle.unset_flags(lt.torrent_flags.auto_managed)
             handle.pause()
 
     def get_torrent_status(self, magnet_uri: str) -> TorrentStatus | None:
