@@ -22,6 +22,11 @@ class DownloadsContent(Vertical):
         ("Down", "down_speed", 6),
     ]
 
+    BINDINGS = [
+        ("d", "delete_torrent"),
+        ("D", "delete_torrent_with_data"),
+    ]
+
     def __init__(self) -> None:
         super().__init__(id="downloads_content")
         self._torrents: list[TorrentRecord] = []
@@ -97,12 +102,18 @@ class DownloadsContent(Vertical):
                 title="Download Resumed",
             )
 
-    def key_d(self) -> None:
+    def action_delete_torrent(self) -> None:
+        self._remove_selected_torrent()
+
+    def action_delete_torrent_with_data(self) -> None:
+        self._remove_selected_torrent(delete_files=True)
+
+    def _remove_selected_torrent(self, delete_files: bool = False) -> None:
         if not self._selected_torrent:
             return
 
         magnet_uri = self._selected_torrent["magnet_uri"]
-        self._dm.remove_torrent(magnet_uri)
+        self._dm.remove_torrent(magnet_uri, delete_files=delete_files)
         self._tm.remove_torrent(magnet_uri)
 
         self._table.remove_row(magnet_uri)
@@ -112,8 +123,13 @@ class DownloadsContent(Vertical):
 
         title = self._selected_torrent["title"]
         short_title = (title[:50] + "...") if len(title) > 40 else title
+        msg = (
+            f"Removed [b]{short_title}[/b] and its data"
+            if delete_files
+            else f"Removed [b]{short_title}[/b] from list"
+        )
         self.notify(
-            f"Removed [b]{short_title}[/b] and its data",
+            msg,
             title="Torrent Removed",
         )
         self._selected_torrent = None
@@ -237,7 +253,7 @@ class DownloadsContent(Vertical):
 [b]Size:[/b] {size} - [b]Status:[/b] {state_text} - [b]Source:[/b] {current_torrent["source"]}
 [b]S/L:[/b] {status["seeders"]}/{status["leechers"]} - [b]Up:[/b] {up_speed} - [b]Down:[/b] {down_speed}
 
-[dim]Press 'p' to pause/resume, 'd' to delete, or 'esc' to close.[/dim]
+[dim]Press 'p' to pause/resume, 'd' to delete, 'D' to delete w/ data, or 'esc' to close.[/dim]
 """
         # update details panel internal widgets
         self._details_panel.update_content(

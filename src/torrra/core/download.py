@@ -60,10 +60,13 @@ class DownloadManager:
         # Add the torrent to the session and start tracking
         self.torrents[magnet_uri] = self.session.add_torrent(atp)
 
-    def remove_torrent(self, magnet_uri: str) -> None:
+    def remove_torrent(self, magnet_uri: str, delete_files: bool = False) -> None:
         handle = self.torrents.get(magnet_uri)
         if handle and handle.is_valid():
-            self.session.remove_torrent(handle)
+            if delete_files:
+                self.session.remove_torrent(handle, lt.session.delete_files)
+            else:
+                self.session.remove_torrent(handle)
             del self.torrents[magnet_uri]
 
     def toggle_pause(self, magnet_uri: str) -> None:
