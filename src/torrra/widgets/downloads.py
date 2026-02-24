@@ -74,19 +74,28 @@ class DownloadsContent(Vertical):
         title = self._selected_torrent["title"]
         short_title = (title[:50] + "...") if len(title) > 40 else title
 
+        status = self._dm.get_torrent_status(magnet_uri)
+        if not status:
+            return
+
+        target_paused = not status["is_paused"]
+
         self._dm.toggle_pause(magnet_uri)
-        if status := self._dm.get_torrent_status(magnet_uri):
-            self._tm.update_torrent_paused_state(magnet_uri, status["is_paused"])
-            if status["is_paused"]:
-                self.notify(
-                    f"Paused download of [b]{short_title}[/b]",
-                    title="Download Paused",
-                )
-            else:
-                self.notify(
-                    f"Resumed download of [b]{short_title}[/b]",
-                    title="Download Resumed",
-                )
+        self._tm.update_torrent_paused_state(magnet_uri, target_paused)
+
+        if self._selected_torrent:
+            self._selected_torrent["is_paused"] = target_paused
+
+        if target_paused:
+            self.notify(
+                f"Paused download of [b]{short_title}[/b]",
+                title="Download Paused",
+            )
+        else:
+            self.notify(
+                f"Resumed download of [b]{short_title}[/b]",
+                title="Download Resumed",
+            )
 
     def key_d(self) -> None:
         if not self._selected_torrent:
