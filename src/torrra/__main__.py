@@ -60,6 +60,18 @@ def search(search_query: str, no_cache: bool) -> None:
 
 
 # --------------------------------------------------
+# DOWNLOADS
+# --------------------------------------------------
+@cli.command(help="Show the downloads view directly.")
+@click.option("--no-cache", is_flag=True, help="Disable caching mechanism.")
+def downloads(no_cache: bool) -> None:
+    from torrra.utils.indexer import run_with_default_indexer
+
+    # detect indexer from config and execute with show_downloads
+    run_with_default_indexer(no_cache=no_cache, show_downloads=True)
+
+
+# --------------------------------------------------
 # INDEXERS
 # --------------------------------------------------
 @cli.command(help="Use Jackett as the indexer.")

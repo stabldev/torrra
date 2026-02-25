@@ -20,6 +20,7 @@ def run_with_indexer(
     no_cache: bool,
     search_query: str | None = None,
     direct_download: str | None = None,
+    show_downloads: bool = False,
 ) -> None:
     config = get_config()
     # validate command args
@@ -89,6 +90,7 @@ def run_with_indexer(
             use_cache=use_cache,
             search_query=search_query,
             direct_download=direct_download,
+            show_downloads=show_downloads,
         )
         app.run()
     except RuntimeError as e:
@@ -100,6 +102,7 @@ def run_with_default_indexer(
     no_cache: bool,
     search_query: str | None = None,
     direct_download: str | None = None,
+    show_downloads: bool = False,
 ) -> None:
     config = get_config()
     try:
@@ -131,6 +134,7 @@ def run_with_default_indexer(
             no_cache=no_cache,
             search_query=search_query,
             direct_download=direct_download,
+            show_downloads=show_downloads,
         )
     except ConfigError as e:
         # the specific error message for default indexer is now raised within the try block

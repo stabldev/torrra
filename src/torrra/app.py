@@ -30,12 +30,14 @@ class TorrraApp(App[None]):
         use_cache: bool,
         search_query: str | None,
         direct_download: str | None = None,
+        show_downloads: bool = False,
     ) -> None:
         super().__init__()
         self.indexer: Indexer = indexer
         self.use_cache: bool = use_cache
         self.search_query: str | None = search_query
         self.direct_download: str | None = direct_download
+        self.show_downloads: bool = show_downloads
 
         # load theme from config file
         theme = get_config().get("general.theme", "textual-dark")
@@ -55,17 +57,22 @@ class TorrraApp(App[None]):
                     search_query=self.search_query or "",
                     use_cache=self.use_cache,
                     direct_download=self.direct_download,
+                    show_downloads=self.show_downloads,
                 )
             )
-        elif not (self.search_query and self.search_query.strip()):
+        elif (
+            not (self.search_query and self.search_query.strip())
+            and not self.show_downloads
+        ):
             self._show_welcome_and_search()
         else:  # direct show search screen
             await self.push_screen(
                 HomeScreen(
                     indexer=self.indexer,
-                    search_query=self.search_query,
+                    search_query=self.search_query or "",
                     use_cache=self.use_cache,
                     direct_download=None,
+                    show_downloads=self.show_downloads,
                 )
             )
 
@@ -83,5 +90,6 @@ class TorrraApp(App[None]):
                     search_query=search_query,
                     use_cache=self.use_cache,
                     direct_download=None,
+                    show_downloads=self.show_downloads,
                 )
             )

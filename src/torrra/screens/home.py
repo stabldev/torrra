@@ -19,12 +19,14 @@ class HomeScreen(Screen[None]):
         search_query: str,
         use_cache: bool,
         direct_download: str | None = None,
+        show_downloads: bool = False,
     ):
         super().__init__()
         self.indexer: Indexer = indexer
         self.search_query: str = search_query
         self.use_cache: bool = use_cache
         self.direct_download: str | None = direct_download
+        self.show_downloads: bool = show_downloads
 
         self._sidebar: Sidebar
         self._content_switcher: ContentSwitcher
@@ -33,7 +35,9 @@ class HomeScreen(Screen[None]):
     @override
     def compose(self) -> ComposeResult:
         initial_content = (
-            "downloads_content" if self.direct_download else "search_content"
+            "downloads_content"
+            if self.direct_download or self.show_downloads
+            else "search_content"
         )
 
         with Horizontal(id="main_layout"):
@@ -62,13 +66,18 @@ class HomeScreen(Screen[None]):
                 is_paused=torrent["is_paused"],
             )
 
+        if self.show_downloads and not self.direct_download:
+            # When merely showing downloads, set sidebar active node to downloads
+            self._sidebar.select_node_by_group_id("downloads_content")
+            self._downloads_content.focus_table()
+
         # Handle direct download if provided
         if self.direct_download:
             import asyncio
             from torrra.utils.direct_download import handle_direct_download
 
+            self._downloads_content.focus_table()
             asyncio.create_task(handle_direct_download(self, str(self.direct_download)))
-            # start_direct_download(self, str(self.direct_download))
 
         # start timer to update data on both sidebar
         # and downloads content table
