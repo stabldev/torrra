@@ -69,14 +69,15 @@ class HomeScreen(Screen[None]):
         if self.show_downloads and not self.direct_download:
             # When merely showing downloads, set sidebar active node to downloads
             self._sidebar.select_node_by_group_id("downloads_content")
+            self._downloads_content.focus_table()
 
         # Handle direct download if provided
         if self.direct_download:
             import asyncio
             from torrra.utils.direct_download import handle_direct_download
 
+            self._downloads_content.focus_table()
             asyncio.create_task(handle_direct_download(self, str(self.direct_download)))
-            # start_direct_download(self, str(self.direct_download))
 
         # start timer to update data on both sidebar
         # and downloads content table
