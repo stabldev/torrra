@@ -6,9 +6,19 @@ import httpx
 import libtorrent as lt
 
 
+def fix_magnet_uri(uri: str) -> str:
+    if not uri.startswith("magnet:"):
+        return uri
+    uri = uri.replace("?btih:", "?xt=urn:btih:")
+    uri = uri.replace("&btih:", "&xt=urn:btih:")
+    uri = uri.replace("?btmh:", "?xt=urn:btmh:")
+    uri = uri.replace("&btmh:", "&xt=urn:btmh:")
+    return uri
+
+
 async def resolve_magnet_uri(input_uri: str) -> str | None:
     if input_uri.startswith("magnet:"):
-        return input_uri
+        return fix_magnet_uri(input_uri)
 
     try:
         # some torrent doesnt have magnet uri, instead a uri to .torrent file

@@ -4,6 +4,7 @@ import libtorrent as lt
 
 from torrra._types import TorrentStatus
 from torrra.core.config import get_config
+from torrra.utils.magnet import fix_magnet_uri
 
 
 @lru_cache
@@ -49,7 +50,10 @@ class DownloadManager:
                 return
 
         # Parse the magnet URI into torrent parameters (modern libtorrent 2.x API)
-        atp = lt.parse_magnet_uri(magnet_uri)
+        # Handle malformed URIs (missing 'xt=urn:') that might be stored in the DB
+        proper_magnet_uri = fix_magnet_uri(magnet_uri)
+
+        atp = lt.parse_magnet_uri(proper_magnet_uri)
         atp.save_path = get_config().get("general.download_path")
         if is_paused:
             atp.flags |= lt.torrent_flags.paused
