@@ -5,24 +5,29 @@
 
   outputs = { self, nixpkgs }:
     let
+      version = "2.0.7";
       systems = [ "x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin" ];
-      forEachSystem = f: nixpkgs.lib.genAttrs systems (system: f nixpkgs.legacyPackages.${system});
+      forEachSystem = f: nixpkgs.lib.genAttrs systems (system:
+        f nixpkgs.legacyPackages.${system}
+      );
     in
     {
-      packages = forEachSystem (pkgs:
-        let torrra = pkgs.callPackage ./package.nix { };
-        in {
-          inherit torrra;
-          default = torrra;
-        });
+      packages = forEachSystem (pkgs: rec {
+        torrra = pkgs.callPackage ./package.nix { src = self; inherit version; };
+        default = torrra;
+      });
 
       overlays.default = final: _prev: {
-        torrra = final.callPackage ./package.nix { };
+        torrra = final.callPackage ./package.nix { src = self; inherit version; };
       };
 
-      nixosModules.default = { pkgs, ... }: {
-        nixpkgs.overlays = [ self.overlays.default ];
-        environment.systemPackages = [ pkgs.torrra ];
+      nixosModules.default = { lib, pkgs, config, ... }: {
+        options.programs.torrra.enable = lib.mkEnableOption "torrra torrent CLI";
+
+        config = lib.mkIf config.programs.torrra.enable {
+          nixpkgs.overlays = [ self.overlays.default ];
+          environment.systemPackages = [ pkgs.torrra ];
+        };
       };
     };
 }
