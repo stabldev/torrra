@@ -28,23 +28,6 @@ Other options: [`AUR`](https://aur.archlinux.org/packages/torrra), [`standalone 
 
 [See full install options →](https://torrra.readthedocs.io/en/latest/installation.html)
 
-### Nix / NixOS
-
-```sh
-# run directly
-nix run github:stabldev/torrra
-```
-
-Or add to your NixOS configuration:
-
-```nix
-# In flake.nix inputs
-torrra.url = "github:stabldev/torrra";
-
-# In your NixOS configuration
-environment.systemPackages = [ inputs.torrra.packages.${pkgs.system}.default ];
-```
-
 ## Quick Usage
 
 ### 1. Interactive Search
