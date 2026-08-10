@@ -88,7 +88,7 @@ class Config:
             self._save_config()
 
         except (KeyError, TypeError) as e:
-            raise ConfigError(f"failed to set '{key_path}': {str(e)}")
+            raise ConfigError(f"failed to set '{key_path}': {e!s}")
 
     def list(self) -> list[str]:
         results: list[str] = []

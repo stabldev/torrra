@@ -195,7 +195,7 @@ class SearchContent(Vertical):
                 str(idx + 1),
                 torrent.title,
                 human_readable_size(torrent.size),
-                f"{str(torrent.seeders)}:{str(torrent.leechers)}",
+                f"{torrent.seeders!s}:{torrent.leechers!s}",
                 key=torrent.magnet_uri,
             )
 

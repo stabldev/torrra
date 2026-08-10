@@ -37,13 +37,12 @@ class WelcomeScreen(Screen[str]):
                 f"v{__version__}{f' - {self.indexer.name}' if self.indexer else ''}",
                 id="version",
             )
-            with Container(id="commands_container"):
-                with Grid():
-                    yield Static("[key binds]", id="title", markup=False)
-                    yield Static("[q]uit", markup=False)
-                    yield Static("ctrl+q", classes="key")
-                    yield Static("[t]heme switcher", markup=False)
-                    yield Static("ctrl+t", classes="key")
+            with Container(id="commands_container"), Grid():
+                yield Static("[key binds]", id="title", markup=False)
+                yield Static("[q]uit", markup=False)
+                yield Static("ctrl+q", classes="key")
+                yield Static("[t]heme switcher", markup=False)
+                yield Static("ctrl+t", classes="key")
 
     async def on_input_submitted(self, event: Input.Submitted) -> None:
         if query := event.value.strip():
