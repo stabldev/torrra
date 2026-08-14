@@ -23,6 +23,27 @@ def human_readable_size(size_bytes: float, short: bool = False) -> str:
     return f"{int(size_bytes)}P"
 
 
+def human_readable_eta(seconds: float | None, is_seeding: bool = False) -> str:
+    if is_seeding or seconds is None or seconds < 0 or seconds == float("inf"):
+        return "∞"
+
+    total_seconds = int(seconds)
+    if total_seconds == 0:
+        return "0s"
+
+    days, remainder = divmod(total_seconds, 86400)
+    hours, remainder = divmod(remainder, 3600)
+    minutes, secs = divmod(remainder, 60)
+
+    if days > 0:
+        return f"{days}d {hours}h" if hours > 0 else f"{days}d"
+    if hours > 0:
+        return f"{hours}h {minutes}m" if minutes > 0 else f"{hours}h"
+    if minutes > 0:
+        return f"{minutes}m {secs}s" if secs > 0 else f"{minutes}m"
+    return f"{secs}s"
+
+
 def lazy_import(dotted_path: str):
     import importlib
 

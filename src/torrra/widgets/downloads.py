@@ -7,7 +7,7 @@ from typing_extensions import override
 from torrra._types import TorrentRecord, TorrentStatus
 from torrra.core.download import DownloadManager, get_download_manager
 from torrra.core.torrent import TorrentManager, get_torrent_manager
-from torrra.utils.helpers import human_readable_size
+from torrra.utils.helpers import human_readable_eta, human_readable_size
 from torrra.widgets.data_table import AutoResizingDataTable
 from torrra.widgets.details_panel import DetailsPanel
 
@@ -247,11 +247,12 @@ class DownloadsContent(Vertical):
         size = human_readable_size(float(current_torrent["size"]))
         up_speed = f"{human_readable_size(status['up_speed'])}/s"
         down_speed = f"{human_readable_size(status['down_speed'])}/s"
+        eta_text = human_readable_eta(status["eta"], is_seeding=status["is_seeding"])
 
         details = f"""
 [b]{current_torrent["title"]}[/b]
 [b]Size:[/b] {size} - [b]Status:[/b] {state_text} - [b]Source:[/b] {current_torrent["source"]}
-[b]S/L:[/b] {status["seeders"]}/{status["leechers"]} - [b]Up:[/b] {up_speed} - [b]Down:[/b] {down_speed}
+[b]S/L:[/b] {status["seeders"]}/{status["leechers"]} - [b]Up:[/b] {up_speed} - [b]Down:[/b] {down_speed} - [b]ETA:[/b] {eta_text}
 
 [dim]Press 'p' to pause/resume, 'd' to delete, 'D' to delete w/ data, or 'esc' to close.[/dim]
 """

@@ -93,6 +93,18 @@ class DownloadManager:
             return None
 
         s = handle.status()
+        is_seeding = (
+            s.is_seeding
+            or s.is_finished
+            or s.state == lt.torrent_status.states.seeding
+            or s.state == lt.torrent_status.states.finished
+        )
+        eta: float | None = None
+        if not is_seeding:
+            remaining_bytes = s.total_wanted - s.total_wanted_done
+            if remaining_bytes > 0 and s.download_rate > 0:
+                eta = remaining_bytes / s.download_rate
+
         return TorrentStatus(
             state=s.state,
             progress=s.progress * 100,
@@ -101,6 +113,8 @@ class DownloadManager:
             seeders=s.num_seeds,
             leechers=s.num_peers,
             is_paused=(s.flags & lt.torrent_flags.paused) != 0,
+            eta=eta,
+            is_seeding=is_seeding,
         )
 
     def get_torrent_state_text(self, status: TorrentStatus, short: bool = False) -> str:
