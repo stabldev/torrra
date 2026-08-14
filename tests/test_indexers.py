@@ -1,6 +1,6 @@
-from httpx import Response
 import pytest
 import respx
+from httpx import Response
 
 from torrra.indexers.base import BaseIndexer
 from torrra.indexers.jackett import JackettIndexer

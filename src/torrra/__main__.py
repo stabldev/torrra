@@ -22,10 +22,10 @@ def cli(ctx: click.Context, no_cache: bool) -> None:
 @click.argument("magnet_uri_or_file")
 @click.option("--no-cache", is_flag=True, help="Disable caching mechanism.")
 def download(magnet_uri_or_file: str, no_cache: bool) -> None:
-    import re
-    from torrra.utils.indexer import run_with_default_indexer
-
     import os
+    import re
+
+    from torrra.utils.indexer import run_with_default_indexer
 
     # Validate input - can be magnet URI, URL, or local torrent file
     is_magnet = magnet_uri_or_file.startswith("magnet:?xt=")

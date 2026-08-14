@@ -74,6 +74,7 @@ class HomeScreen(Screen[None]):
         # Handle direct download if provided
         if self.direct_download:
             import asyncio
+
             from torrra.utils.direct_download import handle_direct_download
 
             self._downloads_content.focus_table()
