@@ -43,7 +43,7 @@ async def handle_direct_download(home_screen: "HomeScreen", input_path: str) -> 
             )
         except Exception as e:
             home_screen.app.notify(
-                f"Error processing torrent file: {str(e)}", severity="error"
+                f"Error processing torrent file: {e!s}", severity="error"
             )
     else:
         # It's a magnet URI or URL, resolve it

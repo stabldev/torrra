@@ -6,7 +6,7 @@ def get_resource_path(relative_path: str):
     if hasattr(sys, "_MEIPASS"):
         # running in a pyinstaller bundle
         # resources are typically placed under _MEIPASS/torrra/
-        _path = getattr(sys, "_MEIPASS")
+        _path = sys._MEIPASS
         return os.path.join(_path, "torrra", relative_path)
     else:
         # running in a dev environment
