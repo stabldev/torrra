@@ -42,8 +42,8 @@ async def resolve_magnet_uri(input_uri: str) -> str | None:
                 return lt.make_magnet_uri(info)
             finally:
                 # delete file silently
-                with suppress(Exception):
+                with suppress(OSError):
                     os.remove(tmp_path)
-    except Exception as e:
+    except (httpx.HTTPError, OSError, RuntimeError, ValueError) as e:
         print(f"an unexpected error occurred: {e}")
     return None

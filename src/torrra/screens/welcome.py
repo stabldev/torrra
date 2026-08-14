@@ -24,12 +24,7 @@ class WelcomeScreen(Screen[str]):
         with Container(id="welcome_container"):
             yield Static(BANNER, id="banner")
             yield Static(
-                "\n".join(
-                    [
-                        "Find and download torrents right from here.",
-                        "Powered by libtorrent and Python ❤️",
-                    ]
-                ),
+                "Find and download torrents right from here.\nPowered by libtorrent and Python ❤️",
                 id="subtitle",
             )
             yield Input(placeholder="Search...", id="search")

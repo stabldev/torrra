@@ -41,7 +41,7 @@ async def handle_direct_download(home_screen: "HomeScreen", input_path: str) -> 
             home_screen.query_one("#sidebar").select_node_by_group_id(
                 "downloads_content"
             )
-        except Exception as e:
+        except (RuntimeError, OSError, ValueError) as e:
             home_screen.app.notify(
                 f"Error processing torrent file: {e!s}", severity="error"
             )

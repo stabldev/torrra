@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any
+from typing import Any, ClassVar
 
 from textual import work
 from textual.app import ComposeResult
@@ -14,7 +14,7 @@ from torrra.core.config import get_config
 
 
 class ThemeSelectorScreen(ModalScreen[None]):
-    BINDINGS: list[BindingType] = [
+    BINDINGS: ClassVar[list[BindingType]] = [
         Binding("escape", "close_screen"),
         Binding("k", "cursor_up"),
         Binding("j", "cursor_down"),
