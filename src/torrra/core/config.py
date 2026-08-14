@@ -119,7 +119,7 @@ class Config:
         try:
             with open(CONFIG_FILE, "rb") as f:
                 self.config = tomllib.load(f)
-        except Exception as e:
+        except (OSError, tomllib.TOMLDecodeError) as e:
             print(f"loading config failed: {e}")
 
     def _create_default_config(self) -> None:

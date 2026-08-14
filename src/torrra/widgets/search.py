@@ -1,6 +1,8 @@
+import asyncio
 import subprocess
-from typing import cast
+from typing import ClassVar, cast
 
+import httpx
 from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Vertical
@@ -11,6 +13,7 @@ from typing_extensions import override
 from torrra._types import Indexer, Torrent
 from torrra.core.config import get_config
 from torrra.core.constants import DEFAULT_MAX_RETRIES, DEFAULT_TIMEOUT
+from torrra.core.exceptions import ConfigError, IndexerError
 from torrra.core.torrent import get_torrent_manager
 from torrra.indexers.base import BaseIndexer
 from torrra.utils.helpers import human_readable_size, lazy_import
@@ -21,7 +24,7 @@ from torrra.widgets.spinner import Spinner
 
 
 class SearchContent(Vertical):
-    COLS: list[tuple[str, str, int]] = [
+    COLS: ClassVar[list[tuple[str, str, int]]] = [
         ("No", "no_col", 2),
         ("Title", "title_col", 25),
         ("Size", "size_col", 10),
@@ -108,16 +111,18 @@ class SearchContent(Vertical):
                     tran_user = config.get("general.transmission_user", "")
                     tran_pass = config.get("general.transmission_pass", "")
 
-                    subprocess.run(
+                    await asyncio.to_thread(
+                        subprocess.run,
                         [
                             "transmission-remote",
                             "--auth",
-                            tran_user + ":" + tran_pass,
+                            f"{tran_user}:{tran_pass}",
                             "-a",
                             resolved_magnet_uri,
                         ],
                         capture_output=True,
                         text=True,
+                        check=False,
                     )
                     self.notify(
                         "Opened in [b]transmission-remote[/b]",
@@ -162,7 +167,7 @@ class SearchContent(Vertical):
             indexer = self._get_indexer_instance()
             results = await indexer.search(query, use_cache=self.use_cache)
             self.post_message(self.SearchResults(results or [], query))
-        except Exception:
+        except (IndexerError, ConfigError, httpx.HTTPError, ValueError, KeyError, RuntimeError):
             self.notify(
                 "Search failed, check indexer settings",
                 title="Search Failed",

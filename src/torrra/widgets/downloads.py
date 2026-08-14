@@ -1,4 +1,4 @@
-from typing import cast
+from typing import ClassVar, cast
 
 from textual.app import ComposeResult
 from textual.containers import Vertical
@@ -13,7 +13,7 @@ from torrra.widgets.details_panel import DetailsPanel
 
 
 class DownloadsContent(Vertical):
-    COLS: list[tuple[str, str, int]] = [
+    COLS: ClassVar[list[tuple[str, str, int]]] = [
         ("No", "no_col", 2),
         ("Title", "title", 25),
         ("St.", "status", 3),
@@ -22,7 +22,7 @@ class DownloadsContent(Vertical):
         ("Down", "down_speed", 6),
     ]
 
-    BINDINGS = [
+    BINDINGS: ClassVar[list[tuple[str, str]]] = [
         ("d", "delete_torrent"),
         ("D", "delete_torrent_with_data"),
     ]
