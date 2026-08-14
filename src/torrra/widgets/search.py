@@ -167,7 +167,14 @@ class SearchContent(Vertical):
             indexer = self._get_indexer_instance()
             results = await indexer.search(query, use_cache=self.use_cache)
             self.post_message(self.SearchResults(results or [], query))
-        except (IndexerError, ConfigError, httpx.HTTPError, ValueError, KeyError, RuntimeError):
+        except (
+            IndexerError,
+            ConfigError,
+            httpx.HTTPError,
+            ValueError,
+            KeyError,
+            RuntimeError,
+        ):
             self.notify(
                 "Search failed, check indexer settings",
                 title="Search Failed",
