@@ -131,10 +131,14 @@ class DownloadManager:
 
         for magnet_uri, handle in self.torrents.items():
             # Only check for metadata if we haven't updated it yet
+            # `torrent_handle.has_metadata()` is deprecated upstream and is
+            # absent from builds compiled without deprecated functions (Arch's
+            # libtorrent-rasterbar 2.1 among them). The status field is
+            # available on every supported version.
             if (
                 magnet_uri not in self._metadata_updated
                 and handle.is_valid()
-                and handle.has_metadata()
+                and handle.status().has_metadata
             ):
                 # Get the torrent info
                 try:
