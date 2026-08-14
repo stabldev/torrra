@@ -34,6 +34,28 @@ yay -S torrra-bin
 
 > `torrra-bin` includes a precompiled standalone binary specifically for x86_64 Linux systems.
 
+## Nix / NixOS
+
+`torrra` is available on Nix and NixOS through a Nix flake.
+
+### Run directly without installing
+
+```sh
+nix run github:stabldev/torrra
+```
+
+### Or add to your NixOS configuration
+
+```nix
+# In flake.nix inputs:
+torrra.url = "github:stabldev/torrra";
+
+# In your NixOS configuration:
+environment.systemPackages = [ inputs.torrra.packages.${pkgs.system}.default ];
+```
+
+> **Note:** This requires [Nix flakes](https://nixos.wiki/wiki/Flakes) to be enabled.
+
 ## Standalone Binaries (No Python Required)
 
 You can download pre-built executables of `torrra` directly from the [GitHub Releases](https://github.com/stabldev/torrra/releases) page. These binaries do not require Python to be installed on your system.
