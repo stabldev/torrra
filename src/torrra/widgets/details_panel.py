@@ -20,7 +20,7 @@ class DetailsPanel(Vertical):
     def compose(self) -> ComposeResult:
         yield Static()
         if self.show_progress_bar:
-            yield ProgressBar(total=100)
+            yield ProgressBar(total=100, show_eta=False)
 
     def on_mount(self) -> None:
         self._content_widget = self.query_one(Static)
