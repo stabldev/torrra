@@ -14,7 +14,7 @@ def get_download_manager() -> "DownloadManager":
 
 
 class DownloadManager:
-    _STATE_MAP: ClassVar[dict[lt.torrent_status.states, tuple[str, str]]] = {
+    _STATE_MAP: ClassVar[dict[int, tuple[str, str]]] = {
         lt.torrent_status.states.downloading: ("Downloading", "DL"),
         lt.torrent_status.states.seeding: ("Seeding", "SE"),
         lt.torrent_status.states.finished: ("Completed", "CD"),

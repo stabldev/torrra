@@ -51,6 +51,7 @@ async def test_search(indexer: BaseIndexer, query: str) -> None:
 
     results = await indexer.search(query, use_cache=False)
 
+    assert results is not None
     assert len(results) == 1
     r = results[0]
     assert r.title == "Arch Linux ISO (Mock)"
