@@ -1,15 +1,17 @@
 import os
 from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from torrra.screens.home import HomeScreen
-
 import libtorrent as lt
+from textual.widgets import ContentSwitcher
 
 from torrra._types import Torrent
 from torrra.core.download import get_download_manager
 from torrra.core.torrent import get_torrent_manager
 from torrra.utils.magnet import resolve_magnet_uri
+from torrra.widgets.sidebar import Sidebar
+
+if TYPE_CHECKING:
+    from torrra.screens.home import HomeScreen
 
 
 async def handle_direct_download(home_screen: "HomeScreen", input_path: str) -> None:
@@ -37,8 +39,10 @@ async def handle_direct_download(home_screen: "HomeScreen", input_path: str) -> 
             tm.add_torrent(torrent_record)
 
             # Switch to downloads content and select the new torrent
-            home_screen.query_one("#content_switcher").current = "downloads_content"
-            home_screen.query_one("#sidebar").select_node_by_group_id(
+            home_screen.query_one(
+                "#content_switcher", ContentSwitcher
+            ).current = "downloads_content"
+            home_screen.query_one("#sidebar", Sidebar).select_node_by_group_id(
                 "downloads_content"
             )
         except (RuntimeError, OSError, ValueError) as e:
@@ -68,8 +72,10 @@ async def handle_direct_download(home_screen: "HomeScreen", input_path: str) -> 
             )
 
             # Switch to downloads content and select the new torrent
-            home_screen.query_one("#content_switcher").current = "downloads_content"
-            home_screen.query_one("#sidebar").select_node_by_group_id(
+            home_screen.query_one(
+                "#content_switcher", ContentSwitcher
+            ).current = "downloads_content"
+            home_screen.query_one("#sidebar", Sidebar).select_node_by_group_id(
                 "downloads_content"
             )
         else:

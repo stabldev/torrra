@@ -80,6 +80,9 @@ dev = [
 [tool.ty.environment]
 python-version = "3.10"
 
+[tool.ty.rules]
+invalid-attribute-access = "ignore"
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 pythonpath = "src"

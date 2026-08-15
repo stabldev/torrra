@@ -1,15 +1,11 @@
 import ast
+import sys
 from contextlib import suppress
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, cast
 
 import tomli_w
-
-try:
-    import tomllib  # Python 3.11+
-except ModuleNotFoundError:
-    import tomli as tomllib  # Python 3.10
 from platformdirs import user_config_dir, user_downloads_dir
 
 from torrra.core.constants import (
@@ -18,6 +14,11 @@ from torrra.core.constants import (
     DEFAULT_TIMEOUT,
 )
 from torrra.core.exceptions import ConfigError
+
+if sys.version_info >= (3, 11):
+    import tomllib
+else:  # Python <3.11
+    import tomli as tomllib  # type: ignore
 
 CONFIG_DIR = Path(user_config_dir("torrra"))
 CONFIG_FILE = CONFIG_DIR / "config.toml"

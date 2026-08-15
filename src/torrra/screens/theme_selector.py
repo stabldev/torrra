@@ -25,7 +25,7 @@ class ThemeSelectorScreen(ModalScreen[None]):
         self.original_theme: str = self.app.theme
 
         self._list_view: ListView | None = None
-        self._update_worker: Worker[None] | None = None
+        self._update_worker: Worker[Any] | None = None
 
     @override
     def compose(self) -> ComposeResult:
