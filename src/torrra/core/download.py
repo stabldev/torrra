@@ -134,7 +134,7 @@ class DownloadManager:
             if (
                 magnet_uri not in self._metadata_updated
                 and handle.is_valid()
-                and handle.has_metadata()
+                and handle.status().has_metadata
             ):
                 # Get the torrent info
                 try:
