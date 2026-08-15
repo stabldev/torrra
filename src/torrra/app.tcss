@@ -161,3 +161,130 @@ ThemeSelectorScreen {
     }
   }
 }
+
+/* ------------------------- */
+/* FILE SELECTION SCREEN     */
+/* ------------------------- */
+FileSelectionScreen {
+  align: center middle;
+  #file_selection_container {
+    width: 80%;
+    max-width: 90;
+    height: 80%;
+    max-height: 80%;
+    background: $surface;
+    border: tall $secondary;
+    padding: 1;
+    #file_selection_title {
+      text-align: center;
+      height: auto;
+    }
+    #file_selection_loader {
+      align: center middle;
+      height: 1fr;
+      Static {
+        content-align-horizontal: center;
+      }
+      Spinner {
+        height: auto;
+        content-align-horizontal: center;
+        color: $secondary;
+      }
+    }
+    #file_selection_header {
+      height: auto;
+      padding: 0 1;
+      color: $text-secondary;
+      text-style: bold;
+    }
+    #file_selection_tree {
+      height: 1fr;
+      margin-top: 1;
+      border: solid $secondary-muted;
+      padding: 0 1;
+      & > .tree--highlight-line {
+        background: $primary-muted;
+      }
+      &:focus {
+        border: solid $secondary;
+      }
+    }
+    #file_selection_hint {
+      height: auto;
+      margin-top: 1;
+      padding: 0 1;
+      color: $foreground-muted;
+      text-align: center;
+    }
+    #file_selection_footer {
+      height: auto;
+      margin-top: 1;
+      Button {
+        margin-right: 1;
+      }
+    }
+  }
+}
+
+/* ------------------------- */
+/* FILE MANAGER SCREEN       */
+/* ------------------------- */
+FileManagerScreen {
+  align: center middle;
+  #file_manager_container {
+    width: 80%;
+    max-width: 90;
+    height: 80%;
+    max-height: 80%;
+    background: $surface;
+    border: tall $secondary;
+    padding: 1;
+    #file_manager_title {
+      text-align: center;
+      height: auto;
+    }
+    #file_manager_loader {
+      align: center middle;
+      height: 1fr;
+      Static {
+        content-align-horizontal: center;
+      }
+      Spinner {
+        height: auto;
+        content-align-horizontal: center;
+        color: $secondary;
+      }
+    }
+    #file_manager_header {
+      height: auto;
+      padding: 0 1;
+      color: $text-secondary;
+      text-style: bold;
+    }
+    #file_manager_table {
+      height: 1fr;
+      margin-top: 1;
+      border: solid $secondary-muted;
+      & > .datatable--header {
+        text-style: bold;
+      }
+      &:focus {
+        border: solid $secondary;
+      }
+    }
+    #file_manager_hint {
+      height: auto;
+      margin-top: 1;
+      padding: 0 1;
+      color: $foreground-muted;
+      text-align: center;
+    }
+    #file_manager_footer {
+      height: auto;
+      margin-top: 1;
+      Button {
+        margin-right: 1;
+      }
+    }
+  }
+}

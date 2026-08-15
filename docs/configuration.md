@@ -27,6 +27,7 @@ max_retries = 3                               # The maximum number of times to r
 use_cache = true                              # If true, search results will be cached to speed up subsequent searches.
 cache_ttl = 300                               # The time in seconds that search results will be cached.
 seed_ratio = 1.5                              # Target upload/download ratio. Seeding stops when reached. Omit or set None for infinite seeding.
+select_files = true                           # If true, lets you pick which files to download before a torrent starts.
 
 [indexers]
 default = "jackett"                           # The name of the default indexer to use if none is specified at runtime
@@ -72,6 +73,14 @@ Or, you can set it directly from the command line:
 
 ```bash
 torrra config set general.theme gruvbox
+```
+
+### Selecting Files Before Download
+
+`general.select_files` (default `true`) controls whether a file-selection screen is shown before a torrent starts downloading. When enabled you can pick which files of the torrent to download; disabled torrents download in full immediately.
+
+```bash
+torrra config set general.select_files false
 ```
 
 ### Indexer Selection

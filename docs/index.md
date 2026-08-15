@@ -8,6 +8,7 @@ Welcome to the official docs for **torrra** - A Python tool that lets you find a
 - Fetch and download magnet links directly, powered by [`Libtorrent`](https://libtorrent.org/)
 - A responsive download manager built with [`Textual`](https://textual.textualize.io/)
 - Pause and resume torrent downloads using keyboard shortcuts
+- Pick which files of a torrent to download, and re-select them anytime with the built-in file manager
 - Operates as both a `CLI` tool and a full-screen terminal `UI`
 - Toggle between dark and light themes
 - Opt-in caching for blazing fast repeated searches

@@ -39,6 +39,7 @@ class TorrentRecord(TypedDict):
     source: str
     is_paused: bool
     is_notified: bool
+    selected_files: list[int] | None
 
 
 @dataclass
@@ -51,6 +52,7 @@ class Torrent:
     seeders: int
     leechers: int
     source: str
+    selected_files: list[int] | None = None
 
     @classmethod
     def from_dict(cls, d: TorrentDict) -> "Torrent":
@@ -58,6 +60,26 @@ class Torrent:
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
+
+
+@dataclass(frozen=True)
+class TorrentFile:
+    """A single file inside a torrent."""
+
+    index: int
+    path: str
+    size: int
+
+
+@dataclass(frozen=True)
+class TorrentFileStatus:
+    """Per-file download status inside a torrent."""
+
+    index: int
+    path: str
+    size: int
+    downloaded: int
+    priority: int
 
 
 # INDEXER TYPES

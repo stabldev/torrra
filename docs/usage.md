@@ -52,7 +52,44 @@ torrra download "magnet:?xt=urn:btih:..."
 # or torrra download "/path/to/file.torrent"
 ```
 
-This command will immediately start the download and open the downloads interface showing the new torrent.
+This command will start the download and open the downloads interface showing the new torrent.
+
+## Selecting Files Before Downloading
+
+By default, before a torrent starts downloading, `torrra` shows a file-selection screen that lets you choose which files to include:
+
+1. The torrent is fetched (for magnet URIs, this waits for metadata to arrive from peers).
+2. A tree of every file in the torrent appears, grouped by directory, all selected by default.
+3. Toggle a file with `Space`/`Enter`, or toggle an entire directory (all of its files at once). Use **Select all** / **Select none** to bulk-change the selection.
+4. Navigate with `j`/`k` and expand/collapse directories with `←`/`→`.
+5. Press **Download** to start downloading only the selected files, or **Cancel** to abort.
+
+While metadata is being fetched, nothing is written to disk: the torrent runs in metadata-only mode with all files at priority `dont_download`, so unselected files are never created. Files are only written once you confirm a selection (or press `Escape` to download everything).
+
+Your file selection is saved with the download. If you restart `torrra`, only the files you picked are downloaded — the selection is re-applied to the torrent when it is restored, so it never falls back to downloading every file.
+
+**Known limitation:** a deselected file that shares a piece boundary with a selected file may still have a few bytes of its data downloaded. BitTorrent pieces are hashed as a whole, and libtorrent documents that *"partial pieces may still be downloaded when setting file priorities"* (see `download_priority.hpp`). Any piece containing a selected file is downloaded in full — in libtorrent 2.1 the bytes belonging to deselected files are not written to those files (they are buffered in a temporary `.parts` file), so the deselected file is not created. This is inherent to BitTorrent piece hashing and is not a full download of the unselected file.
+
+After the download reaches 100% you may briefly see a non-zero download speed (~10-20 seconds). This is not real downloading: it is libtorrent's rate estimate decaying after the final pieces arrived in flight. `torrra` hides it once the torrent is marked complete.
+
+You don't have to wait for the metadata spinner or pick files at all: press **`Escape`** at any time (even while metadata is still loading) to skip selection and download every file.
+
+The file selection screen is shown for every download entry point: search results, `torrra download <magnet_uri>`, and `torrra download <file.torrent>`.
+
+You can skip the prompt and download everything immediately by disabling it:
+
+```bash
+torrra config set general.select_files false
+```
+
+## Managing Files After Download
+
+Press **`f`** on a torrent in the downloads view to open the file manager. It lists every file in the torrent with its selection state, size, bytes downloaded, and completion percentage, and lets you change which files are included at any time — while a torrent is still downloading or after it has finished.
+
+- Move through the list with `j`/`k` and toggle a file on or off with `space`.
+- Press **Apply** to save your changes: the new selection is applied to the running torrent immediately and persisted, so it is re-applied if you restart `torrra` (see [Selecting Files Before Downloading](#selecting-files-before-downloading)).
+- Press **Close** or `esc` to exit without changing anything.
+- At least one file must remain selected; the file manager refuses to apply an empty selection.
 
 ## Command-Line Interface (CLI)
 
@@ -103,6 +140,8 @@ Once `torrra` is running (after specifying an indexer), you'll interact with it 
 | `G`           | Scroll to the bottom of the results list                                   |
 | `gg`          | Scroll to the top of the results list (press `g` twice)                    |
 | `Tab`         | Move focus to the next interactive widget (e.g., search box, results list) |
-| `p`           | Pause the currently active download                                        |
-| `r`           | Resume a previously paused download                                        |
-| `q`           | Quit `torrra` and exit the application                                     |
+| `p`           | Pause or resume the currently selected download                       |
+| `f`           | Open the file manager for the currently selected download             |
+| `d`           | Delete the currently selected download from the list                  |
+| `D`           | Delete the currently selected download and its data                   |
+| `q`           | Quit `torrra` and exit the application                                |

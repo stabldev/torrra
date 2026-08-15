@@ -5,7 +5,7 @@ from textual.widgets import ContentSwitcher
 from typing_extensions import override
 
 from torrra._types import Indexer, TorrentStatus
-from torrra.core.download import get_download_manager
+from torrra.core.download import get_download_manager, selection_priorities
 from torrra.core.torrent import get_torrent_manager
 from torrra.widgets.downloads import DownloadsContent
 from torrra.widgets.search import SearchContent
@@ -64,6 +64,7 @@ class HomeScreen(Screen[None]):
             dm.add_torrent(
                 torrent["magnet_uri"],
                 is_paused=torrent["is_paused"],
+                file_priorities=selection_priorities(torrent["selected_files"]),
             )
 
         if self.show_downloads and not self.direct_download:

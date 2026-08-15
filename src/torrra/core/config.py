@@ -136,6 +136,7 @@ class Config:
                 "max_retries": DEFAULT_MAX_RETRIES,
                 "use_cache": True,
                 "cache_ttl": DEFAULT_CACHE_TTL,
+                "select_files": True,
             }
         }
 

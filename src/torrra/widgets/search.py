@@ -135,15 +135,27 @@ class SearchContent(Vertical):
                         title="Torrent Opened",
                     )
             else:  # continue with libtorrent
+                from torrra.utils.download_flow import start_download
+
+                record = await start_download(
+                    self.app,
+                    magnet_uri=resolved_magnet_uri,
+                    title=self._selected_torrent.title,
+                    size=self._selected_torrent.size,
+                    source=self._selected_torrent.source,
+                )
+                if record is None:
+                    return
+
                 tm = get_torrent_manager()
-                tm.add_torrent(self._selected_torrent)
-                title = self._selected_torrent.title
+                tm.add_torrent(record)
+                title = record.title
                 short_title = (title[:30] + "...") if len(title) > 30 else title
                 self.notify(
                     f"Started downloading [b]{short_title}[/b]",
                     title="Download Started",
                 )
-                self.post_message(self.DownloadRequested(self._selected_torrent))
+                self.post_message(self.DownloadRequested(record))
 
     def on_input_submitted(self, event: Input.Submitted) -> None:
         query = event.value

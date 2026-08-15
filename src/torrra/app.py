@@ -8,6 +8,7 @@ from textual.types import CSSPathType
 
 from torrra._types import Indexer
 from torrra.core.config import get_config
+from torrra.screens.file_selection import FileSelectionResult
 from torrra.screens.home import HomeScreen
 from torrra.screens.theme_selector import ThemeSelectorScreen
 from torrra.screens.welcome import WelcomeScreen
@@ -78,6 +79,19 @@ class TorrraApp(App[None]):
 
     def action_switch_theme(self) -> None:
         self.push_screen(ThemeSelectorScreen())
+
+    @work(exclusive=True)
+    async def _run_file_selection(
+        self, magnet_uri: str, title: str
+    ) -> FileSelectionResult:
+        """Show the file-selection modal for a torrent awaiting metadata."""
+        from torrra.core.download import get_download_manager
+        from torrra.screens.file_selection import FileSelectionScreen
+
+        dm = get_download_manager()
+        return await self.push_screen_wait(
+            FileSelectionScreen(title, lambda: dm.wait_for_metadata(magnet_uri))
+        )
 
     @work(exclusive=True)
     async def _show_welcome_and_search(self) -> None:

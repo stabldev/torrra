@@ -92,6 +92,7 @@ torrra # default indexer will be used
 
 - Search with [`Jackett`](https://github.com/Jackett/Jackett) or [`Prowlarr`](https://github.com/Prowlarr/Prowlarr)
 - Download torrents directly with pause/resume support
+- Pick which files of a torrent to download, and manage them anytime with the built-in file manager
 - Beautiful and responsive TUI built with [`Textual`](https://textual.textualize.io/)
 - Customizable themes (dark, light, and more)
 - Smart config + opt-in caching for fast searches

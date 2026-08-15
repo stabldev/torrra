@@ -1,5 +1,6 @@
 from typing import ClassVar, cast
 
+from textual import work
 from textual.app import ComposeResult
 from textual.containers import Vertical
 from typing_extensions import override
@@ -25,6 +26,7 @@ class DownloadsContent(Vertical):
     BINDINGS: ClassVar[list[tuple[str, str]]] = [
         ("d", "delete_torrent"),
         ("D", "delete_torrent_with_data"),
+        ("f", "show_file_manager"),
     ]
 
     def __init__(self) -> None:
@@ -59,8 +61,9 @@ class DownloadsContent(Vertical):
         self._table.clear()
         self._table.border_title = f"all ({len(self._torrents)})"
 
+        # Torrents are already added (with their saved file selection) by
+        # HomeScreen.on_mount, so this view only renders the table.
         for idx, torrent in enumerate(self._torrents):
-            self._dm.add_torrent(torrent["magnet_uri"], is_paused=torrent["is_paused"])
             self._table.add_row(
                 str(idx + 1),
                 torrent["title"],
@@ -107,6 +110,48 @@ class DownloadsContent(Vertical):
 
     def action_delete_torrent_with_data(self) -> None:
         self._remove_selected_torrent(delete_files=True)
+
+    def action_show_file_manager(self) -> None:
+        if not self._selected_torrent:
+            self.notify(
+                "Select a torrent first",
+                title="No Torrent Selected",
+                severity="warning",
+            )
+            return
+        self._file_manager_worker = self._open_file_manager()
+
+    @work(exclusive=True)
+    async def _open_file_manager(self) -> None:
+        from torrra.screens.file_manager import FileManagerScreen
+
+        magnet_uri = self._selected_torrent["magnet_uri"]
+        title = self._selected_torrent["title"]
+        screen = FileManagerScreen(title, lambda: self._dm.get_file_details(magnet_uri))
+
+        result = await self.app.push_screen_wait(screen)
+        if result is None:
+            return
+
+        if not self._dm.prioritize_files(magnet_uri, set(result)):
+            self.notify(
+                "Could not apply file selection",
+                title="Apply Failed",
+                severity="error",
+            )
+            return
+
+        self._tm.update_torrent_selected_files(magnet_uri, result)
+        for torrent in self._torrents:
+            if torrent["magnet_uri"] == magnet_uri:
+                torrent["selected_files"] = result
+                break
+
+        short_title = (title[:50] + "...") if len(title) > 40 else title
+        self.notify(
+            f"Updated files for [b]{short_title}[/b]",
+            title="File Selection Applied",
+        )
 
     def _remove_selected_torrent(self, delete_files: bool = False) -> None:
         if not self._selected_torrent:
@@ -254,7 +299,7 @@ class DownloadsContent(Vertical):
 [b]Size:[/b] {size} - [b]Status:[/b] {state_text} - [b]Source:[/b] {current_torrent["source"]}
 [b]S/L:[/b] {status["seeders"]}/{status["leechers"]} - [b]Up:[/b] {up_speed} - [b]Down:[/b] {down_speed} - [b]ETA:[/b] {eta_text}
 
-[dim]Press 'p' to pause/resume, 'd' to delete, 'D' to delete w/ data, or 'esc' to close.[/dim]
+[dim]Press 'p' to pause/resume, 'f' to manage files, 'd' to delete, 'D' to delete w/ data, or 'esc' to close.[/dim]
 """
         # update details panel internal widgets
         self._details_panel.update_content(
