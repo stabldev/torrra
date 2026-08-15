@@ -480,7 +480,7 @@ name = "exceptiongroup"
 version = "1.3.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "typing-extensions", marker = "python_full_version < '3.11'" },
+    { name = "typing-extensions" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/0b/9f/a65090624ecf468cdca03533906e7c69ed7588582240cfe7cc9e770b50eb/exceptiongroup-1.3.0.tar.gz", hash = "sha256:b241f5885f560bc56a59ee63ca4c6a8bfa46ae4ad651af316d4e81817bb9fd88", size = 29749, upload-time = "2025-05-10T17:42:51.123Z" }
 wheels = [
@@ -702,69 +702,45 @@ wheels = [
 
 [[package]]
 name = "libtorrent"
-version = "2.0.11"
+version = "2.1.1"
 source = { registry = "https://pypi.org/simple" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ba/a5/29efe1dba2d0e6eb18ceab7875be8ae186da5dc5c08aeb8cfe9e7713d935/libtorrent-2.0.11-cp310-cp310-macosx_13_0_x86_64.whl", hash = "sha256:32abb3a0488d489f5d74a3c5fb164f0e445a9890af8d8bed5b617f5b145b3cf5", size = 5547129, upload-time = "2025-01-29T11:33:26.897Z" },
-    { url = "https://files.pythonhosted.org/packages/bd/82/a0741411bb1ed718a9fd4da7638aceb2d1a8cacadf11b4019239334ae511/libtorrent-2.0.11-cp310-cp310-macosx_14_0_arm64.whl", hash = "sha256:684d9a1f06d4437735ea7aa1efb744cf9c8be28bf54f033e854516b8640f3eb4", size = 5648784, upload-time = "2025-01-29T11:33:31.508Z" },
-    { url = "https://files.pythonhosted.org/packages/8b/62/24927c44925fe530236f1f668a21227321af0f1a19f932324500bb879acf/libtorrent-2.0.11-cp310-cp310-macosx_15_0_arm64.whl", hash = "sha256:6639904a349532bbd785344f83849cd03bfc671f272a6701fc994ec77eaa9230", size = 5647654, upload-time = "2025-01-29T11:33:33.991Z" },
-    { url = "https://files.pythonhosted.org/packages/13/31/4fa8ce41a45759e231e64af3c01fbaa390abc843aeaa7b2a05fd41df543f/libtorrent-2.0.11-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:932e519299442e8dcd1b85cec84170b967e05ebc048e6b91b3212de8276b4f51", size = 8259893, upload-time = "2025-01-29T11:33:36.153Z" },
-    { url = "https://files.pythonhosted.org/packages/f8/f3/dad03aa0cbfbbe57dcba7ac8ab4bdc5110d1559b1129ff1bf2dd9a715ec9/libtorrent-2.0.11-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:68d739dd51e5c2a0deb6822fdf4434113016fd942a70569813bfee3f1184a15b", size = 8519612, upload-time = "2025-01-29T11:33:39.518Z" },
-    { url = "https://files.pythonhosted.org/packages/ad/06/a8adc75b71c179fd81d4b58347c2ce58a296952e358cb9eb0aeb9d2a34ed/libtorrent-2.0.11-cp310-cp310-musllinux_1_2_aarch64.whl", hash = "sha256:1a09b0287ea545b3bc31552792db31d3c8999b179b0dbae6090b7986913d97ed", size = 12086901, upload-time = "2025-01-29T11:33:43.519Z" },
-    { url = "https://files.pythonhosted.org/packages/ac/1b/8e7ceb19bedc19a6474b52f18ad17643bb84307d3d97e47f10ca2b078df0/libtorrent-2.0.11-cp310-cp310-musllinux_1_2_x86_64.whl", hash = "sha256:5f2354c596bd85b212c81daa84ea017b87fbe35aafbf167eb3b73d4be10a8e52", size = 12062955, upload-time = "2025-01-29T11:33:48.01Z" },
-    { url = "https://files.pythonhosted.org/packages/58/d1/6074ddb437719d92059e5294266a85c0a996e17bbc7ac0cec8993f204e91/libtorrent-2.0.11-cp310-cp310-win32.whl", hash = "sha256:f29bbf659272c46c14b333c945e38282907c6c1784fd73af370fa475361bff84", size = 1772634, upload-time = "2025-01-29T11:33:51.782Z" },
-    { url = "https://files.pythonhosted.org/packages/3a/d1/bf1317d4c604078a23535701ca666cc7df35b2587756965a8ccbf10f63f7/libtorrent-2.0.11-cp310-cp310-win_amd64.whl", hash = "sha256:cf681e540d9c71d580262b64573be67ffe98e85a2fa22cf68cdbc9766878a7ef", size = 1969854, upload-time = "2025-01-29T11:33:54.65Z" },
-    { url = "https://files.pythonhosted.org/packages/2a/32/11c1343e3f64859acba2448d1fc857af94b336f7e857e607abf24c191eb3/libtorrent-2.0.11-cp311-cp311-macosx_13_0_x86_64.whl", hash = "sha256:5041f69119a4c0dc2c586a4cfa72b75bd3591561369da97abaa6fab9ed8bb0db", size = 5547062, upload-time = "2025-01-29T11:33:57.4Z" },
-    { url = "https://files.pythonhosted.org/packages/a0/e4/e472f2d0e8623399dbfcf0048f68f90760520bb08665c0cadc0a16cda346/libtorrent-2.0.11-cp311-cp311-macosx_14_0_arm64.whl", hash = "sha256:4463ffa568cbfcc348098f15c7cfc8afccdbae2a63d929de9c45a929a0865b56", size = 5648816, upload-time = "2025-01-29T11:34:00.5Z" },
-    { url = "https://files.pythonhosted.org/packages/2b/96/15a4c4ebc9a86b7bb4d348c1a7064710adfb5d379419e1879f0a6df3f314/libtorrent-2.0.11-cp311-cp311-macosx_15_0_arm64.whl", hash = "sha256:93627846dd1567cbd961b23e4314d1661a1c64797338518837a35c5bb702a61c", size = 5647624, upload-time = "2025-01-29T11:34:03.522Z" },
-    { url = "https://files.pythonhosted.org/packages/41/83/60d5f9e18be1b4d251e2135c14294ca1893ee3074130542f4b72751b6642/libtorrent-2.0.11-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:e92f5154527171ab48aa13116d6571fb167cde859b3169e8c28ae86989f301fd", size = 8259209, upload-time = "2025-01-29T11:34:07.105Z" },
-    { url = "https://files.pythonhosted.org/packages/c3/9f/a6c9cb4eb88a0223de83396383c503fcec8d22ee85aa7452b0b74101219c/libtorrent-2.0.11-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:ffc0a821ea9df5ce33efcd9c08f34fcf7302d0eaa772cf12d9245c69fed32aeb", size = 8518820, upload-time = "2025-01-29T11:34:10.64Z" },
-    { url = "https://files.pythonhosted.org/packages/e2/63/b688df15c74d86bf609368ee4b8525b8c2654fc7d187bbc477dd2a8329fd/libtorrent-2.0.11-cp311-cp311-musllinux_1_2_aarch64.whl", hash = "sha256:ac9ecf07a155fb2c2ac3da6596ca71d4bc3886e17bff1ab7c7594e2b663f99f1", size = 12086823, upload-time = "2025-01-29T11:34:14.616Z" },
-    { url = "https://files.pythonhosted.org/packages/d0/5b/e356a04a76b0df140d5c46dbc11484d100d5dc1957cd2d4890d61c3f84aa/libtorrent-2.0.11-cp311-cp311-musllinux_1_2_x86_64.whl", hash = "sha256:a61a7b203d38a43db8a895437deef6c9b601fbb3444b972a8b2f4c7dac8ede7b", size = 12062529, upload-time = "2025-01-29T11:34:17.926Z" },
-    { url = "https://files.pythonhosted.org/packages/3c/7d/ed8ac3426de0a5e8883c76747bc0cc280fc2ea78d7d75f49d85313cd408c/libtorrent-2.0.11-cp311-cp311-win32.whl", hash = "sha256:285e9e14771a3a0f4a49ad5c8e31f18a123e3a770d1f66b1376f72cc07bace99", size = 1772105, upload-time = "2025-01-29T11:34:20.825Z" },
-    { url = "https://files.pythonhosted.org/packages/aa/5b/30713e1a9bf5768cdfcdb6e22187f670cd39a9c3d42cf0e0efcbc8d9545e/libtorrent-2.0.11-cp311-cp311-win_amd64.whl", hash = "sha256:1c6520d43593da16aaac7dd49e5778be59a4f975e2566eb571779c5527433b24", size = 1969476, upload-time = "2025-01-29T11:34:24.691Z" },
-    { url = "https://files.pythonhosted.org/packages/31/1b/b0cd5352b15df6e1fe5dcc3d900da3a09f4738b9558f02ea87f98404fe05/libtorrent-2.0.11-cp312-cp312-macosx_13_0_x86_64.whl", hash = "sha256:392f8879911efc7c87f3bc7d6e2cff42be5c17abfc77d766f56083d07c9b6c8b", size = 5555225, upload-time = "2025-01-29T11:34:27.124Z" },
-    { url = "https://files.pythonhosted.org/packages/46/72/ccc462046630f99087ddbc690cfe9f1aab597da8093b91a1928c5f47a396/libtorrent-2.0.11-cp312-cp312-macosx_14_0_arm64.whl", hash = "sha256:e372dd7bf042296365d42b4bdf266f58626066f6ceb62bbd8ac23b376ab26d30", size = 5654166, upload-time = "2025-01-29T11:34:29.393Z" },
-    { url = "https://files.pythonhosted.org/packages/57/5a/5329d8dc6ccd45c91272ecb3fc9c7c2b01b683335ebb4dfc204ec934ab4b/libtorrent-2.0.11-cp312-cp312-macosx_15_0_arm64.whl", hash = "sha256:31e2a990a055cefb296ed52d2998bea406ee4db538df8e919af9c6878f4d4c5b", size = 5653459, upload-time = "2025-01-29T11:34:32.611Z" },
-    { url = "https://files.pythonhosted.org/packages/37/99/a4e5711fa26882165e653dd3c661ce1b3542ac9e51c3b660bfd134b43d36/libtorrent-2.0.11-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:fea392e3e0b2f5e84000ec87fd2b3fa11477216875809737ce00c9ba07db4c55", size = 8251384, upload-time = "2025-01-29T11:34:35.699Z" },
-    { url = "https://files.pythonhosted.org/packages/58/bd/475332a05b25de3b6d350144d8c5bfe74c23412c8e7f34dff43f8ded2cdb/libtorrent-2.0.11-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:fbf4418471a96158d995c4573697ce2dcf27ca42d0b03c3bf97b0165015bf641", size = 8514680, upload-time = "2025-01-29T11:34:39.211Z" },
-    { url = "https://files.pythonhosted.org/packages/dc/24/178cd82b11e0c989d24123cb0512d15164f7447ffb05f6a631818bd00f68/libtorrent-2.0.11-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:db0bd26b803c21f3d02a455c9521c8aef4418c457b5751493cd464ca336ae11e", size = 12076821, upload-time = "2025-01-29T11:34:42.273Z" },
-    { url = "https://files.pythonhosted.org/packages/ae/a0/f8c79175be62c66e486d5ec72b4d318191583e30fa52b530add07562bc39/libtorrent-2.0.11-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:545bf693844477c42e8d24e0d461c3bec4ab3a71914cb6aea105044994e40a89", size = 12065535, upload-time = "2025-01-29T11:34:46.64Z" },
-    { url = "https://files.pythonhosted.org/packages/09/75/cf1988d3fe2f933e858449bc3a55c3fa3edba4292f8d3d15a777e1afb568/libtorrent-2.0.11-cp312-cp312-win32.whl", hash = "sha256:00c626742e03447703bc726bb430a0f3e2f0661ae5a5cd06f5d7cd1b81eb92c2", size = 1772291, upload-time = "2025-01-29T11:34:49.452Z" },
-    { url = "https://files.pythonhosted.org/packages/7a/f5/a0e16855d73ea8dc33351a12dfa16dcad12bbacfc2e6632247484fbbed82/libtorrent-2.0.11-cp312-cp312-win_amd64.whl", hash = "sha256:5b8a9a5943c304d1c8093d2a6ec222d81dd84d080861cd5aaaa040e31034417a", size = 1973825, upload-time = "2025-01-29T11:34:54.371Z" },
-    { url = "https://files.pythonhosted.org/packages/92/74/b689c070c1649c69b6f70c27cd9f3418fb3cba7532b6b5f857c1689edcdc/libtorrent-2.0.11-cp313-cp313-macosx_13_0_x86_64.whl", hash = "sha256:f4489732bbc44114c7fb1893b71c578052d1aca352852002938b23ac8a6fb5c3", size = 5555119, upload-time = "2025-01-29T11:34:57.644Z" },
-    { url = "https://files.pythonhosted.org/packages/c1/b8/24e072c2270fc0193332987f1c3082a1cc8276bc462167b3e45fa0bb9a07/libtorrent-2.0.11-cp313-cp313-macosx_14_0_arm64.whl", hash = "sha256:758662c88a186c6018e4062d1b1b5e58ed55e17189ad4a7389c87b8b2b5efeb4", size = 5654645, upload-time = "2025-01-29T11:35:00.79Z" },
-    { url = "https://files.pythonhosted.org/packages/07/62/5e3bbebfcf19c963f3f960b8a28ad2bf8cad1e56d8dce3ff9387084ef705/libtorrent-2.0.11-cp313-cp313-macosx_15_0_arm64.whl", hash = "sha256:55aa67cdc8cbf777e41998d5432a3ab01f198c955ec6d2fb14c500b309db3f37", size = 5653493, upload-time = "2025-01-29T11:35:03.139Z" },
-    { url = "https://files.pythonhosted.org/packages/5c/85/e067ca5544e79525b80a7a986cb58e28977f274c4f341d1294c0ea35d7c7/libtorrent-2.0.11-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:474e792c52319cc918a007aa61cb34fb7f9236fa6c9603953e8c0fb3e6d922c7", size = 8251482, upload-time = "2025-01-29T11:35:05.522Z" },
-    { url = "https://files.pythonhosted.org/packages/a4/4c/86d834a8bbdd34276e4d87400d105ddab1dd4b8938f2c1229accc03a5b0d/libtorrent-2.0.11-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:e234f665c987262d4102f6d2e099d76b12dfa20bcc77b77891184b075ab84ea8", size = 8514771, upload-time = "2025-01-29T11:35:09.604Z" },
-    { url = "https://files.pythonhosted.org/packages/f6/7e/e369802ae56bad9de629d9ad7c719dc4328aecf9aac8f61d33755d20b269/libtorrent-2.0.11-cp313-cp313-musllinux_1_2_aarch64.whl", hash = "sha256:8be0e27f40594bfee42e60e7785261834fdaf938267dceee8a08eae08a12a3c2", size = 12076824, upload-time = "2025-01-29T11:35:12.773Z" },
-    { url = "https://files.pythonhosted.org/packages/51/c6/b78e0f1515e65ca1a22383124cd867a1c9eee40053e7971064dd937c4802/libtorrent-2.0.11-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:51daa58d0958ac99d88a1749d6848c6023ea899da98e503b12a1a311189d79fd", size = 12065489, upload-time = "2025-01-29T11:35:16.533Z" },
-    { url = "https://files.pythonhosted.org/packages/db/4a/cac02c0d907ec37f22131207f69e78a97045d8e8cab6c6b0a29647dbf732/libtorrent-2.0.11-cp313-cp313-win32.whl", hash = "sha256:63fcb829d2b9fed566771426c7b1473a4acb7ccb4957ef07793b28de8468cd3e", size = 1772278, upload-time = "2025-01-29T11:35:19.333Z" },
-    { url = "https://files.pythonhosted.org/packages/3d/7b/49ebb7df766398d49d59335481dafd7f4a3e8669a1aee5a6d22f9338b09c/libtorrent-2.0.11-cp313-cp313-win_amd64.whl", hash = "sha256:f72f0075b84aa18d25ee3ab3c39ba5193777d34d016c9a38294c92ffc60f6225", size = 1973890, upload-time = "2025-01-29T11:35:22.157Z" },
-]
-
-[[package]]
-name = "libtorrent-stubs"
-version = "0.0.1"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "libtorrent" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/56/a2/9132b06461b7fdb0a283df03ff6dcbe5bc21dcccc84b722600ae0011afe6/libtorrent_stubs-0.0.1.tar.gz", hash = "sha256:1fe701c23b4fb1f68e6abd7118e5f2fae10a3ce13d5ad22d277d1b425351afa4", size = 13468, upload-time = "2025-07-23T06:31:30.711Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/f6/e6/964ecb0531e2d375e4bf4654c009f5f85702cd4dabcbe647c320188729b6/libtorrent_stubs-0.0.1-py3-none-any.whl", hash = "sha256:43fd9ce83959d1aeb2b592e25a9ae5ed0d15b488223e37b7cd4c53b6f2fceaf1", size = 14310, upload-time = "2025-07-23T06:31:29.811Z" },
-]
-
-[[package]]
-name = "libtorrent-windows-dll"
-version = "0.0.3"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "libtorrent" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/73/06/cb2fd5a6948aa1936ec6400c2478e04f65faaee6df750a5201026b419c11/libtorrent_windows_dll-0.0.3.tar.gz", hash = "sha256:84f0f4f8d80f36a8769eeed8b85aa03ed1a961fd44ff597d60771f63f77135d8", size = 1524559, upload-time = "2025-07-08T19:05:32.488Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/88/cf/0293a8daea4a0e89044f3f7289930046bf139d118b62bbe2d47b78a0bc9b/libtorrent_windows_dll-0.0.3-py3-none-any.whl", hash = "sha256:eac387522f70286fcad688c78c3f8e428c43fef3bd48f493bc4fb480d68ed366", size = 1532907, upload-time = "2025-07-08T19:05:30.741Z" },
+    { url = "https://files.pythonhosted.org/packages/2f/f6/eb37599b848f0ade3e7c43f43c70b93d4f699cc24f41a2736ee4cca92778/libtorrent-2.1.1-cp310-cp310-macosx_14_0_arm64.whl", hash = "sha256:c271a030e853fa9b95de93e119a555959df3f94396f58c106af0c11c28a35525", size = 7411724, upload-time = "2026-08-10T17:37:18.537Z" },
+    { url = "https://files.pythonhosted.org/packages/ac/9a/16c41f86d04171aa47786fcf6eb6cdd9037a7d9921927e572c1410acd2a9/libtorrent-2.1.1-cp310-cp310-macosx_15_0_arm64.whl", hash = "sha256:13647413ae000da744f9059fe028b1bad33c8fa49943af58b8c12c2bfca27d36", size = 7366616, upload-time = "2026-08-10T17:37:20.633Z" },
+    { url = "https://files.pythonhosted.org/packages/85/fd/62d1a39b365e570115c941f67c27b3ac51dfa0e4a50d826053d2c51973ae/libtorrent-2.1.1-cp310-cp310-macosx_15_0_x86_64.whl", hash = "sha256:c69b377ec0411013cd02099b8f76bab42ca42b607b439d4a0176867af22537e2", size = 7382735, upload-time = "2026-08-10T17:37:22.264Z" },
+    { url = "https://files.pythonhosted.org/packages/49/16/f3707a1e411970457eda472d97d700c48eeec3ecc29ab8b61a955db92f6f/libtorrent-2.1.1-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:b400fb2c5beefd9d3931a5cd64366c4e18b9a1734243f59da0192ad03fda8509", size = 8439114, upload-time = "2026-08-10T17:37:23.814Z" },
+    { url = "https://files.pythonhosted.org/packages/a4/e7/55a78f48cb9755812a5e39effbd17bb9c0c797a444118b7821857d6b4244/libtorrent-2.1.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:d54a0de00d98261f90d970d7572b024a0fc90939e241df61dd134513801ff8ac", size = 8248713, upload-time = "2026-08-10T17:37:25.722Z" },
+    { url = "https://files.pythonhosted.org/packages/80/07/cc7d7898c18487598f46608163bdac340a6e67ab9dde9ce593ae96c261c4/libtorrent-2.1.1-cp310-cp310-musllinux_1_2_aarch64.whl", hash = "sha256:0130072eaef39ec94ee144ab45fc7f2479a2930c47902e79b0efa50f097c0090", size = 14173024, upload-time = "2026-08-10T17:37:27.377Z" },
+    { url = "https://files.pythonhosted.org/packages/95/8c/212aba989a5763d455175ca4e46ab9b392b86026009f1fd51ea989d94237/libtorrent-2.1.1-cp310-cp310-musllinux_1_2_x86_64.whl", hash = "sha256:b9286e5dacc069427016780e324422a503ac67312f2671746d68327dd8481b17", size = 14301619, upload-time = "2026-08-10T17:37:29.482Z" },
+    { url = "https://files.pythonhosted.org/packages/fc/d6/3d17f78c2b383fd6e61986a2c582bc8f2a3dff294ff31c99feec13ade513/libtorrent-2.1.1-cp310-cp310-win32.whl", hash = "sha256:c60dd3fba8a0953d716933dcf6a7df676816941d97d414532e5cdf16f894f3c2", size = 4325075, upload-time = "2026-08-10T17:37:31.629Z" },
+    { url = "https://files.pythonhosted.org/packages/bd/cd/c0ced997dba50d32911b18b52e768e815c0614f138bf0f31e1e98f52e0a4/libtorrent-2.1.1-cp310-cp310-win_amd64.whl", hash = "sha256:f8d77dd8129c0f7e6e182b503fba248ac3af9c851a982be61f05665107b82d15", size = 5014752, upload-time = "2026-08-10T17:37:32.911Z" },
+    { url = "https://files.pythonhosted.org/packages/19/2f/cb6f0bdd846fb72acbd0b4c363c16b36e56c6101f896b30ec865395c4ddd/libtorrent-2.1.1-cp311-cp311-macosx_14_0_arm64.whl", hash = "sha256:5c951beaadc26d00dbf49051e2fd4ec5d714c2c1a727870c7a2fefe8d047c1f7", size = 7411638, upload-time = "2026-08-10T17:37:34.324Z" },
+    { url = "https://files.pythonhosted.org/packages/c5/95/bd4df0d598e69ff4c3075a04cd04489ba787511b3921b37294a3848453ef/libtorrent-2.1.1-cp311-cp311-macosx_15_0_arm64.whl", hash = "sha256:068a693e4aa744b41c0fcb7bac80befff8182981462f5e9b33c73dfe1c13704b", size = 7366596, upload-time = "2026-08-10T17:37:35.902Z" },
+    { url = "https://files.pythonhosted.org/packages/3c/8d/4f52fd7130ffa932b2b459b1fcebefeab1bdc4d1c5df89961afba324d9eb/libtorrent-2.1.1-cp311-cp311-macosx_15_0_x86_64.whl", hash = "sha256:ea022e090e164365f81dee4f68be5d3ff03401c5f2d926c7192e33ce4280c0d6", size = 7382767, upload-time = "2026-08-10T17:37:37.539Z" },
+    { url = "https://files.pythonhosted.org/packages/a7/f2/ca63e2b43b3c7301c2df41a7882466eff189869f30443b68722ed0c8949b/libtorrent-2.1.1-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:2841a67cf5ca155704d04076749bb84562f6b851b9a5301d234d132544f2f076", size = 8437400, upload-time = "2026-08-10T17:37:39.034Z" },
+    { url = "https://files.pythonhosted.org/packages/cc/04/821365b3523973b749edeee73cc12215fe20523fd98e3169c6c8f5a77dd1/libtorrent-2.1.1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:36c823ddd89283cd37f03a8cc0dae17f096ba45247e029713ee0f8f00b8ecf08", size = 8247792, upload-time = "2026-08-10T17:37:40.953Z" },
+    { url = "https://files.pythonhosted.org/packages/b9/0c/ad74117479cafc5d593ead28ad27afdc2529b55df7a0ca208f7bf2c08bfd/libtorrent-2.1.1-cp311-cp311-musllinux_1_2_aarch64.whl", hash = "sha256:f5dcce4334a9e933d6544132f931c40f70ac2f9b651a793c76e52aff17011a49", size = 14173229, upload-time = "2026-08-10T17:37:42.741Z" },
+    { url = "https://files.pythonhosted.org/packages/4e/dd/9ceb4dcc723f9123c1054099ad5b7ed1a099fc8aa38fb8721168fea1308f/libtorrent-2.1.1-cp311-cp311-musllinux_1_2_x86_64.whl", hash = "sha256:c7ca5ac707c974639b5047d44cdeec401c360385d6b638158c7390087be08ec2", size = 14301275, upload-time = "2026-08-10T17:37:44.888Z" },
+    { url = "https://files.pythonhosted.org/packages/c5/30/e54f0adf658a930ef7323e8c4e37a1e175c6382baeaf02beab30a28d6c67/libtorrent-2.1.1-cp311-cp311-win32.whl", hash = "sha256:9c2061d1062b18c2af35bee667023b9e88ce192bd2e19a347be2930d93b63d03", size = 4325109, upload-time = "2026-08-10T17:37:46.732Z" },
+    { url = "https://files.pythonhosted.org/packages/7b/ba/9185569da1602bd53e01ff4a7a877b8cb8dbf519f1fc4bbdf56646d03ef5/libtorrent-2.1.1-cp311-cp311-win_amd64.whl", hash = "sha256:1db0d91cc90f6f8b0deef088ad9366d534b98dce9399f76de0f1eecefb56bff7", size = 5014796, upload-time = "2026-08-10T17:37:48.046Z" },
+    { url = "https://files.pythonhosted.org/packages/c2/10/77694ec3f50d3678cf2a7143f380f8a043ee62f653bfce8977ce9b307ea8/libtorrent-2.1.1-cp312-cp312-macosx_14_0_arm64.whl", hash = "sha256:768375f62631acd298a118d6e4f3e288af8220880d6432a49125f0539ce446d4", size = 7418245, upload-time = "2026-08-10T17:37:49.616Z" },
+    { url = "https://files.pythonhosted.org/packages/f5/78/bad3873f65ba26586cd380a81ed002498e74848db92b0bec1676768c105b/libtorrent-2.1.1-cp312-cp312-macosx_15_0_arm64.whl", hash = "sha256:188aa0f03a2d6e967956a45534cbfd04d81641deb7b92b816e56723fc7ae5078", size = 7372771, upload-time = "2026-08-10T17:37:51.311Z" },
+    { url = "https://files.pythonhosted.org/packages/6c/78/ca385948e656f2307b01aa2e139df4c1828e7645d5a1f8ffe09fbcd35bb3/libtorrent-2.1.1-cp312-cp312-macosx_15_0_x86_64.whl", hash = "sha256:c8d843dc910a31e5cfc2b8e3d1bd5b7ae8b02a1100eeb19764157b7a5ed81308", size = 7392110, upload-time = "2026-08-10T17:37:53.162Z" },
+    { url = "https://files.pythonhosted.org/packages/21/e2/105cab89d59a94bbaaac322bee2f507eda0b5af32756deb333112dfb58a5/libtorrent-2.1.1-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:580b07d04b30c9d85f73ceaab5184035e815ee4ff3f37ba5b8f887292ae949f1", size = 8423265, upload-time = "2026-08-10T17:37:54.705Z" },
+    { url = "https://files.pythonhosted.org/packages/0c/58/345ed75b4b4d908b488f9c5cf46dad249b3940be1c5ee16c38a5d87f2e85/libtorrent-2.1.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:90c11511a67c118e2fd6043c717d42663e60da03ab8d4851b2ad5a500a5e0134", size = 8245815, upload-time = "2026-08-10T17:37:56.411Z" },
+    { url = "https://files.pythonhosted.org/packages/f2/96/d623ecc609eafcdaf78e12410b3a81dcd543fc94a73e9db11d59d25524d1/libtorrent-2.1.1-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:08ce0c0275e60ec1aa0d13f46099e41ddc184273af175cc0a7d3812c31bc9134", size = 14159891, upload-time = "2026-08-10T17:37:58.206Z" },
+    { url = "https://files.pythonhosted.org/packages/36/65/0bcc5613669084b5cfe53fa399176a0a6cc809f7319859d95d216677c5b2/libtorrent-2.1.1-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:0a2bc058e53e11ef38b1dafbdb8595b5a1d6c7881c0b04fd01afae99e2845be5", size = 14301049, upload-time = "2026-08-10T17:38:00.299Z" },
+    { url = "https://files.pythonhosted.org/packages/51/dc/04c867f00154fb679d704293c9fb1bf11824ca906dbba0a9df352d24def7/libtorrent-2.1.1-cp312-cp312-win32.whl", hash = "sha256:2845d60a35ea1a97a96c70c5817d898c0d9fe5e50fe1cd86d3ca995b3e1afa0d", size = 4323872, upload-time = "2026-08-10T17:38:02.333Z" },
+    { url = "https://files.pythonhosted.org/packages/5a/8f/a262d268098f58f17a221c8b8c632eaf187bc810b4cf2a633937b3c6bd3e/libtorrent-2.1.1-cp312-cp312-win_amd64.whl", hash = "sha256:493954405d15f14b9d9f9b1762ae78e7fecc5a44699f74cb433a9800fa3a7b45", size = 5018631, upload-time = "2026-08-10T17:38:03.893Z" },
+    { url = "https://files.pythonhosted.org/packages/8b/31/e38b29f397ef5ba615136a9ae1c9795d71d3d5856c43c12a20aab058e513/libtorrent-2.1.1-cp313-cp313-macosx_14_0_arm64.whl", hash = "sha256:94767ff3e8bf4fb35cff3f638188ba5ca69dec331bf3b96254289bee635102a1", size = 7418386, upload-time = "2026-08-10T17:38:05.307Z" },
+    { url = "https://files.pythonhosted.org/packages/56/e7/8c92ca04c63f6e909f768dceae64559b9e73ed615a084bc04ca53a3ef60d/libtorrent-2.1.1-cp313-cp313-macosx_15_0_arm64.whl", hash = "sha256:bae8a30fa1b4988881124c76867f8e61f9887a42e55638693d7a1b0038bdebe8", size = 7372882, upload-time = "2026-08-10T17:38:06.77Z" },
+    { url = "https://files.pythonhosted.org/packages/5d/3f/a8b5ac66bc80f143b4ea734dbc6f19d9d80dd04ca1a078fda8c8772faae2/libtorrent-2.1.1-cp313-cp313-macosx_15_0_x86_64.whl", hash = "sha256:baea3ba15ad692d8d87b6cf6685c91611f0ce0367ce6213c4ce52f20e62a5b8c", size = 7391859, upload-time = "2026-08-10T17:38:08.303Z" },
+    { url = "https://files.pythonhosted.org/packages/f0/2e/674ea2526d6bf8c3728848eeefc0b66e8ae3cd8d01e67317bac3c005a4ce/libtorrent-2.1.1-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:d456d5c772e64267211eca995f5a61cfa9e476de9494b300b42fd6fdf71675ca", size = 8423724, upload-time = "2026-08-10T17:38:09.887Z" },
+    { url = "https://files.pythonhosted.org/packages/7b/e4/ef1bacf71afb4feba617aebe699ad75e9ae36f025f047fd078df3730c45e/libtorrent-2.1.1-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:c81d768e04915c1627ac108a6abfa64c740bdd1a1634d5fffcdc56ed6e6d915f", size = 8246041, upload-time = "2026-08-10T17:38:11.701Z" },
+    { url = "https://files.pythonhosted.org/packages/8f/bc/d35c775bb7b111623d7402e8c589353642bd0c474a07d50a985aa35612cc/libtorrent-2.1.1-cp313-cp313-musllinux_1_2_aarch64.whl", hash = "sha256:f4104e121fd20949ea681abb63377de5dcdbbeda68f0d27ceb074b24877ddaa9", size = 14159928, upload-time = "2026-08-10T17:38:13.604Z" },
+    { url = "https://files.pythonhosted.org/packages/7d/02/42a632b930a61c96a4aed9ca3e451ed61a46ef19ef9d8d31e95772c624ba/libtorrent-2.1.1-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:98a0cccb5da53e855c8ea6d8b06f190f05de3219732882a1cd2643df15faa22a", size = 14301102, upload-time = "2026-08-10T17:38:15.511Z" },
+    { url = "https://files.pythonhosted.org/packages/c2/5b/b84a328fe45983ff2f6a77d6d466ad78d39127894f0fd6f44bd64269fffa/libtorrent-2.1.1-cp313-cp313-win32.whl", hash = "sha256:ee9030a6062b671a71ce1bf873e3b62481b7ef9abbe6bce1768c2efb8426f8f8", size = 4323886, upload-time = "2026-08-10T17:38:18.005Z" },
+    { url = "https://files.pythonhosted.org/packages/f0/2b/b843874837440dadb6d6cde2374a311367efdb40f86375de46cf9a0e59ea/libtorrent-2.1.1-cp313-cp313-win_amd64.whl", hash = "sha256:fa11aa801d5b9184f067f559c465d3074a4e878d9c671b00dd4930d6dfce2b46", size = 5018669, upload-time = "2026-08-10T17:38:19.403Z" },
 ]
 
 [[package]]
@@ -1494,23 +1470,23 @@ resolution-markers = [
     "python_full_version < '3.11'",
 ]
 dependencies = [
-    { name = "alabaster", marker = "python_full_version < '3.11'" },
-    { name = "babel", marker = "python_full_version < '3.11'" },
-    { name = "colorama", marker = "python_full_version < '3.11' and sys_platform == 'win32'" },
-    { name = "docutils", marker = "python_full_version < '3.11'" },
-    { name = "imagesize", marker = "python_full_version < '3.11'" },
-    { name = "jinja2", marker = "python_full_version < '3.11'" },
-    { name = "packaging", marker = "python_full_version < '3.11'" },
-    { name = "pygments", marker = "python_full_version < '3.11'" },
-    { name = "requests", marker = "python_full_version < '3.11'" },
-    { name = "snowballstemmer", marker = "python_full_version < '3.11'" },
-    { name = "sphinxcontrib-applehelp", marker = "python_full_version < '3.11'" },
-    { name = "sphinxcontrib-devhelp", marker = "python_full_version < '3.11'" },
-    { name = "sphinxcontrib-htmlhelp", marker = "python_full_version < '3.11'" },
-    { name = "sphinxcontrib-jsmath", marker = "python_full_version < '3.11'" },
-    { name = "sphinxcontrib-qthelp", marker = "python_full_version < '3.11'" },
-    { name = "sphinxcontrib-serializinghtml", marker = "python_full_version < '3.11'" },
-    { name = "tomli", marker = "python_full_version < '3.11'" },
+    { name = "alabaster" },
+    { name = "babel" },
+    { name = "colorama", marker = "sys_platform == 'win32'" },
+    { name = "docutils" },
+    { name = "imagesize" },
+    { name = "jinja2" },
+    { name = "packaging" },
+    { name = "pygments" },
+    { name = "requests" },
+    { name = "snowballstemmer" },
+    { name = "sphinxcontrib-applehelp" },
+    { name = "sphinxcontrib-devhelp" },
+    { name = "sphinxcontrib-htmlhelp" },
+    { name = "sphinxcontrib-jsmath" },
+    { name = "sphinxcontrib-qthelp" },
+    { name = "sphinxcontrib-serializinghtml" },
+    { name = "tomli" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/6f/6d/be0b61178fe2cdcb67e2a92fc9ebb488e3c51c4f74a36a7824c0adf23425/sphinx-8.1.3.tar.gz", hash = "sha256:43c1911eecb0d3e161ad78611bc905d1ad0e523e4ddc202a58a821773dc4c927", size = 8184611, upload-time = "2024-10-13T20:27:13.93Z" }
 wheels = [
@@ -1525,23 +1501,23 @@ resolution-markers = [
     "python_full_version >= '3.11'",
 ]
 dependencies = [
-    { name = "alabaster", marker = "python_full_version >= '3.11'" },
-    { name = "babel", marker = "python_full_version >= '3.11'" },
-    { name = "colorama", marker = "python_full_version >= '3.11' and sys_platform == 'win32'" },
-    { name = "docutils", marker = "python_full_version >= '3.11'" },
-    { name = "imagesize", marker = "python_full_version >= '3.11'" },
-    { name = "jinja2", marker = "python_full_version >= '3.11'" },
-    { name = "packaging", marker = "python_full_version >= '3.11'" },
-    { name = "pygments", marker = "python_full_version >= '3.11'" },
-    { name = "requests", marker = "python_full_version >= '3.11'" },
-    { name = "roman-numerals-py", marker = "python_full_version >= '3.11'" },
-    { name = "snowballstemmer", marker = "python_full_version >= '3.11'" },
-    { name = "sphinxcontrib-applehelp", marker = "python_full_version >= '3.11'" },
-    { name = "sphinxcontrib-devhelp", marker = "python_full_version >= '3.11'" },
-    { name = "sphinxcontrib-htmlhelp", marker = "python_full_version >= '3.11'" },
-    { name = "sphinxcontrib-jsmath", marker = "python_full_version >= '3.11'" },
-    { name = "sphinxcontrib-qthelp", marker = "python_full_version >= '3.11'" },
-    { name = "sphinxcontrib-serializinghtml", marker = "python_full_version >= '3.11'" },
+    { name = "alabaster" },
+    { name = "babel" },
+    { name = "colorama", marker = "sys_platform == 'win32'" },
+    { name = "docutils" },
+    { name = "imagesize" },
+    { name = "jinja2" },
+    { name = "packaging" },
+    { name = "pygments" },
+    { name = "requests" },
+    { name = "roman-numerals-py" },
+    { name = "snowballstemmer" },
+    { name = "sphinxcontrib-applehelp" },
+    { name = "sphinxcontrib-devhelp" },
+    { name = "sphinxcontrib-htmlhelp" },
+    { name = "sphinxcontrib-jsmath" },
+    { name = "sphinxcontrib-qthelp" },
+    { name = "sphinxcontrib-serializinghtml" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/38/ad/4360e50ed56cb483667b8e6dadf2d3fda62359593faabbe749a27c4eaca6/sphinx-8.2.3.tar.gz", hash = "sha256:398ad29dee7f63a75888314e9424d40f52ce5a6a87ae88e7071e80af296ec348", size = 8321876, upload-time = "2025-03-02T22:31:59.658Z" }
 wheels = [
@@ -1757,7 +1733,6 @@ dependencies = [
     { name = "diskcache" },
     { name = "httpx" },
     { name = "libtorrent" },
-    { name = "libtorrent-windows-dll" },
     { name = "platformdirs" },
     { name = "textual" },
     { name = "tomli", marker = "python_full_version < '3.11'" },
@@ -1775,7 +1750,6 @@ docs = [
 
 [package.dev-dependencies]
 dev = [
-    { name = "libtorrent-stubs" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
@@ -1789,8 +1763,7 @@ requires-dist = [
     { name = "click", specifier = ">=8.3.0" },
     { name = "diskcache", specifier = ">=5.6.3" },
     { name = "httpx", specifier = ">=0.28.1" },
-    { name = "libtorrent", specifier = ">=2.0.11" },
-    { name = "libtorrent-windows-dll", specifier = ">=0.0.3" },
+    { name = "libtorrent", specifier = ">=2.1.1" },
     { name = "myst-parser", marker = "extra == 'docs'", specifier = ">=4.0.1" },
     { name = "platformdirs", specifier = ">=4.5.0" },
     { name = "qiskit-sphinx-theme", marker = "extra == 'docs'", specifier = ">=2.0.0" },
@@ -1804,7 +1777,6 @@ provides-extras = ["docs"]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "libtorrent-stubs", specifier = ">=0.0.1" },
     { name = "pytest", specifier = ">=9.0.1" },
     { name = "pytest-asyncio", specifier = ">=1.3.0" },
     { name = "pytest-cov", specifier = ">=7.0.0" },
