@@ -1,3 +1,6 @@
+from itertools import pairwise
+
+
 def human_readable_size(size_bytes: float, short: bool = False) -> str:
     if not short:
         units = ["B", "KB", "MB", "GB", "TB"]
@@ -35,12 +38,10 @@ def human_readable_eta(seconds: float | None, is_seeding: bool = False) -> str:
     hours, remainder = divmod(remainder, 3600)
     minutes, secs = divmod(remainder, 60)
 
-    if days > 0:
-        return f"{days}d {hours}h" if hours > 0 else f"{days}d"
-    if hours > 0:
-        return f"{hours}h {minutes}m" if minutes > 0 else f"{hours}h"
-    if minutes > 0:
-        return f"{minutes}m {secs}s" if secs > 0 else f"{minutes}m"
+    units = [(days, "d"), (hours, "h"), (minutes, "m"), (secs, "s")]
+    for (val, unit), (sub_val, sub_unit) in pairwise(units):
+        if val > 0:
+            return f"{val}{unit} {sub_val}{sub_unit}" if sub_val > 0 else f"{val}{unit}"
     return f"{secs}s"
 
 
