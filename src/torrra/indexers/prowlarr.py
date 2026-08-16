@@ -80,11 +80,14 @@ class ProwlarrIndexer(BaseIndexer):
 
     @override
     def _normalize_result(self, r: dict[str, Any]) -> Torrent:
+        # `or 0` rather than a get() default: prowlarr reports null seeders and
+        # leechers for indexers that don't publish them, and get(key, 0) keeps
+        # the null because the key is present
         return Torrent(
-            title=r.get("title", "unknown"),
-            size=r.get("size", 0),
-            seeders=r.get("seeders", 0),
-            leechers=r.get("leechers", 0),
-            source=r.get("indexer", "unknown"),
+            title=r.get("title") or "unknown",
+            size=r.get("size") or 0,
+            seeders=r.get("seeders") or 0,
+            leechers=r.get("leechers") or 0,
+            source=r.get("indexer") or "unknown",
             magnet_uri=r.get("magnetUrl") or r["downloadUrl"],
         )

@@ -82,11 +82,14 @@ class JackettIndexer(BaseIndexer):
 
     @override
     def _normalize_result(self, r: dict[str, Any]) -> Torrent:
+        # `or 0` rather than a get() default: jackett sends "Peers": null for
+        # some trackers, and get("Peers", 0) returns the null because the key
+        # is present. that None renders as "None" and breaks any comparison.
         return Torrent(
-            title=r.get("Title", "unknown"),
-            size=r.get("Size", 0),
-            seeders=r.get("Seeders", 0),
-            leechers=r.get("Peers", 0),
-            source=r.get("Tracker", "unknown"),
+            title=r.get("Title") or "unknown",
+            size=r.get("Size") or 0,
+            seeders=r.get("Seeders") or 0,
+            leechers=r.get("Peers") or 0,
+            source=r.get("Tracker") or "unknown",
             magnet_uri=r.get("MagnetUri") or r["Link"],
         )

@@ -35,6 +35,37 @@ MOCK_SEARCH_RESPONSE = {
 }
 
 
+# indexers annotate these fields as ints but send explicit nulls: jackett
+# reports "Peers": null for several trackers, and prowlarr omits counts for
+# indexers that don't publish them
+MOCK_NULL_RESPONSE = {
+    "jackett": {
+        "Results": [
+            {
+                "Title": None,
+                "Size": None,
+                "Seeders": None,
+                "Peers": None,
+                "Tracker": None,
+                "MagnetUri": None,
+                "Link": "http://mock.indexer.url/dl/mock",
+            }
+        ]
+    },
+    "prowlarr": [
+        {
+            "title": None,
+            "size": None,
+            "seeders": None,
+            "leechers": None,
+            "indexer": None,
+            "magnetUrl": None,
+            "downloadUrl": "http://mock.indexer.url/dl/mock",
+        }
+    ],
+}
+
+
 @pytest.fixture(params=[JackettIndexer, ProwlarrIndexer])
 def indexer(request: pytest.FixtureRequest) -> BaseIndexer:
     return request.param(url=MOCK_API_URL, api_key=MOCK_API_KEY)
@@ -69,3 +100,31 @@ async def test_healthcheck(indexer: BaseIndexer) -> None:
     respx.get(url).mock(Response(200))
 
     assert await indexer.healthcheck() is True
+
+
+@respx.mock
+async def test_null_fields_are_coerced(indexer: BaseIndexer) -> None:
+    """A null in a numeric field must not reach Torrent.
+
+    dict.get(key, default) returns the null when the key is present, so the
+    defaults these normalizers were written with never fired.
+    """
+    indexer_name = indexer.__class__.__name__.removesuffix("Indexer").lower()
+    respx.get(indexer.get_search_url()).mock(
+        Response(200, json=MOCK_NULL_RESPONSE[indexer_name])
+    )
+
+    results = await indexer.search("anything", use_cache=False)
+
+    assert results is not None
+    r = results[0]
+    assert r.seeders == 0
+    assert r.leechers == 0
+    assert r.size == 0
+    assert r.title == "unknown"
+    assert r.source == "unknown"
+    # a null magnet still falls back to the download link
+    assert r.magnet_uri == "http://mock.indexer.url/dl/mock"
+
+    # the S:L cell the results table builds must not read "None"
+    assert f"{r.seeders!s}:{r.leechers!s}" == "0:0"
