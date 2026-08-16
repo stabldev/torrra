@@ -161,3 +161,28 @@ ThemeSelectorScreen {
     }
   }
 }
+
+/* ------------------------- */
+/* SORT SELECT SCREEN        */
+/* ------------------------- */
+SortSelectorScreen {
+  align: center middle;
+  #sort-selector-container {
+    height: auto;
+    max-width: 30;
+    max-height: 80%;
+    Label {
+      width: 100%;
+      text-align: center;
+    }
+    ListView {
+      margin-top: 1;
+      height: auto;
+      background: $surface;
+      border: tall $secondary;
+      Static {
+        padding-left: 1;
+      }
+    }
+  }
+}

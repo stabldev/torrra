@@ -12,6 +12,8 @@
 
 ![demo](./docs/_static/demo.gif)
 
+![sorting and filtering search results](./docs/_static/sort-filter-demo.gif)
+
 _Torrra_ provides a streamlined command-line interface for torrent search and downloads, powered by Jackett/Prowlarr and Libtorrent. Built with Textual, it offers a beautiful
 TUI with pause/resume support - all without leaving your terminal.
 
@@ -95,6 +97,7 @@ torrra # default indexer will be used
 - Beautiful and responsive TUI built with [`Textual`](https://textual.textualize.io/)
 - Customizable themes (dark, light, and more)
 - Smart config + opt-in caching for fast searches
+- Sort search results by seeders, size, title or leechers, and hide dead torrents
 - Native support for Linux, macOS, and Windows
 
 [Full feature list →](https://torrra.readthedocs.io/en/latest/#features)

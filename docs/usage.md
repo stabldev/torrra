@@ -90,19 +90,88 @@ Both the `jackett` and `prowlarr` commands support the following options:
 
 ## Text-User Interface (TUI) Controls
 
-Once `torrra` is running (after specifying an indexer), you'll interact with it through its intuitive Text-User Interface (TUI). Here are the primary keyboard controls for navigation and interaction:
+Once `torrra` is running (after specifying an indexer), you'll interact with it through its Text-User Interface (TUI).
 
-| Key           | Action                                                                     |
-| :------------ | :------------------------------------------------------------------------- |
-| `↑` / `k`     | Navigate up through the list of search results                             |
-| `↓` / `j`     | Navigate down through the list of search results                           |
-| `Enter` / `l` | Initiate the download for the currently selected torrent                   |
-| `ctrl+u`      | Page up in the results list                                                |
-| `ctrl+d`      | Page down in the results list                                              |
-| `ctrl+t`      | Open the theme switcher to change the application's appearance             |
-| `G`           | Scroll to the bottom of the results list                                   |
-| `gg`          | Scroll to the top of the results list (press `g` twice)                    |
-| `Tab`         | Move focus to the next interactive widget (e.g., search box, results list) |
-| `p`           | Pause the currently active download                                        |
-| `r`           | Resume a previously paused download                                        |
-| `q`           | Quit `torrra` and exit the application                                     |
+The TUI has two views, **Search** and **Downloads**, which you switch between using the sidebar. Some keys work everywhere, and some only apply to one view.
+
+### Anywhere in the app
+
+| Key      | Action                                                       |
+| :------- | :----------------------------------------------------------- |
+| `Tab`    | Move focus between the search box, the sidebar and the list  |
+| `ctrl+t` | Open the theme switcher to change the application's appearance |
+| `ctrl+q` | Quit `torrra`                                                |
+
+### Moving around a list
+
+These work in both the search results and the downloads list.
+
+| Key       | Action                                       |
+| :-------- | :------------------------------------------- |
+| `↑` / `k` | Move up one row                              |
+| `↓` / `j` | Move down one row                            |
+| `ctrl+u`  | Page up                                      |
+| `ctrl+d`  | Page down                                    |
+| `gg`      | Jump to the top (press `g` twice, quickly)   |
+| `G`       | Jump to the bottom                           |
+
+### Search results
+
+| Key           | Action                                                                       |
+| :------------ | :--------------------------------------------------------------------------- |
+| `Enter` / `l` | Open the details panel for the highlighted torrent                           |
+| `Enter`       | Start the download (while the details panel is focused)                      |
+| `Esc`         | Close the details panel                                                      |
+| `s`           | Open the sort menu to pick a field: relevance, seeders, size, title, leechers |
+| `S`           | Reverse the current sort direction                                           |
+| `f`           | Toggle hiding results that have 0 seeders                                    |
+| `x`           | Clear sorting and filters, back to the indexer's own ordering                |
+
+### Downloads
+
+| Key           | Action                                                     |
+| :------------ | :--------------------------------------------------------- |
+| `Enter` / `l` | Show details and progress for the highlighted download     |
+| `p`           | Pause or resume the selected download (the same key toggles) |
+| `d`           | Remove the selected torrent, keeping any downloaded files  |
+| `D`           | Remove the selected torrent **and** delete its files       |
+
+### Sorting and Filtering Results
+
+![Sorting and filtering search results](_static/sort-filter-demo.gif)
+
+Indexers return results in their own order, which is usually a relevance guess and often buries the copies that will actually download quickly. Sorting and filtering let you reorder and narrow what you already have, without querying your indexer again — `torrra` keeps the full result set in memory, so it's instant.
+
+#### A first walkthrough
+
+Say you search for `ubuntu iso` and get 40 results in no obvious order.
+
+1. Press `Tab` (or `↓`) to move focus out of the search box and into the results list. **This step matters** — see the note below.
+2. Press `f`. Every result with 0 seeders disappears. Those are dead torrents that would never finish downloading, and real indexers return a lot of them.
+3. Press `s`, then `j`/`k` to highlight **seeders**, then `Enter`. The results reorder with the healthiest torrents at the top, since more seeders generally means a faster download.
+4. The border above the list now reads something like `results (12/40) · seeders ↓` — 12 of the 40 results are shown, sorted by seeders, highest first.
+5. Press `Enter` on the top result to open its details, then `Enter` again to start downloading.
+
+That's the common path: **`f` then `s`** gets you from a raw result dump to the best few candidates in two keystrokes.
+
+You don't have to memorise any of this. The bottom border of the results list always shows a reminder: `s sort · S order · f seeded · x reset`.
+
+> **If pressing `s` types the letter "s" instead**, your focus is still in the search box. These keys only act as shortcuts when the results list has focus — press `Tab` first. This is deliberate, so the shortcuts can never interfere with typing a query.
+
+#### The rest of the controls
+
+- Press `S` to reverse the current direction. Useful for finding the *smallest* file rather than the largest.
+- Press `x` to clear sorting and filters together and return to the indexer's own ranking.
+- In the sort menu, `Esc` closes without changing anything, and the highlight starts on whichever field is already active, so `Enter` is never a surprise.
+
+Each field starts in the direction you'd usually want, shown next to its name in the menu: `seeders`, `size` and `leechers` sort high-to-low (`↓`), while `title` sorts A-Z (`↑`).
+
+You can also **click a column header** to sort by it, if your terminal has mouse support. Clicking a new column applies that column's default direction, clicking the column that's already active reverses it, and clicking `#` returns to the indexer's own ranking.
+
+#### Details worth knowing
+
+Sorting is stable, so results that tie on the sort field keep their original relevance ranking rather than jumping around.
+
+Your choices persist across searches for the rest of the session — sort once, and the next search comes back already sorted. To make them permanent, set `default_sort`, `default_sort_order` and `min_seeders` in your [configuration](configuration.md).
+
+Sorting and filtering are independent. Changing the sort keeps your filter, and vice versa.

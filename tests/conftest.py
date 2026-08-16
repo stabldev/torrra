@@ -69,4 +69,7 @@ def mock_config(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     config_module.get_config.cache_clear()
 
     # this will now create a Config instance using the tmp_path
-    return Config()
+    yield Config()
+
+    # drop the temp instance so later tests don't resolve a deleted tmp_path
+    config_module.get_config.cache_clear()

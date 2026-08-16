@@ -27,6 +27,9 @@ max_retries = 3                               # The maximum number of times to r
 use_cache = true                              # If true, search results will be cached to speed up subsequent searches.
 cache_ttl = 300                               # The time in seconds that search results will be cached.
 seed_ratio = 1.5                              # Target upload/download ratio. Seeding stops when reached. Omit or set None for infinite seeding.
+default_sort = "relevance"                    # Initial sort for search results: "relevance", "seeders", "size", "title" or "leechers".
+default_sort_order = "desc"                   # Direction for the initial sort: "desc" or "asc". Ignored when default_sort is "relevance".
+min_seeders = 0                               # Hide results with fewer seeders than this. 0 shows everything.
 
 [indexers]
 default = "jackett"                           # The name of the default indexer to use if none is specified at runtime

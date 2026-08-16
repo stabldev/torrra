@@ -11,6 +11,9 @@ from platformdirs import user_config_dir, user_downloads_dir
 from torrra.core.constants import (
     DEFAULT_CACHE_TTL,
     DEFAULT_MAX_RETRIES,
+    DEFAULT_MIN_SEEDERS,
+    DEFAULT_SORT,
+    DEFAULT_SORT_ORDER,
     DEFAULT_TIMEOUT,
 )
 from torrra.core.exceptions import ConfigError
@@ -136,6 +139,9 @@ class Config:
                 "max_retries": DEFAULT_MAX_RETRIES,
                 "use_cache": True,
                 "cache_ttl": DEFAULT_CACHE_TTL,
+                "default_sort": DEFAULT_SORT,
+                "default_sort_order": DEFAULT_SORT_ORDER,
+                "min_seeders": DEFAULT_MIN_SEEDERS,
             }
         }
 

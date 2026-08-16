@@ -5,6 +5,7 @@ from typing import ClassVar, cast
 import httpx
 from textual import on, work
 from textual.app import ComposeResult
+from textual.binding import Binding, BindingType
 from textual.containers import Vertical
 from textual.message import Message
 from textual.widgets import Input, Static
@@ -12,10 +13,24 @@ from typing_extensions import override
 
 from torrra._types import Indexer, Torrent
 from torrra.core.config import get_config
-from torrra.core.constants import DEFAULT_MAX_RETRIES, DEFAULT_TIMEOUT
+from torrra.core.constants import (
+    DEFAULT_MAX_RETRIES,
+    DEFAULT_MIN_SEEDERS,
+    DEFAULT_SORT,
+    DEFAULT_SORT_ORDER,
+    DEFAULT_TIMEOUT,
+)
 from torrra.core.exceptions import ConfigError, IndexerError
+from torrra.core.results import (
+    ResultView,
+    SortKey,
+    parse_min_seeders,
+    parse_sort_key,
+    parse_sort_order,
+)
 from torrra.core.torrent import get_torrent_manager
 from torrra.indexers.base import BaseIndexer
+from torrra.screens.sort_selector import SortSelectorScreen
 from torrra.utils.helpers import human_readable_size, lazy_import
 from torrra.utils.magnet import resolve_magnet_uri
 from torrra.widgets.data_table import AutoResizingDataTable
@@ -30,6 +45,25 @@ class SearchContent(Vertical):
         ("Size", "size_col", 10),
         ("S:L", "seeders_leechers_col", 6),
     ]
+
+    # clicking a column header sorts by it; "No" restores the indexer's order
+    COL_SORTS: ClassVar[dict[str, SortKey]] = {
+        "no_col": SortKey.RELEVANCE,
+        "title_col": SortKey.TITLE,
+        "size_col": SortKey.SIZE,
+        "seeders_leechers_col": SortKey.SEEDERS,
+    }
+
+    # these only fire while the results table has focus; the search Input
+    # consumes printable keys before they can reach these bindings
+    BINDINGS: ClassVar[list[BindingType]] = [
+        Binding("s", "open_sort_menu"),
+        Binding("S", "toggle_sort_order"),
+        Binding("f", "toggle_seeded_only"),
+        Binding("x", "clear_filters"),
+    ]
+
+    HINTS = "s sort · S order · f seeded · x reset"
 
     class SearchResults(Message):
         def __init__(self, results: list[Torrent], query: str) -> None:
@@ -54,12 +88,36 @@ class SearchContent(Vertical):
         # application states
         self._search_results_map: dict[str, Torrent] = {}
         self._selected_torrent: Torrent | None = None
+        # ordering/filtering survives across searches in a session
+        self._view: ResultView = self._build_view()
 
         # ui refs (cached later)
         self._search_input: Input
         self._table: AutoResizingDataTable[str]
         self._details_panel: DetailsPanel
         self._loader: Vertical
+
+    @staticmethod
+    def _build_view() -> ResultView:
+        config = get_config()
+        view = ResultView()
+
+        sort_key = parse_sort_key(config.get("general.default_sort", DEFAULT_SORT))
+        # a direction is meaningless for relevance, and honouring a configured
+        # "desc" there would silently reverse the indexer's own ranking
+        descending = (
+            None
+            if sort_key is SortKey.RELEVANCE
+            else parse_sort_order(
+                config.get("general.default_sort_order", DEFAULT_SORT_ORDER)
+            )
+        )
+        view.set_sort(sort_key, descending)
+
+        view.filters.min_seeders = parse_min_seeders(
+            config.get("general.min_seeders", DEFAULT_MIN_SEEDERS), DEFAULT_MIN_SEEDERS
+        )
+        return view
 
     @override
     def compose(self) -> ComposeResult:
@@ -152,6 +210,11 @@ class SearchContent(Vertical):
 
         self._table.add_class("hidden")
         self._table.clear()
+        # drop the previous result set so stale rows can't be re-rendered
+        # by a sort/filter keypress while the new search is in flight
+        self._view.set_results([])
+        self._search_results_map.clear()
+        self._selected_torrent = None
         self._details_panel.add_class("hidden")
         self._loader.remove_class("hidden")
         cast(Spinner, self._loader.children[1]).resume()
@@ -191,29 +254,100 @@ class SearchContent(Vertical):
             )  # show loader and exit
             return
 
+        self._view.set_results(message.results)
+
         self._loader.add_class("hidden")
         self._table.remove_class("hidden")
         self._table.focus()  # initial focus table
-        self._table.border_title = f"results ({len(message.results)})"
+        self._render_rows()
 
-        seen: set[str] = set()
-        for idx, torrent in enumerate(message.results):
-            if torrent.magnet_uri in seen:
-                continue
+    def _render_rows(self) -> None:
+        """Single path from the view model to the table.
 
-            seen.add(torrent.magnet_uri)
+        Every state change - new search, sort, filter - funnels through here so
+        row numbering and the lookup map can never drift out of sync.
+        """
+        rows = self._view.visible()
+
+        self._table.clear()
+        self._search_results_map.clear()
+
+        for idx, torrent in enumerate(rows, start=1):
             self._search_results_map[torrent.magnet_uri] = torrent
             self._table.add_row(
-                str(idx + 1),
+                str(idx),
                 torrent.title,
                 human_readable_size(torrent.size),
                 f"{torrent.seeders!s}:{torrent.leechers!s}",
                 key=torrent.magnet_uri,
             )
 
+        shown, total = len(rows), self._view.total
+        count = f"{shown}/{total}" if shown != total else str(total)
+        self._table.border_title = f"results ({count}) · {self._view.sort_label}"
+        self._table.border_subtitle = self.HINTS
         # row numbers and swarm counts both outgrow the widths their columns
         # are declared with once a search returns a few hundred results
         self._table.fit_columns()
+
+    def _refresh_view(self, message: str) -> None:
+        """Re-render after a sort/filter change, unless nothing is loaded yet."""
+        if not self._view.total:
+            return
+
+        # the details panel may be pointing at a row that is now filtered out
+        self._selected_torrent = None
+        self._details_panel.add_class("hidden")
+
+        self._render_rows()
+        self._table.focus()
+        self.notify(message, title="Results Updated")
+
+    def action_open_sort_menu(self) -> None:
+        if not self._view.total:
+            return
+        self.app.push_screen(
+            SortSelectorScreen(self._view.sort_key), self._apply_sort_choice
+        )
+
+    def _apply_sort_choice(self, key: SortKey | None) -> None:
+        if key is None:  # cancelled
+            return
+        self._view.set_sort(key)
+        self._refresh_view(f"Sorted by [b]{self._view.sort_label}[/b]")
+
+    def action_toggle_sort_order(self) -> None:
+        self._view.toggle_direction()
+        self._refresh_view(f"Sorted by [b]{self._view.sort_label}[/b]")
+
+    def action_toggle_seeded_only(self) -> None:
+        filters = self._view.filters
+        filters.min_seeders = 0 if filters.min_seeders else 1
+        self._refresh_view(
+            "Hiding results with [b]0 seeders[/b]"
+            if filters.min_seeders
+            else "Showing [b]all[/b] results"
+        )
+
+    def action_clear_filters(self) -> None:
+        self._view.reset()
+        self._refresh_view("Filters cleared, back to [b]relevance[/b]")
+
+    @on(AutoResizingDataTable.HeaderSelected)
+    def on_header_selected(self, event: AutoResizingDataTable.HeaderSelected) -> None:
+        """Sort by clicking a column header, toggling on repeated clicks."""
+        key = self.COL_SORTS.get(str(event.column_key.value))
+        if key is None or not self._view.total:
+            return
+
+        # clicking the active column flips it; a new column starts in its
+        # own natural direction. relevance has no direction to flip.
+        if key is self._view.sort_key and key is not SortKey.RELEVANCE:
+            self._view.toggle_direction()
+        else:
+            self._view.set_sort(key)
+
+        self._refresh_view(f"Sorted by [b]{self._view.sort_label}[/b]")
 
     def on_details_panel_closed(self):
         self._selected_torrent = None
