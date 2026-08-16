@@ -211,6 +211,10 @@ class SearchContent(Vertical):
                 key=torrent.magnet_uri,
             )
 
+        # row numbers and swarm counts both outgrow the widths their columns
+        # are declared with once a search returns a few hundred results
+        self._table.fit_columns()
+
     def on_details_panel_closed(self):
         self._selected_torrent = None
         self._table.focus()
