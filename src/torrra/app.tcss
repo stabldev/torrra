@@ -144,7 +144,7 @@ HelpScreen {
   align: center middle;
   #help-container {
     height: auto;
-    max-width: 50;
+    max-width: 45;
     max-height: 80%;
     padding-left: 2;
     background: $surface;
