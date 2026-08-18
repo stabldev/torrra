@@ -13,13 +13,13 @@ The following features have been successfully implemented and are available in t
 - [x] **Standalone Binary & AUR Packaging:** Availability of pre-built executables for various operating systems and packaging for Arch Linux via AUR.
 - [x] **Magnet Info Preview (Seeders/Leechers before download):** Ability to display crucial torrent metadata (like seeders and leechers) before initiating a download.
 - [x] **Sorting & Filtering of Search Results:** Reordering results by seeders, size, title or leechers, either from a menu or by clicking a column header, plus hiding dead torrents. Starting sort and minimum seeder count are configurable.
+- [x] **Keyboard Shortcuts Overlay / Help Screen:** An in-app help screen, opened with `?`, listing every keyboard shortcut grouped by where it applies.
 
 ## Planned Features
 
 Our future development efforts will focus on introducing the following enhancements and new functionalities:
 
 - [ ] **Sorting by Date and Category:** Extending result sorting to publish date and category, which first requires indexers to return those fields.
-- [ ] **Keyboard Shortcuts Overlay / Help Screen:** Introducing an in-app overlay or dedicated screen to display available keyboard shortcuts and general help for the TUI.
 - [ ] **Support for Custom Indexers:** Allowing users to define and integrate their own custom torrent indexers beyond Jackett and Prowlarr.
 
 We welcome community feedback and contributions to help shape the future of `torrra`. If you have suggestions or would like to contribute, please refer to the [Contributing Guide](contributing).

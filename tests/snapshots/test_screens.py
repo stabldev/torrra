@@ -88,3 +88,21 @@ def test_sort_selector_screen_snapshot(
     app = app_factory("arch linux iso")
     app.theme = "textual-dark"  # default theme
     assert snap_compare(app, run_before=run_before)
+
+
+def test_help_screen_snapshot(app_factory: Any, snap_compare: Any):
+    # the other help tests assert content but not layout, and the panel is
+    # sized to fit its rows, so this is what catches a row wrapping or a
+    # section getting pushed out of view when a shortcut is added.
+    # sized larger than the other snapshots deliberately: the full list needs
+    # ~40 rows and the panel is capped at 80% of the screen, so anything
+    # shorter than 50 clips the bottom sections and a regression down there
+    # would go unseen. grow this if SHORTCUTS grows.
+    async def run_before(pilot: Pilot[Any]):
+        pilot.app.screen.set_focus(None)  # "?" is suppressed while an Input has focus
+        await pilot.press("question_mark")
+        await pilot.pause()
+
+    app = app_factory()
+    app.theme = "textual-dark"  # default theme
+    assert snap_compare(app, run_before=run_before, terminal_size=(90, 50))
