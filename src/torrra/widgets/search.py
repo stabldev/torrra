@@ -136,7 +136,7 @@ class SearchContent(Vertical):
         yield DetailsPanel()
         with Vertical(id="loader"):
             yield Static()
-            yield Spinner(name="shark")
+            yield Spinner(name="material")
 
     def on_mount(self) -> None:
         self._search_input = self.query_one(Input)
@@ -215,7 +215,16 @@ class SearchContent(Vertical):
 
     def on_input_submitted(self, event: Input.Submitted) -> None:
         query = event.value
-        if not query:
+        if not query or not query.strip():
+            self._table.add_class("hidden")
+            self._table.clear()
+            self._view.set_results([])
+            self._search_results_map.clear()
+            self._selected_torrent = None
+            self._details_panel.add_class("hidden")
+            self._loader.remove_class("hidden")
+            cast(Spinner, self._loader.children[1]).pause()
+            cast(Static, self._loader.children[0]).update("Search for torrents...")
             return
 
         self._table.add_class("hidden")
