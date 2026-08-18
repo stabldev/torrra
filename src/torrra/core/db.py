@@ -29,7 +29,8 @@ def init_db() -> None:
                 size REAL,
                 source TEXT,
                 is_paused BOOLEAN DEFAULT 0,
-                is_notified BOOLEAN DEFAULT 0
+                is_notified BOOLEAN DEFAULT 0,
+                file_priorities TEXT DEFAULT NULL
             )
             """
         )
@@ -37,5 +38,9 @@ def init_db() -> None:
         with suppress(sqlite3.OperationalError):
             cursor.execute(
                 "ALTER TABLE torrents ADD COLUMN is_notified BOOLEAN DEFAULT 0"
+            )
+        with suppress(sqlite3.OperationalError):
+            cursor.execute(
+                "ALTER TABLE torrents ADD COLUMN file_priorities TEXT DEFAULT NULL"
             )
         conn.commit()

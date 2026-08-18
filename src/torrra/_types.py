@@ -5,7 +5,7 @@ import libtorrent as lt
 
 
 # TORRENT TYPES
-class TorrentDict(TypedDict):
+class TorrentDict(TypedDict, total=False):
     """Dict variant of Torrent dataclass."""
 
     magnet_uri: str
@@ -14,6 +14,7 @@ class TorrentDict(TypedDict):
     seeders: int
     leechers: int
     source: str
+    file_priorities: list[int] | None
 
 
 class TorrentStatus(TypedDict):
@@ -30,7 +31,7 @@ class TorrentStatus(TypedDict):
     is_seeding: bool
 
 
-class TorrentRecord(TypedDict):
+class TorrentRecord(TypedDict, total=False):
     """Torrent data stored in db."""
 
     magnet_uri: str
@@ -39,6 +40,16 @@ class TorrentRecord(TypedDict):
     source: str
     is_paused: bool
     is_notified: bool
+    file_priorities: list[int] | None
+
+
+@dataclass
+class TorrentFileInfo:
+    """Information for a single file in a torrent."""
+
+    index: int
+    path: str
+    size: int
 
 
 @dataclass
@@ -51,6 +62,7 @@ class Torrent:
     seeders: int
     leechers: int
     source: str
+    file_priorities: list[int] | None = None
 
     @classmethod
     def from_dict(cls, d: TorrentDict) -> "Torrent":

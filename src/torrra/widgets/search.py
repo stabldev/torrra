@@ -1,8 +1,9 @@
 import asyncio
 import subprocess
-from typing import ClassVar, cast
+from typing import Any, ClassVar, cast
 
 import httpx
+import libtorrent as lt
 from textual import on, work
 from textual.app import ComposeResult
 from textual.binding import Binding, BindingType
@@ -20,6 +21,7 @@ from torrra.core.constants import (
     DEFAULT_SORT_ORDER,
     DEFAULT_TIMEOUT,
 )
+from torrra.core.download import get_download_manager
 from torrra.core.exceptions import ConfigError, IndexerError
 from torrra.core.results import (
     ResultView,
@@ -30,9 +32,10 @@ from torrra.core.results import (
 )
 from torrra.core.torrent import get_torrent_manager
 from torrra.indexers.base import BaseIndexer
+from torrra.screens.file_selection import FileSelectionScreen
 from torrra.screens.sort_selector import SortSelectorScreen
 from torrra.utils.helpers import human_readable_size, lazy_import
-from torrra.utils.magnet import resolve_magnet_uri
+from torrra.utils.magnet import resolve_magnet_uri, resolve_torrent
 from torrra.widgets.data_table import AutoResizingDataTable
 from torrra.widgets.details_panel import DetailsPanel
 from torrra.widgets.spinner import Spinner
@@ -65,29 +68,35 @@ class SearchContent(Vertical):
 
     HINTS = "s sort · S order · f seeded · x reset"
 
+    class DownloadRequested(Message):
+        def __init__(self, torrent: Torrent) -> None:
+            self.torrent: Torrent = torrent
+            super().__init__()
+
     class SearchResults(Message):
         def __init__(self, results: list[Torrent], query: str) -> None:
             self.results: list[Torrent] = results
             self.query: str = query
             super().__init__()
 
-    class DownloadRequested(Message):
-        def __init__(self, torrent: Torrent) -> None:
-            self.torrent: Torrent = torrent
-            super().__init__()
-
-    def __init__(self, indexer: Indexer, search_query: str, use_cache: bool):
-        super().__init__(id="search_content")
+    def __init__(
+        self,
+        indexer: Indexer,
+        search_query: str,
+        use_cache: bool = True,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(id="search_content", *args, **kwargs)
         self.indexer: Indexer = indexer
         self.search_query: str = search_query
         self.use_cache: bool = use_cache
-
-        # instance-level cache
         self._indexer_instance_cache: BaseIndexer | None = None
 
         # application states
         self._search_results_map: dict[str, Torrent] = {}
         self._selected_torrent: Torrent | None = None
+        self._current_torrent_info: lt.torrent_info | None = None
         # ordering/filtering survives across searches in a session
         self._view: ResultView = self._build_view()
 
@@ -157,61 +166,88 @@ class SearchContent(Vertical):
         # send initial search
         self.post_message(Input.Submitted(self._search_input, self.search_query))
 
-    async def key_enter(self) -> None:
-        if not self._details_panel.has_focus:
+    async def on_data_table_row_selected(
+        self, event: AutoResizingDataTable.RowSelected
+    ) -> None:
+        magnet_uri = cast(str, event.row_key.value)
+        self._selected_torrent = self._search_results_map.get(magnet_uri)
+        if not self._selected_torrent:
             return
 
-        if self._selected_torrent:
-            # uri returned from the indexer
-            # might not be a proper magnet uri, resolve anyways
-            raw_magnet_uri = self._selected_torrent.magnet_uri
-            resolved_magnet_uri = await resolve_magnet_uri(raw_magnet_uri)
+        raw_magnet_uri = self._selected_torrent.magnet_uri
+        resolved_magnet_uri, torrent_info = await resolve_torrent(raw_magnet_uri)
 
-            if resolved_magnet_uri is None:
-                return
+        if resolved_magnet_uri is None:
+            self.notify("Failed to resolve torrent URI", severity="error")
+            return
 
-            # update with resolved magnet_uri
-            self._selected_torrent.magnet_uri = resolved_magnet_uri
+        # update with resolved magnet_uri
+        self._selected_torrent.magnet_uri = resolved_magnet_uri
+        self._current_torrent_info = torrent_info
 
-            config = get_config()
-            if config.get("general.download_in_external_client", False):
-                if config.get("general.use_transmission", False):
-                    tran_user = config.get("general.transmission_user", "")
-                    tran_pass = config.get("general.transmission_pass", "")
+        config = get_config()
+        if config.get("general.download_in_external_client", False):
+            if config.get("general.use_transmission", False):
+                tran_user = config.get("general.transmission_user", "")
+                tran_pass = config.get("general.transmission_pass", "")
 
-                    await asyncio.to_thread(
-                        subprocess.run,
-                        [
-                            "transmission-remote",
-                            "--auth",
-                            f"{tran_user}:{tran_pass}",
-                            "-a",
-                            resolved_magnet_uri,
-                        ],
-                        capture_output=True,
-                        text=True,
-                        check=False,
-                    )
-                    self.notify(
-                        "Opened in [b]transmission-remote[/b]",
-                        title="Torrent Opened",
-                    )
-                else:
-                    self.app.open_url(resolved_magnet_uri)
-                    self.notify(
-                        "Opened in default magnet: handler",
-                        title="Torrent Opened",
-                    )
-            else:  # continue with libtorrent
-                tm = get_torrent_manager()
-                tm.add_torrent(self._selected_torrent)
-                title = self._selected_torrent.title
-                short_title = (title[:30] + "...") if len(title) > 30 else title
-                self.notify(
-                    f"Started downloading [b]{short_title}[/b]",
-                    title="Download Started",
+                await asyncio.to_thread(
+                    subprocess.run,
+                    [
+                        "transmission-remote",
+                        "--auth",
+                        f"{tran_user}:{tran_pass}",
+                        "-a",
+                        resolved_magnet_uri,
+                    ],
+                    capture_output=True,
+                    text=True,
+                    check=False,
                 )
-                self.post_message(self.DownloadRequested(self._selected_torrent))
+                self.notify(
+                    "Opened in [b]transmission-remote[/b]",
+                    title="Torrent Opened",
+                )
+            else:
+                self.app.open_url(resolved_magnet_uri)
+                self.notify(
+                    "Opened in default magnet: handler",
+                    title="Torrent Opened",
+                )
+        else:  # continue with libtorrent file selection
+            self.app.push_screen(
+                FileSelectionScreen(
+                    torrent=self._selected_torrent,
+                    torrent_info=torrent_info,
+                ),
+                self._on_file_selection_done,
+            )
+
+    def _on_file_selection_done(self, priorities: list[int] | None) -> None:
+        if priorities is None or not self._selected_torrent:
+            return
+
+        tm = get_torrent_manager()
+        dm = get_download_manager()
+
+        actual_priorities = priorities if priorities else None
+
+        self._selected_torrent.file_priorities = actual_priorities
+        tm.add_torrent(self._selected_torrent, file_priorities=actual_priorities)
+        dm.add_torrent(
+            self._selected_torrent.magnet_uri,
+            is_paused=False,
+            file_priorities=actual_priorities,
+            torrent_info=getattr(self, "_current_torrent_info", None),
+        )
+
+        title = self._selected_torrent.title
+        short_title = (title[:30] + "...") if len(title) > 30 else title
+        self.notify(
+            f"Started downloading [b]{short_title}[/b]",
+            title="Download Started",
+        )
+        self.post_message(self.DownloadRequested(self._selected_torrent))
 
     def on_input_submitted(self, event: Input.Submitted) -> None:
         query = event.value
@@ -221,7 +257,6 @@ class SearchContent(Vertical):
             self._view.set_results([])
             self._search_results_map.clear()
             self._selected_torrent = None
-            self._details_panel.add_class("hidden")
             self._loader.remove_class("hidden")
             cast(Spinner, self._loader.children[1]).pause()
             cast(Static, self._loader.children[0]).update("Search for torrents...")
@@ -234,7 +269,6 @@ class SearchContent(Vertical):
         self._view.set_results([])
         self._search_results_map.clear()
         self._selected_torrent = None
-        self._details_panel.add_class("hidden")
         self._loader.remove_class("hidden")
         cast(Spinner, self._loader.children[1]).resume()
         cast(Static, self._loader.children[0]).update(
@@ -314,10 +348,7 @@ class SearchContent(Vertical):
         if not self._view.total:
             return
 
-        # the details panel may be pointing at a row that is now filtered out
         self._selected_torrent = None
-        self._details_panel.add_class("hidden")
-
         self._render_rows()
         self._table.focus()
         self.notify(message, title="Results Updated")
@@ -375,29 +406,6 @@ class SearchContent(Vertical):
             self._view.set_sort(key)
 
         self._refresh_view(f"Sorted by [b]{self._view.sort_label}[/b]")
-
-    def on_details_panel_closed(self):
-        self._selected_torrent = None
-        self._table.focus()
-
-    def on_data_table_row_selected(
-        self, event: AutoResizingDataTable.RowSelected
-    ) -> None:
-        magnet_uri = cast(str, event.row_key.value)
-        self._selected_torrent = self._search_results_map.get(magnet_uri)
-        if not self._selected_torrent:
-            return
-
-        details = f"""
-[b]{self._selected_torrent.title}[/b]
-[b]Size:[/b] {human_readable_size(self._selected_torrent.size)} - [b]Seeders:[/b] {self._selected_torrent.seeders} - [b]Leechers:[/b] {self._selected_torrent.leechers} - [b]Source:[/b] {self._selected_torrent.source}
-
-[dim]Press 'enter' to download or 'esc' to close.[/dim]
-"""
-
-        self._details_panel.update_content(details.strip())
-        self._details_panel.remove_class("hidden")
-        self._details_panel.focus()
 
     def _get_indexer_instance(self) -> BaseIndexer:
         if self._indexer_instance_cache:

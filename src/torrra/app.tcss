@@ -219,3 +219,79 @@ SortSelectorScreen {
     }
   }
 }
+
+/* ------------------------- */
+/* FILE SELECTION SCREEN     */
+/* ------------------------- */
+FileSelectionScreen {
+  align: center middle;
+  #file-selection-container {
+    height: 18;
+    max-height: 80%;
+    width: 60;
+    max-width: 85%;
+    background: $surface;
+    border: tall $secondary;
+    padding: 0 1;
+
+    #file-selection-header {
+      height: auto;
+      margin-bottom: 0;
+      #torrent-name {
+        width: 100%;
+        text-align: center;
+        color: $foreground;
+        text-style: bold;
+      }
+      #selection-stats {
+        width: 100%;
+        text-align: center;
+        color: $foreground-muted;
+      }
+    }
+
+    #file-selection-loading {
+      height: 1fr;
+      align: center middle;
+      Static {
+        text-align: center;
+        content-align-horizontal: center;
+      }
+      Spinner {
+        height: auto;
+        content-align-horizontal: center;
+        color: $secondary;
+      }
+      #loading-cancel-hint {
+        margin-top: 1;
+        text-align: center;
+        color: $foreground-muted;
+      }
+    }
+
+    #file-selection-body {
+      height: 1fr;
+      margin: 0;
+      SelectionList {
+        height: 1fr;
+        background: transparent;
+        border: solid $secondary-muted;
+        scrollbar-size: 0 0;
+        &:focus {
+          border: solid $secondary;
+        }
+      }
+    }
+
+    #file-selection-footer {
+      height: auto;
+      margin-top: 0;
+      #shortcuts-hint {
+        width: 100%;
+        text-align: center;
+        color: $foreground-muted;
+      }
+    }
+  }
+}
+

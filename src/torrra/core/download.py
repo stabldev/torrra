@@ -3,9 +3,9 @@ from typing import ClassVar
 
 import libtorrent as lt
 
-from torrra._types import TorrentStatus
+from torrra._types import TorrentFileInfo, TorrentStatus
 from torrra.core.config import get_config
-from torrra.utils.magnet import fix_magnet_uri
+from torrra.utils.magnet import enhance_magnet_uri, fix_magnet_uri
 
 
 @lru_cache
@@ -22,20 +22,50 @@ class DownloadManager:
     }
 
     def __init__(self) -> None:
-        self.session: lt.session = lt.session({"listen_interfaces": "0.0.0.0:6881"})
+        settings = {
+            "listen_interfaces": "0.0.0.0:6881,[::]:6881,0.0.0.0:0",
+            "enable_dht": True,
+            "dht_bootstrap_nodes": "router.bittorrent.com:6881,dht.transmissionbt.com:6881,router.utorrent.com:6881,dht.libtorrent.org:25401",
+            "enable_lsd": True,
+            "enable_upnp": True,
+            "enable_natpmp": True,
+            "announce_to_all_trackers": True,
+            "announce_to_all_tiers": True,
+            "prefer_udp_trackers": True,
+        }
+        self.session: lt.session = lt.session(settings)
         self.torrents: dict[str, lt.torrent_handle] = {}
+        self._file_priorities: dict[str, list[int]] = {}
         self._metadata_updated: set[str] = (
             set()
         )  # Track torrents whose metadata has been updated
 
-    def add_torrent(self, magnet_uri: str, is_paused: bool = False) -> None:
+    def add_torrent(
+        self,
+        magnet_uri: str,
+        is_paused: bool = False,
+        file_priorities: list[int] | None = None,
+        torrent_info: lt.torrent_info | None = None,
+    ) -> None:
+        if file_priorities is not None:
+            self._file_priorities[magnet_uri] = file_priorities
+
         if magnet_uri in self.torrents:
-            # Torrent already exists, update paused state if needed
+            # Torrent already exists, update paused state and priorities if needed
             handle = self.torrents[magnet_uri]
             if not handle.is_valid():
                 # If handle is invalid, remove it and add the torrent fresh
                 del self.torrents[magnet_uri]
             else:
+                if (
+                    file_priorities is not None
+                    and handle.status().has_metadata
+                ):
+                    try:
+                        handle.prioritize_files(file_priorities)
+                    except (AttributeError, RuntimeError):
+                        pass
+
                 # Check current paused state and update if different
                 current_status = handle.status()
                 is_currently_paused = (
@@ -51,19 +81,42 @@ class DownloadManager:
                 return
 
         # Parse the magnet URI into torrent parameters (modern libtorrent 2.x API)
-        # Handle malformed URIs (missing 'xt=urn:') that might be stored in the DB
-        proper_magnet_uri = fix_magnet_uri(magnet_uri)
+        # Handle malformed URIs (missing 'xt=urn:') and add default public trackers
+        proper_magnet_uri = enhance_magnet_uri(fix_magnet_uri(magnet_uri))
 
-        atp = lt.parse_magnet_uri(proper_magnet_uri)
-        atp.save_path = get_config().get("general.download_path")
-        if is_paused:
-            atp.flags |= lt.torrent_flags.paused
-            atp.flags &= ~lt.torrent_flags.auto_managed
-        else:
-            atp.flags |= lt.torrent_flags.auto_managed
+        try:
+            atp = lt.parse_magnet_uri(proper_magnet_uri)
+            atp.save_path = get_config().get("general.download_path")
+            if torrent_info is not None:
+                atp.ti = torrent_info
 
-        # Add the torrent to the session and start tracking
-        self.torrents[magnet_uri] = self.session.add_torrent(atp)
+            if is_paused:
+                if torrent_info is not None or (hasattr(atp, "ti") and atp.ti is not None):
+                    atp.flags |= lt.torrent_flags.paused
+                    atp.flags &= ~lt.torrent_flags.auto_managed
+                else:
+                    # When fetching metadata from swarm before download, enable auto_managed
+                    # and default_dont_download so metadata is fetched without downloading payload
+                    atp.flags |= lt.torrent_flags.auto_managed
+                    atp.flags |= lt.torrent_flags.default_dont_download
+            else:
+                atp.flags |= lt.torrent_flags.auto_managed
+
+            # Add the torrent to the session and start tracking
+            handle = self.session.add_torrent(atp)
+            self.torrents[magnet_uri] = handle
+
+            if (
+                file_priorities is not None
+                and handle.is_valid()
+                and handle.status().has_metadata
+            ):
+                try:
+                    handle.prioritize_files(file_priorities)
+                except (AttributeError, RuntimeError):
+                    pass
+        except (RuntimeError, ValueError):
+            return
 
     def remove_torrent(self, magnet_uri: str, delete_files: bool = False) -> None:
         handle = self.torrents.get(magnet_uri)
@@ -73,6 +126,52 @@ class DownloadManager:
             else:
                 self.session.remove_torrent(handle)
             del self.torrents[magnet_uri]
+        self._file_priorities.pop(magnet_uri, None)
+        self._metadata_updated.discard(magnet_uri)
+
+    def set_file_priorities(self, magnet_uri: str, priorities: list[int]) -> None:
+        self._file_priorities[magnet_uri] = priorities
+        handle = self.torrents.get(magnet_uri)
+        if handle and handle.is_valid() and handle.status().has_metadata:
+            try:
+                handle.prioritize_files(priorities)
+            except (AttributeError, RuntimeError):
+                pass
+
+    def get_file_priorities(self, magnet_uri: str) -> list[int] | None:
+        handle = self.torrents.get(magnet_uri)
+        if handle and handle.is_valid() and handle.status().has_metadata:
+            try:
+                return [int(p) for p in handle.get_file_priorities()]
+            except (AttributeError, RuntimeError):
+                pass
+        return self._file_priorities.get(magnet_uri)
+
+    def get_torrent_files(self, magnet_uri: str) -> list[TorrentFileInfo] | None:
+        handle = self.torrents.get(magnet_uri)
+        if not handle or not handle.is_valid() or not handle.status().has_metadata:
+            return None
+        try:
+            info = handle.torrent_file()
+            if not info:
+                return None
+            fs = info.files()
+            files: list[TorrentFileInfo] = []
+            for i in range(fs.num_files()):
+                if hasattr(lt.file_storage, "flag_pad_file") and (
+                    fs.file_flags(i) & lt.file_storage.flag_pad_file
+                ):
+                    continue
+                files.append(
+                    TorrentFileInfo(
+                        index=i,
+                        path=fs.file_path(i).replace("\\", "/"),
+                        size=fs.file_size(i),
+                    )
+                )
+            return files
+        except (AttributeError, RuntimeError):
+            return None
 
     def toggle_pause(self, magnet_uri: str) -> None:
         handle = self.torrents.get(magnet_uri)
@@ -142,6 +241,10 @@ class DownloadManager:
                     if torrent_info:
                         title = torrent_info.name()
                         size = torrent_info.total_size()
+
+                        # Apply pending file priorities if any
+                        if magnet_uri in self._file_priorities:
+                            handle.prioritize_files(self._file_priorities[magnet_uri])
 
                         # Update the database with the actual metadata
                         tm.update_torrent_metadata(magnet_uri, title, size)

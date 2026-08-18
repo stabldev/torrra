@@ -64,6 +64,7 @@ class HomeScreen(Screen[None]):
             dm.add_torrent(
                 torrent["magnet_uri"],
                 is_paused=torrent["is_paused"],
+                file_priorities=torrent.get("file_priorities"),
             )
 
         if self.show_downloads and not self.direct_download:

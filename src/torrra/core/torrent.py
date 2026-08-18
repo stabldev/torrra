@@ -1,3 +1,4 @@
+import json
 import sqlite3
 from functools import lru_cache
 
@@ -12,21 +13,31 @@ def get_torrent_manager() -> "TorrentManager":
 
 
 class TorrentManager:
-    def add_torrent(self, torrent: Torrent) -> None:
+    def add_torrent(
+        self, torrent: Torrent, file_priorities: list[int] | None = None
+    ) -> None:
+        prios = file_priorities if file_priorities is not None else torrent.file_priorities
+        priorities_json = json.dumps(prios) if prios is not None else None
         with get_db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
                 """
-                INSERT OR IGNORE INTO torrents (magnet_uri, title, size, source)
-                VALUES (?, ?, ?, ?)
+                INSERT OR IGNORE INTO torrents (magnet_uri, title, size, source, file_priorities)
+                VALUES (?, ?, ?, ?, ?)
                 """,
                 (
                     torrent.magnet_uri,
                     torrent.title,
                     torrent.size,
                     torrent.source,
+                    priorities_json,
                 ),
             )
+            if priorities_json is not None:
+                cursor.execute(
+                    "UPDATE torrents SET file_priorities = ? WHERE magnet_uri = ?",
+                    (priorities_json, torrent.magnet_uri),
+                )
             conn.commit()
 
     def remove_torrent(self, magnet_uri: str) -> None:
@@ -62,6 +73,46 @@ class TorrentManager:
             )
             conn.commit()
 
+    def update_torrent_file_priorities(
+        self, magnet_uri: str, file_priorities: list[int] | None
+    ) -> None:
+        priorities_json = (
+            json.dumps(file_priorities) if file_priorities is not None else None
+        )
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "UPDATE torrents SET file_priorities = ? WHERE magnet_uri = ?",
+                (priorities_json, magnet_uri),
+            )
+            conn.commit()
+
+    def get_torrent(self, magnet_uri: str) -> TorrentRecord | None:
+        with get_db_connection() as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT * FROM torrents WHERE magnet_uri = ?", (magnet_uri,)
+            )
+            row = cursor.fetchone()
+            if not row:
+                return None
+            prio_raw = (
+                row["file_priorities"]
+                if "file_priorities" in row.keys()
+                else None
+            )
+            file_priorities = json.loads(prio_raw) if prio_raw else None
+            return TorrentRecord(
+                magnet_uri=row["magnet_uri"],
+                title=row["title"],
+                size=row["size"],
+                source=row["source"],
+                is_paused=bool(row["is_paused"]),
+                is_notified=bool(row["is_notified"]),
+                file_priorities=file_priorities,
+            )
+
     def get_all_torrents(self) -> list[TorrentRecord]:
         with get_db_connection() as conn:
             conn.row_factory = sqlite3.Row
@@ -69,14 +120,23 @@ class TorrentManager:
             cursor.execute("SELECT * FROM torrents")
             rows = cursor.fetchall()
 
-            return [
-                TorrentRecord(
-                    magnet_uri=row["magnet_uri"],
-                    title=row["title"],
-                    size=row["size"],
-                    source=row["source"],
-                    is_paused=bool(row["is_paused"]),
-                    is_notified=bool(row["is_notified"]),
+            result = []
+            for row in rows:
+                prio_raw = (
+                    row["file_priorities"]
+                    if "file_priorities" in row.keys()
+                    else None
                 )
-                for row in rows
-            ]
+                file_priorities = json.loads(prio_raw) if prio_raw else None
+                result.append(
+                    TorrentRecord(
+                        magnet_uri=row["magnet_uri"],
+                        title=row["title"],
+                        size=row["size"],
+                        source=row["source"],
+                        is_paused=bool(row["is_paused"]),
+                        is_notified=bool(row["is_notified"]),
+                        file_priorities=file_priorities,
+                    )
+                )
+            return result
