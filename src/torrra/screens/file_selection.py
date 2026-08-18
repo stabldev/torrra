@@ -148,6 +148,19 @@ class FileSelectionScreen(ModalScreen[list[int] | None]):
                 f"Fetching torrent metadata...\n[dim](peers: {status.num_peers})[/dim]"
             )
 
+    @staticmethod
+    def _format_file_prompt(file_path: str, size_str: str, max_width: int = 46) -> str:
+        size_suffix = f" ({size_str})"
+        if len(file_path) + len(size_suffix) <= max_width:
+            return f"{file_path} [dim]({size_str})[/dim]"
+
+        avail = max_width - len(size_suffix) - 3  # 3 chars for "..."
+        if avail > 0:
+            truncated = file_path[:avail] + "..."
+        else:
+            truncated = file_path[:8] + "..."
+        return f"{truncated} [dim]({size_str})[/dim]"
+
     def _populate_files(self, info: lt.torrent_info) -> None:
         self._torrent_info = info
         fs = info.files()
@@ -185,7 +198,7 @@ class FileSelectionScreen(ModalScreen[list[int] | None]):
                 initial_state = True
 
             size_str = human_readable_size(file_size)
-            prompt = f"{file_path} [dim]({size_str})[/dim]"
+            prompt = self._format_file_prompt(file_path, size_str, max_width=46)
             selections.append(Selection(prompt, value=i, initial_state=initial_state))
 
         self._selection_list.add_options(selections)

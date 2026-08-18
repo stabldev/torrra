@@ -3,6 +3,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from textual.app import App, ComposeResult
+from textual.containers import Vertical
 from textual.widgets import Button, Static
 
 from torrra._types import Torrent
@@ -64,6 +65,37 @@ async def test_file_selection_screen_initial_state():
 
         stats = app.screen.query_one("#selection-stats", Static)
         assert "3/3" in str(stats.content)
+
+
+async def test_file_selection_screen_filename_truncation_with_size():
+    long_name = "Very.Long.Series.Title.2026.S01E01.1080p.BluRay.x265.10bit.DTS-HD.MA.7.1-GROUP/Subs/English_Full_SDH_Commentary.srt"
+    mock_ti = MagicMock()
+    mock_ti.name.return_value = "Long Torrent Title"
+    mock_files = MagicMock()
+    mock_files.num_files.return_value = 1
+    mock_files.file_path.side_effect = lambda idx: long_name
+    mock_files.file_size.side_effect = lambda idx: 50000
+    mock_files.file_flags.side_effect = lambda idx: 0
+    mock_ti.files.return_value = mock_files
+
+    torrent = Torrent(
+        magnet_uri="magnet:?xt=urn:btih:mocklong",
+        title="Long Torrent Title",
+        size=50000,
+        seeders=10,
+        leechers=2,
+        source="Mock",
+    )
+
+    screen = FileSelectionScreen(torrent=torrent, torrent_info=mock_ti)
+    app = DummyHostApp(screen)
+
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        selection_list = app.screen.query_one(FileSelectionList)
+        prompt_text = str(selection_list.get_option_at_index(0).prompt)
+        assert "..." in prompt_text
+        assert "48.83 KB" in prompt_text
 
 
 async def test_file_selection_screen_select_none_and_all():

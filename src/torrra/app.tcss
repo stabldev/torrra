@@ -237,6 +237,7 @@ FileSelectionScreen {
     #file-selection-header {
       height: auto;
       margin-bottom: 0;
+      padding: 0 1;
       #torrent-name {
         width: 100%;
         text-align: center;
