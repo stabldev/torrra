@@ -82,10 +82,13 @@ class FileSelectionScreen(ModalScreen[list[int] | None]):
                 yield Static("Loading file list...", id="selection-stats")
 
             with Vertical(id="file-selection-loading"):
-                yield Static("Fetching torrent metadata...", id="loading-status-text")
-                yield Spinner(name="material")
+                with Vertical(id="loading-spinner-area"):
+                    yield Static(
+                        "Fetching torrent metadata...", id="loading-status-text"
+                    )
+                    yield Spinner(name="material")
                 yield Static(
-                    "[dim]\\[enter] download · \\[esc] cancel[/dim]",
+                    "[dim]hint: download all files without waiting\n\\[enter] download · \\[esc] cancel[/dim]",
                     id="loading-cancel-hint",
                 )
 

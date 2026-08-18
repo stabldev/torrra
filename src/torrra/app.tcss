@@ -252,18 +252,22 @@ FileSelectionScreen {
 
     #file-selection-loading {
       height: 1fr;
-      align: center middle;
-      Static {
-        text-align: center;
-        content-align-horizontal: center;
-      }
-      Spinner {
-        height: auto;
-        content-align-horizontal: center;
-        color: $secondary;
+      #loading-spinner-area {
+        height: 1fr;
+        align: center middle;
+        Static {
+          text-align: center;
+          content-align-horizontal: center;
+        }
+        Spinner {
+          height: auto;
+          content-align-horizontal: center;
+          color: $secondary;
+        }
       }
       #loading-cancel-hint {
-        margin-top: 1;
+        height: auto;
+        width: 100%;
         text-align: center;
         color: $foreground-muted;
       }
