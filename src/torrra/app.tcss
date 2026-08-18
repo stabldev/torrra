@@ -138,8 +138,31 @@ HomeScreen #main_layout {
 }
 
 /* ------------------------- */
-/* THEME SWITCH SCREEN       */
+/* HELP SCREEN               */
 /* ------------------------- */
+HelpScreen {
+  align: center middle;
+  #help-container {
+    height: auto;
+    width: auto;
+    min-width: 46;
+    max-height: 80%;
+    padding: 1 2;
+    background: $surface;
+    border: tall $secondary;
+    Label {
+      width: 100%;
+      text-align: center;
+    }
+    .help-section {
+      margin-top: 1;
+    }
+    .help-row {
+      padding-left: 1;
+    }
+  }
+}
+
 ThemeSelectorScreen {
   align: center middle;
   #theme-switcher-container {

@@ -100,6 +100,7 @@ The TUI has two views, **Search** and **Downloads**, which you switch between us
 | :------- | :----------------------------------------------------------- |
 | `Tab`    | Move focus between the search box, the sidebar and the list  |
 | `ctrl+t` | Open the theme switcher to change the application's appearance |
+| `?`      | Show all keyboard shortcuts                                  |
 | `ctrl+q` | Quit `torrra`                                                |
 
 ### Moving around a list
@@ -135,6 +136,19 @@ These work in both the search results and the downloads list.
 | `p`           | Pause or resume the selected download (the same key toggles) |
 | `d`           | Remove the selected torrent, keeping any downloaded files  |
 | `D`           | Remove the selected torrent **and** delete its files       |
+
+### Discovering Shortcuts In the App
+
+You don't need to keep this page open to remember the keys. Press `?` at any time to
+open a help screen listing every shortcut, grouped by the same sections used above,
+since most keys only do something in one of the two views.
+
+Press `?` again, or `Esc`, to close it. On a short terminal the list won't fit all at
+once, so the panel scrolls with the same keys as the rest of the app (`j`/`k`,
+`ctrl+d`/`ctrl+u`, `gg`/`G`).
+
+Like the sort and filter keys, `?` steps aside while you're typing in the search box, so
+it never interferes with a query — press `Tab` to move focus into the list first.
 
 ### Sorting and Filtering Results
 

@@ -5,9 +5,12 @@ from textual.app import App
 from textual.binding import Binding, BindingType
 from textual.reactive import Reactive
 from textual.types import CSSPathType
+from textual.widgets import Input
+from typing_extensions import override
 
 from torrra._types import Indexer
 from torrra.core.config import get_config
+from torrra.screens.help import HelpScreen
 from torrra.screens.home import HomeScreen
 from torrra.screens.theme_selector import ThemeSelectorScreen
 from torrra.screens.welcome import WelcomeScreen
@@ -22,6 +25,7 @@ class TorrraApp(App[None]):
     ENABLE_COMMAND_PALETTE: ClassVar[bool] = False
     BINDINGS: ClassVar[list[BindingType]] = [
         Binding("ctrl+t", "switch_theme"),
+        Binding("question_mark", "show_help", priority=True),
     ]
 
     def __init__(
@@ -78,6 +82,22 @@ class TorrraApp(App[None]):
 
     def action_switch_theme(self) -> None:
         self.push_screen(ThemeSelectorScreen())
+
+    @override
+    def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
+        # "?" is bound with priority so it works from any list, but it is also a
+        # perfectly ordinary character to type into a search query, so step
+        # aside whenever a text box is focused
+        typing_a_query = action == "show_help" and isinstance(self.focused, Input)
+        return not typing_a_query
+
+    def action_show_help(self) -> None:
+        # the binding has priority, so it stays live while help is open;
+        # make the same key close it rather than stack a second copy
+        if isinstance(self.screen, HelpScreen):
+            self.pop_screen()
+        else:
+            self.push_screen(HelpScreen())
 
     @work(exclusive=True)
     async def _show_welcome_and_search(self) -> None:
