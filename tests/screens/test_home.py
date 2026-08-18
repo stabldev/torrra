@@ -70,6 +70,27 @@ async def test_home_screen_search_no_results(app: TorrraApp, mock_indexer: Magic
         assert table.has_class("hidden")
 
 
+async def test_home_screen_search_empty_query(mock_indexer: MagicMock):
+    app = TorrraApp(
+        indexer=Indexer(
+            name="jackett", url="http://mock.indexer.url", api_key="mock_api_key"
+        ),
+        use_cache=False,
+        search_query="",
+        show_downloads=True,
+    )
+
+    async with app.run_test():
+        assert isinstance(app.screen, HomeScreen)
+
+        loader_status = app.screen.query_one("#loader Static", Static)
+        table = app.screen.query_one("SearchContent DataTable")
+
+        assert "Search for torrents..." in str(loader_status.content)
+        assert table.has_class("hidden")
+        assert not mock_indexer.search.called
+
+
 # indexer order is deliberately NOT sorted by any column, so a passing
 # ordering assertion can only come from the sort actually being applied
 SORT_FIXTURE = [
@@ -395,7 +416,7 @@ async def test_clear_filters_restores_configured_min_seeders(
         assert _table_of(app).row_count == 3
 
 
-async def _click_header(pilot: Pilot[TorrraApp], app: TorrraApp, col_key: str) -> None:
+async def _click_header(pilot: Pilot[None], app: TorrraApp, col_key: str) -> None:
     """Click a column header the way a user would, via a real mouse event."""
     table = _table_of(app)
     # the table is bordered, so content starts inset from the widget origin
@@ -461,8 +482,8 @@ NULL_FIELD_FIXTURE = SORT_FIXTURE + [
         magnet_uri="magnet:?xt=urn:btih:nopeers",
         title="Tracker With No Peer Counts",
         size=1_000_000_000,
-        seeders=None,  # pyright: ignore[reportArgumentType]
-        leechers=None,  # pyright: ignore[reportArgumentType]
+        seeders=cast(int, None),
+        leechers=cast(int, None),
         source="MockIndexer",
     ),
 ]

@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from torrra._types import Torrent
@@ -14,10 +16,10 @@ from torrra.core.results import (
 
 
 def make_torrent(
-    title: str,
-    size: float = 1000,
-    seeders: int = 0,
-    leechers: int = 0,
+    title: Any,
+    size: Any = 1000,
+    seeders: Any = 0,
+    leechers: Any = 0,
     source: str = "MockIndexer",
     magnet_uri: str | None = None,
 ) -> Torrent:
