@@ -125,7 +125,7 @@ These work in both the search results and the downloads list.
 | `s`           | Open the sort menu to pick a field: relevance, seeders, size, title, leechers |
 | `S`           | Reverse the current sort direction                                           |
 | `f`           | Toggle hiding results that have 0 seeders                                    |
-| `x`           | Clear sorting and filters, back to the indexer's own ordering                |
+| `x`           | Reset sorting and filters back to your configured defaults                   |
 
 ### Downloads
 
@@ -161,7 +161,7 @@ You don't have to memorise any of this. The bottom border of the results list al
 #### The rest of the controls
 
 - Press `S` to reverse the current direction. Useful for finding the *smallest* file rather than the largest.
-- Press `x` to clear sorting and filters together and return to the indexer's own ranking.
+- Press `x` to reset sorting and filters back to your configured defaults. Out of the box that's the indexer's own ranking with nothing hidden; if you've set `default_sort` or `min_seeders`, `x` returns you to those. To reach the indexer's raw ranking regardless, click the `#` header.
 - In the sort menu, `Esc` closes without changing anything, and the highlight starts on whichever field is already active, so `Enter` is never a surprise.
 
 Each field starts in the direction you'd usually want, shown next to its name in the menu: `seeders`, `size` and `leechers` sort high-to-low (`↓`), while `title` sorts A-Z (`↑`).
@@ -172,6 +172,6 @@ You can also **click a column header** to sort by it, if your terminal has mouse
 
 Sorting is stable, so results that tie on the sort field keep their original relevance ranking rather than jumping around.
 
-Your choices persist across searches for the rest of the session — sort once, and the next search comes back already sorted. To make them permanent, set `default_sort`, `default_sort_order` and `min_seeders` in your [configuration](configuration.md).
+Your choices persist across searches for the rest of the session — sort once, and the next search comes back already sorted. To make them permanent, set `default_sort`, `default_sort_order` and `min_seeders` in your [configuration](configuration.md). `default_sort_order` defaults to `auto`, which gives each field its natural direction, so setting `default_sort = "title"` loads A-Z rather than Z-A.
 
 Sorting and filtering are independent. Changing the sort keeps your filter, and vice versa.

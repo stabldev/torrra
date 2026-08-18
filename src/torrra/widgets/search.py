@@ -98,9 +98,12 @@ class SearchContent(Vertical):
         self._loader: Vertical
 
     @staticmethod
-    def _build_view() -> ResultView:
+    def _config_defaults() -> tuple[SortKey, bool | None, int]:
+        """Read the configured baseline: sort key, direction, and seeder floor.
+
+        Shared by startup and `x` so the two can't drift apart.
+        """
         config = get_config()
-        view = ResultView()
 
         sort_key = parse_sort_key(config.get("general.default_sort", DEFAULT_SORT))
         # a direction is meaningless for relevance, and honouring a configured
@@ -112,11 +115,18 @@ class SearchContent(Vertical):
                 config.get("general.default_sort_order", DEFAULT_SORT_ORDER)
             )
         )
-        view.set_sort(sort_key, descending)
-
-        view.filters.min_seeders = parse_min_seeders(
+        min_seeders = parse_min_seeders(
             config.get("general.min_seeders", DEFAULT_MIN_SEEDERS), DEFAULT_MIN_SEEDERS
         )
+        return sort_key, descending, min_seeders
+
+    @classmethod
+    def _build_view(cls) -> ResultView:
+        sort_key, descending, min_seeders = cls._config_defaults()
+
+        view = ResultView()
+        view.set_sort(sort_key, descending)
+        view.filters.min_seeders = min_seeders
         return view
 
     @override
@@ -330,8 +340,16 @@ class SearchContent(Vertical):
         )
 
     def action_clear_filters(self) -> None:
-        self._view.reset()
-        self._refresh_view("Filters cleared, back to [b]relevance[/b]")
+        # back to the configured baseline rather than hardcoded relevance, so a
+        # configured default_sort stays reachable instead of being startup-only
+        sort_key, descending, min_seeders = self._config_defaults()
+        self._view.reset_to(sort_key, descending, min_seeders)
+
+        message = f"Reset to [b]{self._view.sort_label}[/b]"
+        if min_seeders:
+            plural = "" if min_seeders == 1 else "s"
+            message += f", hiding under [b]{min_seeders}[/b] seeder{plural}"
+        self._refresh_view(message)
 
     @on(AutoResizingDataTable.HeaderSelected)
     def on_header_selected(self, event: AutoResizingDataTable.HeaderSelected) -> None:

@@ -210,6 +210,23 @@ class TestFiltering:
         assert view.filters.is_active is False
         assert titles(view.visible()) == ["ubuntu", "arch", "tiny", "dead"]
 
+    def test_reset_to_applies_a_baseline_instead_of_relevance(
+        self, sample: list[Torrent]
+    ):
+        view = ResultView()
+        view.set_results(sample)
+        view.set_sort(SortKey.TITLE)
+        view.filters.title_contains = "buntu"
+
+        view.reset_to(SortKey.SEEDERS, None, min_seeders=1)
+
+        # ad-hoc filtering is dropped, but the baseline floor is reapplied
+        assert view.sort_key is SortKey.SEEDERS
+        assert view.descending is True  # None defers to the key's own direction
+        assert view.filters.title_contains == ""
+        assert view.filters.min_seeders == 1
+        assert "dead" not in titles(view.visible())
+
 
 class TestDeduplication:
     def test_duplicate_magnet_uris_are_dropped(self):
@@ -252,9 +269,20 @@ class TestConfigParsing:
 
     @pytest.mark.parametrize(
         "raw,expected",
-        [("desc", True), ("DESC", True), ("asc", False), ("bogus", False)],
+        [
+            ("desc", True),
+            ("DESC", True),
+            ("asc", False),
+            ("  Asc  ", False),
+            # anything that isn't an explicit direction defers to the sort key
+            ("auto", None),
+            ("bogus", None),
+            ("", None),
+            (None, None),
+            (42, None),
+        ],
     )
-    def test_parse_sort_order(self, raw: object, expected: bool):
+    def test_parse_sort_order(self, raw: object, expected: bool | None):
         assert parse_sort_order(raw) is expected
 
     @pytest.mark.parametrize(

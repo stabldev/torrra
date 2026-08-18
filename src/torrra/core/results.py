@@ -74,12 +74,18 @@ def parse_sort_key(value: Any, default: SortKey = SortKey.RELEVANCE) -> SortKey:
         return default
 
 
-def parse_sort_order(value: Any, default: bool = False) -> bool:
-    """Return whether the order is descending."""
+def parse_sort_order(value: Any) -> bool | None:
+    """Return whether the order is descending, or None to defer to the sort key.
+
+    Anything that isn't a literal "asc"/"desc" — "auto", a missing key, or junk —
+    returns None so `set_sort` falls back on `_DEFAULT_DESCENDING`. Returning a
+    bool here instead would force one direction onto every key, which is how a
+    configured `default_sort = "title"` ended up loading Z-A.
+    """
     try:
         return SortOrder(str(value).strip().lower()) is SortOrder.DESC
     except ValueError:
-        return default
+        return None
 
 
 def parse_min_seeders(value: Any, default: int = 0) -> int:
@@ -167,8 +173,15 @@ class ResultView:
 
     def reset(self) -> None:
         """Drop filters and return to the indexer's own ordering."""
+        self.reset_to(SortKey.RELEVANCE)
+
+    def reset_to(
+        self, key: SortKey, descending: bool | None = None, min_seeders: int = 0
+    ) -> None:
+        """Drop ad-hoc sorting and filtering, returning to a given baseline."""
         self.filters.clear()
-        self.set_sort(SortKey.RELEVANCE)
+        self.filters.min_seeders = min_seeders
+        self.set_sort(key, descending)
 
     @property
     def total(self) -> int:

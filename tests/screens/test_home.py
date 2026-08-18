@@ -315,6 +315,86 @@ async def test_malformed_sort_config_does_not_crash_startup(
         assert _titles(table) == [t.title for t in SORT_FIXTURE]
 
 
+async def test_configured_title_sort_loads_ascending(
+    app: TorrraApp, mock_indexer: MagicMock, mock_config: Config
+):
+    # regression: default_sort_order fell back to "desc" for every key, so a
+    # configured title sort loaded Z-A instead of the natural A-Z
+    mock_config.set("general.default_sort", "title")
+    mock_indexer.search.return_value = list(SORT_FIXTURE)
+
+    async with app.run_test():
+        table = _table_of(app)
+        assert _titles(table) == sorted(t.title for t in SORT_FIXTURE)
+        assert "title ↑" in str(table.border_title)
+
+
+async def test_configured_seeders_sort_loads_descending(
+    app: TorrraApp, mock_indexer: MagicMock, mock_config: Config
+):
+    # the same defaulting must still give numeric keys their high-to-low order
+    mock_config.set("general.default_sort", "seeders")
+    mock_indexer.search.return_value = list(SORT_FIXTURE)
+
+    async with app.run_test():
+        table = _table_of(app)
+        assert _titles(table)[0] == "Arch Linux ISO"  # 523 seeders
+        assert "seeders ↓" in str(table.border_title)
+
+
+async def test_explicit_sort_order_overrides_the_natural_direction(
+    app: TorrraApp, mock_indexer: MagicMock, mock_config: Config
+):
+    mock_config.set("general.default_sort", "title")
+    mock_config.set("general.default_sort_order", "desc")
+    mock_indexer.search.return_value = list(SORT_FIXTURE)
+
+    async with app.run_test():
+        table = _table_of(app)
+        assert _titles(table) == sorted((t.title for t in SORT_FIXTURE), reverse=True)
+
+
+async def test_clear_filters_restores_configured_sort_not_relevance(
+    app: TorrraApp, mock_indexer: MagicMock, mock_config: Config
+):
+    # x resets to the user's baseline, otherwise default_sort would only ever
+    # apply at startup and be unreachable again for the rest of the session
+    mock_config.set("general.default_sort", "seeders")
+    mock_indexer.search.return_value = list(SORT_FIXTURE)
+
+    async with app.run_test() as pilot:
+        await _choose_sort(pilot, app, SortKey.TITLE)
+        assert _titles(_table_of(app))[0] == "Arch Linux ISO"
+
+        await pilot.press("x")
+        await pilot.pause()
+
+        table = _table_of(app)
+        assert _titles(table)[0] == "Arch Linux ISO"  # 523 seeders, not relevance
+        assert "seeders ↓" in str(table.border_title)
+
+
+async def test_clear_filters_restores_configured_min_seeders(
+    app: TorrraApp, mock_indexer: MagicMock, mock_config: Config
+):
+    mock_config.set("general.min_seeders", "1")
+    mock_indexer.search.return_value = list(SORT_FIXTURE)
+
+    async with app.run_test() as pilot:
+        # the configured floor already hides the dead torrent at startup
+        assert _table_of(app).row_count == 3
+
+        await pilot.press("f")  # toggle the floor off
+        await pilot.pause()
+        assert _table_of(app).row_count == 4
+
+        await pilot.press("x")
+        await pilot.pause()
+
+        # back to the configured baseline, not to "show everything"
+        assert _table_of(app).row_count == 3
+
+
 async def _click_header(pilot: Pilot[TorrraApp], app: TorrraApp, col_key: str) -> None:
     """Click a column header the way a user would, via a real mouse event."""
     table = _table_of(app)
