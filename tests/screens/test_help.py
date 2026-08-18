@@ -106,7 +106,7 @@ async def test_help_scrolls_with_the_same_keys_as_the_rest_of_the_app(
         await pilot.press("question_mark")
         assert isinstance(app.screen, HelpScreen)
 
-        container = app.screen.query_one("#help-container", VerticalScroll)
+        container = app.screen.query_one("#help-content", VerticalScroll)
         bottom = container.max_scroll_y
         assert bottom > 0, "expected the panel to overflow this size"
 

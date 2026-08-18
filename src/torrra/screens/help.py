@@ -3,7 +3,7 @@ from typing import ClassVar
 
 from textual.app import ComposeResult
 from textual.binding import Binding, BindingType
-from textual.containers import VerticalScroll
+from textual.containers import Vertical, VerticalScroll
 from textual.screen import ModalScreen
 from textual.widgets import Label, Static
 from typing_extensions import override
@@ -88,19 +88,21 @@ class HelpScreen(ModalScreen[None]):
 
     @override
     def compose(self) -> ComposeResult:
-        with VerticalScroll(id="help-container"):
+        with Vertical(id="help-container"):
             yield Label("[b]Keyboard Shortcuts[/b]")
-            yield Label("j/k: scroll - esc: close", classes="help-subtext")
-            for title, shortcuts in SHORTCUTS:
-                yield Static(f"[b]{title}[/b]", classes="help-section")
-                for keys, description in shortcuts:
-                    yield Static(
-                        f"[$accent]{keys:<12}[/$accent] {description}",
-                        classes="help-row",
-                    )
+            yield Label("j/k: scroll - esc: close", classes="help-subtitle")
+            with VerticalScroll(id="help-content"):
+                for title, shortcuts in SHORTCUTS:
+                    with Vertical(classes="help-group"):
+                        yield Static(f"[b]{title}[/b]", classes="help-section")
+                        for keys, description in shortcuts:
+                            yield Static(
+                                f"[$accent]{keys:<12}[/$accent] {description}",
+                                classes="help-row",
+                            )
 
     def on_mount(self) -> None:
-        self._container = self.query_one("#help-container", VerticalScroll)
+        self._container = self.query_one("#help-content", VerticalScroll)
 
     # this list only grows as bindings are added, and it already overflows on a
     # short terminal, so the panel scrolls with the same keys the rest of the

@@ -144,7 +144,7 @@ HelpScreen {
   align: center middle;
   #help-container {
     height: auto;
-    max-width: 45;
+    max-width: 50;
     max-height: 80%;
     padding-left: 2;
     background: $surface;
@@ -153,14 +153,22 @@ HelpScreen {
       width: 100%;
       text-align: center;
     }
-    .help-subtext {
+    .help-subtitle {
       color: $text-muted;
     }
-    .help-section {
+    #help-content {
       margin-top: 1;
-    }
-    .help-row {
-      color: $text-muted;
+      height: 1fr;
+      .help-group {
+        height: auto;
+        margin-bottom: 1;
+        &:last-child {
+          margin-bottom: 0;
+        }
+      }
+      .help-row {
+        color: $text-muted;
+      }
     }
   }
 }
