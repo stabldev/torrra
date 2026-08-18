@@ -4,11 +4,17 @@ from unittest.mock import MagicMock
 from textual.pilot import Pilot
 
 from torrra._types import Torrent
+from torrra.core.config import Config
 
 
 def test_home_screen_snapshot(
-    app_factory: Any, mock_indexer: MagicMock, snap_compare: Any
+    app_factory: Any,
+    mock_indexer: MagicMock,
+    mock_config: Config,
+    snap_compare: Any,
 ):
+    # mock_config keeps sort/filter defaults hermetic, so the snapshot
+    # doesn't depend on the developer's real config.toml
     # return mock torrents as result
     mock_indexer.search.return_value = [
         Torrent(
@@ -53,5 +59,32 @@ def test_theme_selector_screen_snapshot(app_factory: Any, snap_compare: Any):
         await pilot.pause()
 
     app = app_factory()
+    app.theme = "textual-dark"  # default theme
+    assert snap_compare(app, run_before=run_before)
+
+
+def test_sort_selector_screen_snapshot(
+    app_factory: Any,
+    mock_indexer: MagicMock,
+    mock_config: Config,
+    snap_compare: Any,
+):
+    mock_indexer.search.return_value = [
+        Torrent(
+            magnet_uri="magnet:?xt=urn:btih:arch_new",
+            title="Arch Linux 2025.11.01",
+            size=1073741824,
+            seeders=850,
+            leechers=50,
+            source="LinuxTacker",
+        ),
+    ]
+
+    async def run_before(pilot: Pilot[Any]):
+        await pilot.pause()
+        await pilot.press("s")
+        await pilot.pause()
+
+    app = app_factory("arch linux iso")
     app.theme = "textual-dark"  # default theme
     assert snap_compare(app, run_before=run_before)
