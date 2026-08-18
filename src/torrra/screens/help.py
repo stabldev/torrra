@@ -90,7 +90,7 @@ class HelpScreen(ModalScreen[None]):
     def compose(self) -> ComposeResult:
         with VerticalScroll(id="help-container"):
             yield Label("[b]Keyboard Shortcuts[/b]")
-            yield Label("j/k: scroll - esc: close", markup=False)
+            yield Label("j/k: scroll - esc: close", classes="help-subtext")
             for title, shortcuts in SHORTCUTS:
                 yield Static(f"[b]{title}[/b]", classes="help-section")
                 for keys, description in shortcuts:
