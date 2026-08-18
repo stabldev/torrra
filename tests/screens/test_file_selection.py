@@ -63,8 +63,55 @@ async def test_file_selection_screen_initial_state():
         # All 3 files should be initially selected
         assert set(selection_list.selected) == {0, 1, 2}
 
+        # Redundant root directory "Ubuntu/" should be removed from displayed prompts
+        prompt_0 = str(selection_list.get_option_at_index(0).prompt)
+        prompt_1 = str(selection_list.get_option_at_index(1).prompt)
+        prompt_2 = str(selection_list.get_option_at_index(2).prompt)
+        assert prompt_0.startswith("ubuntu-24.04-desktop.iso")
+        assert not prompt_0.startswith("Ubuntu/")
+        assert prompt_1.startswith("SHA256SUMS")
+        assert prompt_2.startswith("README.md")
+
         stats = app.screen.query_one("#selection-stats", Static)
         assert "3/3" in str(stats.content)
+
+
+async def test_file_selection_screen_strips_root_preserves_subdirs():
+    mock_ti = MagicMock()
+    mock_ti.name.return_value = "Series Pack"
+    fs = MagicMock()
+    fs.num_files.return_value = 3
+    fs.file_flags.return_value = 0
+    fs.file_path.side_effect = lambda i: [
+        "Series Pack/Season 1/S01E01.mkv",
+        "Series Pack/Season 2/S02E01.mkv",
+        "Series Pack/info.nfo",
+    ][i]
+    fs.file_size.side_effect = lambda i: [1_000_000, 1_000_000, 500][i]
+    ti_files = fs
+    mock_ti.files.return_value = ti_files
+
+    torrent = Torrent(
+        magnet_uri="magnet:?xt=urn:btih:mockseries",
+        title="Series Pack",
+        size=2_000_500,
+        seeders=5,
+        leechers=1,
+        source="Mock",
+    )
+
+    screen = FileSelectionScreen(torrent=torrent, torrent_info=mock_ti)
+    app = DummyHostApp(screen)
+
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        selection_list = app.screen.query_one(FileSelectionList)
+        p0 = str(selection_list.get_option_at_index(0).prompt)
+        p1 = str(selection_list.get_option_at_index(1).prompt)
+        p2 = str(selection_list.get_option_at_index(2).prompt)
+        assert p0.startswith("Season 1/S01E01.mkv")
+        assert p1.startswith("Season 2/S02E01.mkv")
+        assert p2.startswith("info.nfo")
 
 
 async def test_file_selection_screen_filename_truncation_with_size():

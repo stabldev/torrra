@@ -155,10 +155,7 @@ class FileSelectionScreen(ModalScreen[list[int] | None]):
             return f"{file_path} [dim]({size_str})[/dim]"
 
         avail = max_width - len(size_suffix) - 3  # 3 chars for "..."
-        if avail > 0:
-            truncated = file_path[:avail] + "..."
-        else:
-            truncated = file_path[:8] + "..."
+        truncated = file_path[: avail if avail > 0 else 8] + "..."
         return f"{truncated} [dim]({size_str})[/dim]"
 
     def _populate_files(self, info: lt.torrent_info) -> None:
@@ -176,7 +173,7 @@ class FileSelectionScreen(ModalScreen[list[int] | None]):
         self._pad_file_indices.clear()
         self._selection_list.clear_options()
 
-        selections: list[Selection[int]] = []
+        raw_files: list[tuple[int, str, int]] = []
         for i in range(num_files):
             # Check for pad files
             if hasattr(lt.file_storage, "flag_pad_file") and (
@@ -188,7 +185,18 @@ class FileSelectionScreen(ModalScreen[list[int] | None]):
             file_path = fs.file_path(i).replace("\\", "/")
             file_size = fs.file_size(i)
             self._file_sizes[i] = file_size
+            raw_files.append((i, file_path, file_size))
 
+        # Check if all files share a common root directory
+        common_root: str | None = None
+        all_paths = [path for _, path, _ in raw_files]
+        if all_paths and all("/" in p for p in all_paths):
+            roots = {p.split("/", 1)[0] for p in all_paths}
+            if len(roots) == 1:
+                common_root = roots.pop()
+
+        selections: list[Selection[int]] = []
+        for i, file_path, file_size in raw_files:
             # Determine initial selected state
             if self.existing_priorities is not None and i < len(
                 self.existing_priorities
@@ -197,8 +205,14 @@ class FileSelectionScreen(ModalScreen[list[int] | None]):
             else:
                 initial_state = True
 
+            display_path = (
+                file_path[len(common_root) + 1 :]
+                if common_root and file_path.startswith(f"{common_root}/")
+                else file_path
+            )
+
             size_str = human_readable_size(file_size)
-            prompt = self._format_file_prompt(file_path, size_str, max_width=46)
+            prompt = self._format_file_prompt(display_path, size_str, max_width=46)
             selections.append(Selection(prompt, value=i, initial_state=initial_state))
 
         self._selection_list.add_options(selections)
