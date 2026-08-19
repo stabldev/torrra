@@ -55,7 +55,10 @@ async def handle_direct_download(home_screen: "HomeScreen", input_path: str) -> 
         )
         tm.add_torrent(torrent_record, file_priorities=actual_priorities)
 
-        # Switch to downloads content and select the new torrent
+        # Refresh downloads content table and ensure downloads is selected
+        from torrra.widgets.downloads import DownloadsContent
+
+        home_screen.query_one(DownloadsContent).refresh_torrents()
         home_screen.query_one(
             "#content_switcher", ContentSwitcher
         ).current = "downloads_content"

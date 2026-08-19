@@ -74,3 +74,24 @@ def test_config_commands_flow():
     list_result = runner.invoke(cli, ["config", "list"])
     assert list_result.exit_code == 0
     assert "test.key=test_value" in list_result.output
+
+
+def test_download_command_valid_magnet(monkeypatch: pytest.MonkeyPatch):
+    mock_run_func = MagicMock()
+    monkeypatch.setattr("torrra.utils.indexer.run_with_default_indexer", mock_run_func)
+
+    runner = CliRunner()
+    magnet = "magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567&dn=test"
+    result = runner.invoke(cli, ["download", magnet, "--no-cache"])
+
+    assert result.exit_code == 0
+    mock_run_func.assert_called_once_with(no_cache=True, direct_download=magnet)
+
+
+def test_download_command_invalid_input():
+    runner = CliRunner()
+    result = runner.invoke(cli, ["download", "not_a_valid_magnet_or_file"])
+
+    assert result.exit_code == 0
+    assert "Invalid input" in result.output
+

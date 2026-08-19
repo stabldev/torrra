@@ -171,15 +171,21 @@ class SearchContent(Vertical):
     async def on_data_table_row_selected(
         self, event: AutoResizingDataTable.RowSelected
     ) -> None:
+        if getattr(self, "_is_selecting_files", False):
+            return
+        self._is_selecting_files = True
+
         magnet_uri = cast(str, event.row_key.value)
         self._selected_torrent = self._search_results_map.get(magnet_uri)
         if not self._selected_torrent:
+            self._is_selecting_files = False
             return
 
         raw_magnet_uri = self._selected_torrent.magnet_uri
         resolved_magnet_uri, torrent_info = await resolve_torrent(raw_magnet_uri)
 
         if resolved_magnet_uri is None:
+            self._is_selecting_files = False
             self.notify("Failed to resolve torrent URI", severity="error")
             return
 
@@ -189,6 +195,7 @@ class SearchContent(Vertical):
 
         config = get_config()
         if config.get("general.download_in_external_client", False):
+            self._is_selecting_files = False
             if config.get("general.use_transmission", False):
                 tran_user = config.get("general.transmission_user", "")
                 tran_pass = config.get("general.transmission_pass", "")
@@ -226,6 +233,7 @@ class SearchContent(Vertical):
             )
 
     def _on_file_selection_done(self, priorities: list[int] | None) -> None:
+        self._is_selecting_files = False
         if priorities is None or not self._selected_torrent:
             return
 

@@ -56,6 +56,9 @@ class DownloadsContent(Vertical):
             self._table.add_column(label, width=width, key=key)
 
     def on_show(self) -> None:
+        self.refresh_torrents()
+
+    def refresh_torrents(self) -> None:
         self._torrents = self._tm.get_all_torrents()
 
         self._table.clear()
@@ -208,11 +211,16 @@ class DownloadsContent(Vertical):
         self._table.focus()
 
     def update_table_data(self, statuses: dict[str, TorrentStatus | None]) -> None:
+        # First, update the torrent list from the database to catch new or updated torrents
+        updated_torrents = self._tm.get_all_torrents()
+        current_uris = [t["magnet_uri"] for t in self._torrents]
+        updated_uris = [t["magnet_uri"] for t in updated_torrents]
+        if current_uris != updated_uris:
+            self.refresh_torrents()
+
         if not self._torrents:
             return
 
-        # First, update the torrent list from the database to catch metadata updates
-        updated_torrents = self._tm.get_all_torrents()
         torrent_map = {t["magnet_uri"]: t for t in updated_torrents}
 
         for torrent in self._torrents:

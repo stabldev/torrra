@@ -28,8 +28,8 @@ def download(magnet_uri_or_file: str, no_cache: bool) -> None:
     from torrra.utils.indexer import run_with_default_indexer
 
     # Validate input - can be magnet URI, URL, or local torrent file
-    is_magnet = magnet_uri_or_file.startswith("magnet:?xt=")
-    is_url = re.match(r"^https?://", magnet_uri_or_file)
+    is_magnet = magnet_uri_or_file.startswith("magnet:")
+    is_url = bool(re.match(r"^https?://", magnet_uri_or_file))
     is_local_file = os.path.isfile(magnet_uri_or_file) and magnet_uri_or_file.endswith(
         ".torrent"
     )

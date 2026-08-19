@@ -340,6 +340,15 @@ async def test_search_content_one_step_enter(mock_indexer: MagicMock):
         # Should immediately open FileSelectionScreen in 1 step!
         assert isinstance(app.screen, FileSelectionScreen)
 
+        # Confirm on FileSelectionScreen with enter
+        await pilot.press("enter")
+        await pilot.pause()
+
+        # Should be on HomeScreen with downloads view, NOT a second FileSelectionScreen!
+        from torrra.screens.home import HomeScreen
+
+        assert isinstance(app.screen, HomeScreen)
+
 
 async def test_torrent_manager_file_priorities_persistence(tmp_path: Any, monkeypatch: pytest.MonkeyPatch):
     from torrra.core import db as db_module
@@ -426,4 +435,104 @@ async def test_downloads_content_action_select_files(tmp_path: Any, monkeypatch:
 
         assert isinstance(app.screen, FileSelectionScreen)
         assert app.screen.is_edit_mode is True
+
+
+async def test_direct_download_modal_shown_on_downloads_section(
+    tmp_path: Any, monkeypatch: pytest.MonkeyPatch
+):
+    from textual.widgets import ContentSwitcher
+
+    from torrra._types import Indexer
+    from torrra.app import TorrraApp
+    from torrra.core import db as db_module
+    from torrra.screens.home import HomeScreen
+    from torrra.widgets.downloads import DownloadsContent
+    from torrra.widgets.sidebar import Sidebar
+
+    temp_db = tmp_path / "test.db"
+    monkeypatch.setattr(db_module, "DB_FILE", temp_db)
+    monkeypatch.setattr(db_module, "DB_DIR", tmp_path)
+    db_module.init_db()
+
+    magnet = "magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567&dn=Direct+Download+Test"
+    app = TorrraApp(
+        indexer=Indexer(name="jackett", url="http://mock.url", api_key="key"),
+        use_cache=False,
+        search_query="",
+        direct_download=magnet,
+    )
+
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        # Verify FileSelectionScreen modal is pushed on top
+        assert isinstance(app.screen, FileSelectionScreen)
+
+        # Verify underlying screen is HomeScreen with downloads section active
+        home_screen = next(s for s in app.screen_stack if isinstance(s, HomeScreen))
+        assert (
+            home_screen.query_one("#content_switcher", ContentSwitcher).current
+            == "downloads_content"
+        )
+        sidebar = home_screen.query_one("#sidebar", Sidebar)
+        assert sidebar.cursor_node is not None
+        assert sidebar.cursor_node.data.get("group_id") == "downloads_content"
+
+        # Confirm download with enter (skip metadata / download all)
+        await pilot.press("enter")
+        await pilot.pause()
+
+        assert isinstance(app.screen, HomeScreen)
+        tm = get_torrent_manager()
+        assert len(tm.get_all_torrents()) == 1
+        assert tm.get_all_torrents()[0]["magnet_uri"] == magnet
+
+        downloads_content = app.screen.query_one(DownloadsContent)
+        assert downloads_content._table.row_count == 1
+
+
+async def test_direct_download_modal_cancel(
+    tmp_path: Any, monkeypatch: pytest.MonkeyPatch
+):
+    from textual.widgets import ContentSwitcher
+
+    from torrra._types import Indexer
+    from torrra.app import TorrraApp
+    from torrra.core import db as db_module
+    from torrra.screens.home import HomeScreen
+    from torrra.widgets.sidebar import Sidebar
+
+    temp_db = tmp_path / "test.db"
+    monkeypatch.setattr(db_module, "DB_FILE", temp_db)
+    monkeypatch.setattr(db_module, "DB_DIR", tmp_path)
+    db_module.init_db()
+
+    magnet = "magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567&dn=Direct+Download+Test"
+    app = TorrraApp(
+        indexer=Indexer(name="jackett", url="http://mock.url", api_key="key"),
+        use_cache=False,
+        search_query="",
+        direct_download=magnet,
+    )
+
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        assert isinstance(app.screen, FileSelectionScreen)
+
+        # Cancel with escape
+        await pilot.press("escape")
+        await pilot.pause()
+
+        assert isinstance(app.screen, HomeScreen)
+        tm = get_torrent_manager()
+        assert len(tm.get_all_torrents()) == 0
+
+        home_screen = app.screen
+        assert (
+            home_screen.query_one("#content_switcher", ContentSwitcher).current
+            == "downloads_content"
+        )
+        sidebar = home_screen.query_one("#sidebar", Sidebar)
+        assert sidebar.cursor_node is not None
+        assert sidebar.cursor_node.data.get("group_id") == "downloads_content"
+
 

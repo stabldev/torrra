@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any, ClassVar
 
 import libtorrent as lt
-from textual import on
+from textual import events, on
 from textual.app import ComposeResult
 from textual.binding import Binding, BindingType
 from textual.containers import Vertical
@@ -29,6 +29,7 @@ class FileSelectionList(SelectionList[int]):
         Binding("k", "cursor_up", "Up", show=False),
         Binding("down", "cursor_down", "Down", show=False),
         Binding("up", "cursor_up", "Up", show=False),
+        Binding("enter", "confirm_selection", "Confirm", show=False),
     ]
 
     def action_toggle_selection(self) -> None:
@@ -42,6 +43,7 @@ class FileSelectionScreen(ModalScreen[list[int] | None]):
 
     BINDINGS: ClassVar[list[BindingType]] = [
         Binding("escape", "cancel", "Cancel"),
+        Binding("enter", "confirm_selection", "Download"),
         Binding("a", "select_all", "Select All"),
         Binding("n", "select_none", "Select None"),
         Binding("i", "invert_selection", "Invert"),
@@ -253,10 +255,10 @@ class FileSelectionScreen(ModalScreen[list[int] | None]):
             f"Selected: [b]{selected_count}/{total_count}[/b] files · [b]{sel_size_str}[/b] / {tot_size_str}"
         )
 
-    def key_enter(self) -> None:
-        if self._torrent_info is None:
-            self.action_skip_metadata()
-        else:
+    def on_key(self, event: events.Key) -> None:
+        if event.key == "enter":
+            event.stop()
+            event.prevent_default()
             self.action_confirm_selection()
 
     def action_confirm_selection(self) -> None:
