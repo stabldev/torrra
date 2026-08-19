@@ -10,9 +10,12 @@ from typing_extensions import override
 
 DOWNLOADS_GROUP: list[str] = [
     "Downloading",
+    "Stalled",
     "Seeding",
     "Paused",
     "Completed",
+    "Checking",
+    "Error",
 ]
 
 

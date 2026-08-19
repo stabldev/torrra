@@ -9,7 +9,7 @@ from torrra.core.download import get_download_manager
 from torrra.core.torrent import get_torrent_manager
 from torrra.widgets.downloads import DownloadsContent
 from torrra.widgets.search import SearchContent
-from torrra.widgets.sidebar import Sidebar
+from torrra.widgets.sidebar import DOWNLOADS_GROUP, Sidebar
 
 
 class HomeScreen(Screen[None]):
@@ -89,10 +89,13 @@ class HomeScreen(Screen[None]):
 
     def on_sidebar_item_selected(self, event: Sidebar.ItemSelected) -> None:
         self.query_one(ContentSwitcher).current = event.group_id
+        if event.group_id == "downloads_content":
+            self._downloads_content.set_group_filter(event.group_type)
 
     def on_search_content_download_requested(self) -> None:
         self.query_one(ContentSwitcher).current = "downloads_content"
         self.query_one(Sidebar).select_node_by_group_id("downloads_content")
+        self._downloads_content.set_group_filter(None)
 
         self._downloads_content.focus_table()
 
@@ -104,7 +107,7 @@ class HomeScreen(Screen[None]):
 
         magnet_uris = list(dm.torrents.keys())
 
-        counts = {"Downloading": 0, "Seeding": 0, "Paused": 0, "Completed": 0}
+        counts = {group: 0 for group in DOWNLOADS_GROUP}
         statuses: dict[str, TorrentStatus | None] = {}
 
         for uri in magnet_uris:
@@ -114,20 +117,20 @@ class HomeScreen(Screen[None]):
                 continue
 
             state_text = dm.get_torrent_state_text(status)
-            if state_text in (
-                "Downloading",
-                "Fetching",
-                "Stalled",
-                "Checking",
-                "Allocating",
-                "Queued",
-            ):
+            if state_text in ("Downloading", "Fetching", "Allocating"):
                 counts["Downloading"] += 1
+            elif state_text == "Stalled":
+                counts["Stalled"] += 1
+            elif state_text == "Seeding":
+                counts["Seeding"] += 1
+            elif state_text in ("Paused", "Queued"):
+                counts["Paused"] += 1
+            elif state_text == "Completed":
+                counts["Completed"] += 1
+            elif state_text == "Checking":
+                counts["Checking"] += 1
             elif state_text in ("Missing Files", "Error"):
-                if status.get("is_seeding") or status.get("progress", 0) >= 100:
-                    counts["Completed"] += 1
-                else:
-                    counts["Downloading"] += 1
+                counts["Error"] += 1
             elif state_text in counts:
                 counts[state_text] += 1
 
