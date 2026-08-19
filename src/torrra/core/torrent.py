@@ -13,6 +13,9 @@ def get_torrent_manager() -> "TorrentManager":
 
 
 class TorrentManager:
+    def __init__(self) -> None:
+        init_db()
+
     def add_torrent(
         self, torrent: Torrent, file_priorities: list[int] | None = None
     ) -> None:

@@ -15,14 +15,14 @@ from torrra.widgets.sidebar import Sidebar
 class HomeScreen(Screen[None]):
     def __init__(
         self,
-        indexer: Indexer,
+        indexer: Indexer | None,
         search_query: str,
         use_cache: bool,
         direct_download: str | None = None,
         show_downloads: bool = False,
     ):
         super().__init__()
-        self.indexer: Indexer = indexer
+        self.indexer: Indexer | None = indexer
         self.search_query: str = search_query
         self.use_cache: bool = use_cache
         self.direct_download: str | None = direct_download
@@ -34,21 +34,24 @@ class HomeScreen(Screen[None]):
 
     @override
     def compose(self) -> ComposeResult:
+        # without an indexer there is no search, so the app opens on downloads
+        has_search = self.indexer is not None
         initial_content = (
-            "downloads_content"
-            if self.direct_download or self.show_downloads
-            else "search_content"
+            "search_content"
+            if has_search and not (self.direct_download or self.show_downloads)
+            else "downloads_content"
         )
 
         with Horizontal(id="main_layout"):
-            yield Sidebar(id="sidebar")
+            yield Sidebar(id="sidebar", show_search=has_search)
             with ContentSwitcher(initial=initial_content, id="content_switcher"):
                 yield DownloadsContent()
-                yield SearchContent(
-                    indexer=self.indexer,
-                    search_query=self.search_query,
-                    use_cache=self.use_cache,
-                )
+                if self.indexer is not None:
+                    yield SearchContent(
+                        indexer=self.indexer,
+                        search_query=self.search_query,
+                        use_cache=self.use_cache,
+                    )
 
     def on_mount(self) -> None:
         self._sidebar = self.query_one(Sidebar)
@@ -67,7 +70,7 @@ class HomeScreen(Screen[None]):
                 file_priorities=torrent.get("file_priorities"),
             )
 
-        if self.show_downloads or self.direct_download:
+        if self.show_downloads or self.direct_download or self.indexer is None:
             # When showing downloads or handling direct download, set sidebar active node to downloads
             self._sidebar.select_node_by_group_id("downloads_content")
             self._downloads_content.focus_table()

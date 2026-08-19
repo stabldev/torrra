@@ -481,6 +481,7 @@ async def test_direct_download_modal_shown_on_downloads_section(
         )
         sidebar = home_screen.query_one("#sidebar", Sidebar)
         assert sidebar.cursor_node is not None
+        assert sidebar.cursor_node.data is not None
         assert sidebar.cursor_node.data.get("group_id") == "downloads_content"
 
         # Confirm download with enter (skip metadata / download all)

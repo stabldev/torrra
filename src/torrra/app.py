@@ -30,14 +30,14 @@ class TorrraApp(App[None]):
 
     def __init__(
         self,
-        indexer: Indexer,
+        indexer: Indexer | None,
         use_cache: bool,
         search_query: str | None,
         direct_download: str | None = None,
         show_downloads: bool = False,
     ) -> None:
         super().__init__()
-        self.indexer: Indexer = indexer
+        self.indexer: Indexer | None = indexer
         self.use_cache: bool = use_cache
         self.search_query: str | None = search_query
         self.direct_download: str | None = direct_download
@@ -53,29 +53,21 @@ class TorrraApp(App[None]):
         self.theme = theme
 
     async def on_mount(self) -> None:
-        if self.direct_download:
-            # Direct download mode - go straight to home screen with downloads tab
+        # the welcome screen only exists to collect a search query, so it is
+        # reachable solely with a configured indexer and no other entry point
+        # (direct download / downloads view / an already-supplied query)
+        wants_downloads_view = bool(self.direct_download or self.show_downloads)
+        has_query = bool(self.search_query and self.search_query.strip())
+
+        if self.indexer is not None and not wants_downloads_view and not has_query:
+            self._show_welcome_and_search()
+        else:
             await self.push_screen(
                 HomeScreen(
                     indexer=self.indexer,
                     search_query=self.search_query or "",
                     use_cache=self.use_cache,
                     direct_download=self.direct_download,
-                    show_downloads=self.show_downloads,
-                )
-            )
-        elif (
-            not (self.search_query and self.search_query.strip())
-            and not self.show_downloads
-        ):
-            self._show_welcome_and_search()
-        else:  # direct show search screen
-            await self.push_screen(
-                HomeScreen(
-                    indexer=self.indexer,
-                    search_query=self.search_query or "",
-                    use_cache=self.use_cache,
-                    direct_download=None,
                     show_downloads=self.show_downloads,
                 )
             )
@@ -101,6 +93,8 @@ class TorrraApp(App[None]):
 
     @work(exclusive=True)
     async def _show_welcome_and_search(self) -> None:
+        # only ever called with an indexer configured (see on_mount)
+        assert self.indexer is not None
         if search_query := await self.push_screen_wait(
             WelcomeScreen(indexer=self.indexer)
         ):  # show both screens
