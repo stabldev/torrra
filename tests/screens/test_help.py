@@ -15,8 +15,6 @@ def app(app_factory: Any) -> TorrraApp:
 
 async def test_help_opens_with_question_mark_and_closes_with_escape(app: TorrraApp):
     async with app.run_test() as pilot:
-        app.screen.set_focus(None)
-
         await pilot.press("question_mark")
         assert isinstance(app.screen, HelpScreen)
         assert len(app.screen_stack) == 3  # default + welcome + help
@@ -28,8 +26,6 @@ async def test_help_opens_with_question_mark_and_closes_with_escape(app: TorrraA
 @pytest.mark.parametrize("key", ["question_mark", "q"])
 async def test_help_closes_with_its_other_keys(app: TorrraApp, key: str):
     async with app.run_test() as pilot:
-        app.screen.set_focus(None)
-
         await pilot.press("question_mark")
         assert isinstance(app.screen, HelpScreen)
 
@@ -39,8 +35,6 @@ async def test_help_closes_with_its_other_keys(app: TorrraApp, key: str):
 
 async def test_help_does_not_stack_duplicate_screens(app: TorrraApp):
     async with app.run_test() as pilot:
-        app.screen.set_focus(None)
-
         await pilot.press("question_mark")
         depth = len(app.screen_stack)
 
@@ -53,16 +47,32 @@ async def test_help_does_not_stack_duplicate_screens(app: TorrraApp):
 async def test_question_mark_types_into_a_search_box_instead_of_opening_help(
     app: TorrraApp,
 ):
-    """The binding has priority, so it must step aside while a query is typed."""
+    """The binding has priority, but it steps aside while a non-empty query is typed."""
     async with app.run_test() as pilot:
         search_input = app.screen.query_one(Input)
         search_input.focus()
+        await pilot.press(*list("arch"))
         await pilot.pause()
 
         await pilot.press("question_mark")
 
         assert not isinstance(app.screen, HelpScreen)
-        assert search_input.value == "?"
+        assert search_input.value == "arch?"
+
+
+async def test_question_mark_opens_help_from_search_box_when_empty(
+    app: TorrraApp,
+):
+    """When the search input is empty, ? opens the help screen directly."""
+    async with app.run_test() as pilot:
+        search_input = app.screen.query_one(Input)
+        search_input.focus()
+        assert search_input.value == ""
+        await pilot.pause()
+
+        await pilot.press("question_mark")
+
+        assert isinstance(app.screen, HelpScreen)
 
 
 async def test_help_lists_every_documented_shortcut(app: TorrraApp):

@@ -79,8 +79,12 @@ class TorrraApp(App[None]):
     def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
         # "?" is bound with priority so it works from any list, but it is also a
         # perfectly ordinary character to type into a search query, so step
-        # aside whenever a text box is focused
-        typing_a_query = action == "show_help" and isinstance(self.focused, Input)
+        # aside whenever a text box is focused and contains text
+        typing_a_query = (
+            action == "show_help"
+            and isinstance(self.focused, Input)
+            and bool(self.focused.value.strip())
+        )
         return not typing_a_query
 
     def action_show_help(self) -> None:
