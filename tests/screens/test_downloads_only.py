@@ -21,7 +21,10 @@ def temp_db(tmp_path: Any, monkeypatch: pytest.MonkeyPatch):
 
 
 def _sidebar_group_ids(sidebar: Sidebar) -> list[str | None]:
-    return [child.data.get("group_id") if child.data else None for child in sidebar.root.children]
+    return [
+        child.data.get("group_id") if child.data else None
+        for child in sidebar.root.children
+    ]
 
 
 @pytest.mark.usefixtures("temp_db")
@@ -45,7 +48,9 @@ async def test_downloads_view_launches_without_indexer():
         )
         # ...and search is entirely absent, both content and sidebar node
         assert len(app.screen.query(SearchContent)) == 0
-        assert _sidebar_group_ids(app.screen.query_one(Sidebar)) == ["downloads_content"]
+        assert _sidebar_group_ids(app.screen.query_one(Sidebar)) == [
+            "downloads_content"
+        ]
 
 
 @pytest.mark.usefixtures("temp_db")
