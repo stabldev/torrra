@@ -236,7 +236,7 @@ FileSelectionScreen {
 
     #file-selection-header {
       height: auto;
-      margin-bottom: 0;
+      margin-bottom: 1;
       padding: 0 1;
       #torrent-name {
         width: 100%;
@@ -279,18 +279,14 @@ FileSelectionScreen {
       margin: 0;
       SelectionList {
         height: 1fr;
-        background: transparent;
-        border: solid $secondary-muted;
+        border: none;
         scrollbar-size: 0 0;
-        &:focus {
-          border: solid $secondary;
-        }
       }
     }
 
     #file-selection-footer {
       height: auto;
-      margin-top: 0;
+      margin-top: 1;
       #shortcuts-hint {
         width: 100%;
         text-align: center;
