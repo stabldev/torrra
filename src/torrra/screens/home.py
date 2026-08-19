@@ -114,8 +114,20 @@ class HomeScreen(Screen[None]):
                 continue
 
             state_text = dm.get_torrent_state_text(status)
-            if state_text in ("Downloading", "Fetching"):
+            if state_text in (
+                "Downloading",
+                "Fetching",
+                "Stalled",
+                "Checking",
+                "Allocating",
+                "Queued",
+            ):
                 counts["Downloading"] += 1
+            elif state_text in ("Missing Files", "Error"):
+                if status.get("is_seeding") or status.get("progress", 0) >= 100:
+                    counts["Completed"] += 1
+                else:
+                    counts["Downloading"] += 1
             elif state_text in counts:
                 counts[state_text] += 1
 

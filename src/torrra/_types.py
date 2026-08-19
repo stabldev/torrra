@@ -17,10 +17,10 @@ class TorrentDict(TypedDict, total=False):
     file_priorities: list[int] | None
 
 
-class TorrentStatus(TypedDict):
+class TorrentStatus(TypedDict, total=False):
     """Torrent status on upload and download."""
 
-    state: lt.torrent_status.states
+    state: lt.torrent_status.states | int
     progress: float
     down_speed: float
     up_speed: float
@@ -29,6 +29,10 @@ class TorrentStatus(TypedDict):
     is_paused: bool
     eta: float | None
     is_seeding: bool
+    error: str | None
+    error_file: int
+    is_missing_files: bool
+    is_queued: bool
 
 
 class TorrentRecord(TypedDict, total=False):
