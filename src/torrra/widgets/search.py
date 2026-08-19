@@ -38,6 +38,7 @@ from torrra.utils.helpers import human_readable_size, lazy_import
 from torrra.utils.magnet import resolve_torrent
 from torrra.widgets.data_table import AutoResizingDataTable
 from torrra.widgets.details_panel import DetailsPanel
+from torrra.widgets.search_input import SearchInput
 from torrra.widgets.spinner import Spinner
 
 
@@ -140,7 +141,7 @@ class SearchContent(Vertical):
 
     @override
     def compose(self) -> ComposeResult:
-        yield Input(placeholder="Search...", value=self.search_query)
+        yield SearchInput(placeholder="Search...", value=self.search_query)
         yield AutoResizingDataTable(cursor_type="row", classes="hidden")
         yield DetailsPanel()
         with Vertical(id="loader"):

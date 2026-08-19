@@ -6,6 +6,7 @@ from typing_extensions import override
 
 from torrra._types import Indexer
 from torrra._version import __version__
+from torrra.widgets.search_input import SearchInput
 
 BANNER = """
 ▀█▀ █▀█ █▀▄ █▀▄ █▀▄ █▀█
@@ -27,7 +28,7 @@ class WelcomeScreen(Screen[str]):
                 "Find and download torrents right from here.\nPowered by libtorrent and Python ❤️",
                 id="subtitle",
             )
-            yield Input(placeholder="Search...", id="search")
+            yield SearchInput(placeholder="Search...", id="search")
             yield Static(
                 f"v{__version__}{f' - {self.indexer.name}' if self.indexer else ''}",
                 id="version",
@@ -38,6 +39,8 @@ class WelcomeScreen(Screen[str]):
                 yield Static("ctrl+q", classes="key")
                 yield Static("[t]heme switcher", markup=False)
                 yield Static("ctrl+t", classes="key")
+                yield Static("shortcuts", markup=False)
+                yield Static("?", classes="key")
 
     async def on_input_submitted(self, event: Input.Submitted) -> None:
         if query := event.value.strip():

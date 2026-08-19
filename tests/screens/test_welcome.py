@@ -71,3 +71,20 @@ async def test_welcome_screen_empty_search_does_not_dismiss(app: TorrraApp):
         await pilot.press("enter")
         # should be still on WelcomeScreen
         assert isinstance(app.screen, WelcomeScreen)
+
+
+async def test_welcome_screen_keybinds_display(app: TorrraApp):
+    async with app.run_test():
+        assert isinstance(app.screen, WelcomeScreen)
+
+        commands_text = [
+            str(widget.content)
+            for widget in app.screen.query("#commands_container Static")
+        ]
+        assert "[key binds]" in commands_text
+        assert "[q]uit" in commands_text
+        assert "ctrl+q" in commands_text
+        assert "[t]heme switcher" in commands_text
+        assert "ctrl+t" in commands_text
+        assert "shortcuts" in commands_text
+        assert "?" in commands_text
