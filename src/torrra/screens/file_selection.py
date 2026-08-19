@@ -7,10 +7,11 @@ from textual import events, on
 from textual.app import ComposeResult
 from textual.binding import Binding, BindingType
 from textual.containers import Vertical
+from textual.message import Message
 from textual.screen import ModalScreen
 from textual.timer import Timer
-from textual.widgets import SelectionList, Static
-from textual.widgets.selection_list import Selection
+from textual.widgets import Static, Tree
+from textual.widgets.tree import TreeNode
 from typing_extensions import override
 
 from torrra._types import Torrent
@@ -20,8 +21,27 @@ from torrra.utils.helpers import human_readable_size
 from torrra.widgets.spinner import Spinner
 
 
-class FileSelectionList(SelectionList[int]):
-    """Custom SelectionList with vim and arrow key navigation."""
+def _selection_mark(selected: int, total: int) -> str:
+    """Return a colored checkbox marker for a node's selection state.
+
+    Brackets are escaped so they survive rich markup processing, and the mark
+    is tinted green (all), yellow (partial) or dim (none).
+    """
+    if selected == 0 or total == 0:
+        return "[dim]\\[ ][/dim]"
+    if selected == total:
+        return "[green]\\[x][/green]"
+    return "[yellow]\\[~][/yellow]"
+
+
+class FileSelectionTree(Tree[int]):
+    """A collapsible directory tree of a torrent's files with multi-selection.
+
+    Folders are expandable/collapsible nodes; files are leaves. ``space``
+    toggles the highlighted file (or a whole folder subtree), and the arrow
+    keys navigate. Selection state is shown on each label and tracked as a set
+    of file indices.
+    """
 
     BINDINGS: ClassVar[list[BindingType]] = [
         Binding("space", "toggle_selection", "Toggle", show=False),
@@ -29,13 +49,210 @@ class FileSelectionList(SelectionList[int]):
         Binding("k", "cursor_up", "Up", show=False),
         Binding("down", "cursor_down", "Down", show=False),
         Binding("up", "cursor_up", "Up", show=False),
+        Binding("left", "collapse_node", "Collapse folder", show=False),
+        Binding("right", "expand_node", "Expand folder", show=False),
         Binding("enter", "confirm_selection", "Confirm", show=False),
     ]
 
+    class SelectionChanged(Message):
+        """Posted whenever the set of selected files changes."""
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.show_root = False
+
+        self._selected: set[int] = set()
+        self._file_sizes: dict[int, int] = {}
+        self._nodes_by_index: dict[int, TreeNode[int]] = {}
+        self._folder_nodes: list[TreeNode[int]] = []
+        self._node_files: dict[TreeNode[int], set[int]] = {}
+        self._base_labels: dict[TreeNode[int], str] = {}
+        self._folder_nodes_by_path: dict[tuple[str, ...], TreeNode[int]] = {}
+
+    @staticmethod
+    def _format_file_prompt(file_path: str, size_str: str, max_width: int = 46) -> str:
+        size_suffix = f" ({size_str})"
+        if len(file_path) + len(size_suffix) <= max_width:
+            return f"{file_path} [dim]({size_str})[/dim]"
+
+        avail = max_width - len(size_suffix) - 3  # 3 chars for "..."
+        truncated = file_path[: avail if avail > 0 else 8] + "..."
+        return f"{truncated} [dim]({size_str})[/dim]"
+
+    @property
+    def selected(self) -> set[int]:
+        return self._selected
+
+    def file_labels(self) -> dict[int, str]:
+        """Map each file index to its rendered label (for tests/introspection)."""
+        return {i: str(node.label) for i, node in self._nodes_by_index.items()}
+
+    def folder_labels(self) -> dict[str, str]:
+        """Map each folder name to its rendered label (for tests/introspection)."""
+        return {self._base_labels[n]: str(n.label) for n in self._folder_nodes}
+
+    def folder_nodes(self) -> list[TreeNode[int]]:
+        """Return the folder nodes in build order (for tests/introspection)."""
+        return list(self._folder_nodes)
+
+    def populate(
+        self,
+        raw_files: list[tuple[int, str, int]],
+        common_root: str | None,
+        existing_priorities: list[int] | None,
+    ) -> None:
+        """Build the folder tree from ``(index, path, size)`` tuples."""
+        self.clear()
+        self._selected = set()
+        self._nodes_by_index = {}
+        self._folder_nodes = []
+        self._node_files = {}
+        self._base_labels = {}
+        self._folder_nodes_by_path = {}
+
+        for index, file_path, file_size in raw_files:
+            self._file_sizes[index] = file_size
+
+            display_path = (
+                file_path[len(common_root) + 1 :]
+                if common_root and file_path.startswith(f"{common_root}/")
+                else file_path
+            )
+            parts = display_path.split("/")
+
+            parent: TreeNode[int] = self.root
+            path_key: tuple[str, ...] = ()
+            for part in parts[:-1]:
+                path_key = path_key + (part,)
+                folder = self._folder_nodes_by_path.get(path_key)
+                if folder is None:
+                    folder = parent.add(part, expand=True)
+                    self._folder_nodes_by_path[path_key] = folder
+                    self._folder_nodes.append(folder)
+                    self._node_files[folder] = set()
+                    self._base_labels[folder] = part
+                parent = folder
+
+            size_str = human_readable_size(file_size)
+            prompt = self._format_file_prompt(parts[-1], size_str)
+            leaf = parent.add_leaf(prompt, data=index)
+            self._nodes_by_index[index] = leaf
+            self._node_files[leaf] = {index}
+            self._base_labels[leaf] = prompt
+
+            ancestor: TreeNode[int] | None = leaf.parent
+            while ancestor is not None and ancestor is not self.root:
+                self._node_files[ancestor].add(index)
+                ancestor = ancestor.parent
+
+        if existing_priorities is not None:
+            self._selected = {
+                index
+                for index in self._nodes_by_index
+                if index < len(existing_priorities) and existing_priorities[index] > 0
+            }
+        else:
+            self._selected = set(self._nodes_by_index)
+
+        self._refresh_all_labels()
+        if self._nodes_by_index:
+            self.cursor_line = 0
+
+    def _is_folder(self, node: TreeNode[int]) -> bool:
+        return node.data is None
+
+    def _selected_count(self, node: TreeNode[int]) -> int:
+        return len(self._node_files[node] & self._selected)
+
+    def _update_node_label(self, node: TreeNode[int]) -> None:
+        base = self._base_labels[node]
+        if self._is_folder(node):
+            files = self._node_files[node]
+            mark = _selection_mark(len(files & self._selected), len(files))
+            node.set_label(
+                f"{mark} {base} ({len(files & self._selected)}/{len(files)})"
+            )
+        else:
+            mark = _selection_mark(1 if node.data in self._selected else 0, 1)
+            node.set_label(f"{mark} {base}")
+
+    def _update_ancestors(self, node: TreeNode[int]) -> None:
+        parent: TreeNode[int] | None = node.parent
+        while parent is not None and parent is not self.root:
+            self._update_node_label(parent)
+            parent = parent.parent
+
+    def _refresh_all_labels(self) -> None:
+        for node in self._folder_nodes:
+            self._update_node_label(node)
+        for node in self._nodes_by_index.values():
+            self._update_node_label(node)
+
+    def _refresh_files(self, indices: set[int]) -> None:
+        for index in indices:
+            self._update_node_label(self._nodes_by_index[index])
+
     def action_toggle_selection(self) -> None:
-        if self.highlighted is None and self.option_count > 0:
-            self.highlighted = 0
-        self._toggle_highlighted_selection()
+        node = self.cursor_node
+        if node is None or node is self.root:
+            return
+        if self._is_folder(node):
+            self._toggle_folder(node)
+        else:
+            assert node.data is not None
+            self._toggle_file(node.data)
+
+    def _toggle_file(self, index: int) -> None:
+        if index in self._selected:
+            self._selected.discard(index)
+        else:
+            self._selected.add(index)
+        self._update_node_label(self._nodes_by_index[index])
+        self._update_ancestors(self._nodes_by_index[index])
+        self.post_message(self.SelectionChanged())
+
+    def _toggle_folder(self, node: TreeNode[int]) -> None:
+        files = self._node_files[node]
+        if not files:
+            return
+        if files <= self._selected:
+            self._selected -= files
+        else:
+            self._selected |= files
+        self._refresh_files(files)
+        self._update_node_label(node)
+        self._update_ancestors(node)
+        self.post_message(self.SelectionChanged())
+
+    def select_all(self) -> None:
+        self._selected = set(self._nodes_by_index)
+        self._refresh_all_labels()
+        self.post_message(self.SelectionChanged())
+
+    def deselect_all(self) -> None:
+        self._selected = set()
+        self._refresh_all_labels()
+        self.post_message(self.SelectionChanged())
+
+    def toggle_all(self) -> None:
+        all_indices = set(self._nodes_by_index)
+        self._selected = all_indices - self._selected
+        self._refresh_all_labels()
+        self.post_message(self.SelectionChanged())
+
+    def action_collapse_node(self) -> None:
+        node = self.cursor_node
+        if node is None or node is self.root:
+            return
+        if self._is_folder(node) and node.is_expanded:
+            node.collapse()
+
+    def action_expand_node(self) -> None:
+        node = self.cursor_node
+        if node is None or node is self.root:
+            return
+        if self._is_folder(node) and node.is_collapsed:
+            node.expand()
 
 
 class FileSelectionScreen(ModalScreen[list[int] | None]):
@@ -69,7 +286,7 @@ class FileSelectionScreen(ModalScreen[list[int] | None]):
         self._pad_file_indices: set[int] = set()
         self._poll_timer: Timer | None = None
 
-        self._selection_list: FileSelectionList
+        self._selection_list: FileSelectionTree
         self._stats_label: Static
         self._torrent_name_label: Static
         self._loading_status_label: Static
@@ -97,16 +314,16 @@ class FileSelectionScreen(ModalScreen[list[int] | None]):
                 )
 
             with Vertical(id="file-selection-body", classes="hidden"):
-                yield FileSelectionList()
+                yield FileSelectionTree("Files")
 
             with Vertical(id="file-selection-footer", classes="hidden"):
                 yield Static(
-                    f"[dim]\\[space] toggle · \\[a] all · \\[n] none · \\[i] invert\n\\[enter] {action_verb} · \\[esc] cancel[/dim]",
+                    f"[dim]\\[space] toggle · \\[a] all · \\[n] none · \\[i] invert · \\[left/right] folders\n\\[enter] {action_verb} · \\[esc] cancel[/dim]",
                     id="shortcuts-hint",
                 )
 
     def on_mount(self) -> None:
-        self._selection_list = self.query_one(FileSelectionList)
+        self._selection_list = self.query_one(FileSelectionTree)
         self._stats_label = self.query_one("#selection-stats", Static)
         self._torrent_name_label = self.query_one("#torrent-name", Static)
         self._loading_status_label = self.query_one("#loading-status-text", Static)
@@ -152,16 +369,6 @@ class FileSelectionScreen(ModalScreen[list[int] | None]):
                 f"Fetching torrent metadata...\n[dim](peers: {status.num_peers})[/dim]"
             )
 
-    @staticmethod
-    def _format_file_prompt(file_path: str, size_str: str, max_width: int = 46) -> str:
-        size_suffix = f" ({size_str})"
-        if len(file_path) + len(size_suffix) <= max_width:
-            return f"{file_path} [dim]({size_str})[/dim]"
-
-        avail = max_width - len(size_suffix) - 3  # 3 chars for "..."
-        truncated = file_path[: avail if avail > 0 else 8] + "..."
-        return f"{truncated} [dim]({size_str})[/dim]"
-
     def _populate_files(self, info: lt.torrent_info) -> None:
         self._torrent_info = info
         fs = info.files()
@@ -175,7 +382,6 @@ class FileSelectionScreen(ModalScreen[list[int] | None]):
 
         self._file_sizes.clear()
         self._pad_file_indices.clear()
-        self._selection_list.clear_options()
 
         raw_files: list[tuple[int, str, int]] = []
         for i in range(num_files):
@@ -199,29 +405,11 @@ class FileSelectionScreen(ModalScreen[list[int] | None]):
             if len(roots) == 1:
                 common_root = roots.pop()
 
-        selections: list[Selection[int]] = []
-        for i, file_path, file_size in raw_files:
-            # Determine initial selected state
-            if self.existing_priorities is not None and i < len(
-                self.existing_priorities
-            ):
-                initial_state = self.existing_priorities[i] > 0
-            else:
-                initial_state = True
-
-            display_path = (
-                file_path[len(common_root) + 1 :]
-                if common_root and file_path.startswith(f"{common_root}/")
-                else file_path
-            )
-
-            size_str = human_readable_size(file_size)
-            prompt = self._format_file_prompt(display_path, size_str, max_width=46)
-            selections.append(Selection(prompt, value=i, initial_state=initial_state))
-
-        self._selection_list.add_options(selections)
-        if selections:
-            self._selection_list.highlighted = 0
+        self._selection_list.populate(
+            raw_files,
+            common_root,
+            self.existing_priorities,
+        )
 
         # Switch UI from loading to loaded
         self._loading_container.add_class("hidden")
@@ -231,8 +419,8 @@ class FileSelectionScreen(ModalScreen[list[int] | None]):
         self._update_stats()
         self._selection_list.focus()
 
-    @on(SelectionList.SelectedChanged)
-    def on_selection_changed(self, _event: SelectionList.SelectedChanged) -> None:
+    @on(FileSelectionTree.SelectionChanged)
+    def on_selection_changed(self, _event: FileSelectionTree.SelectionChanged) -> None:
         self._update_stats()
 
     def _update_stats(self) -> None:

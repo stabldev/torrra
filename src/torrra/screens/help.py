@@ -60,7 +60,9 @@ SHORTCUTS: list[tuple[str, list[tuple[str, str]]]] = [
     (
         "File selection",
         [
-            ("space", "toggle file selection"),
+            ("space", "toggle file / folder selection"),
+            ("left / right", "collapse / expand folder"),
+            ("j / k", "move up or down"),
             ("a", "select all files"),
             ("n", "select no files"),
             ("i", "invert file selection"),
