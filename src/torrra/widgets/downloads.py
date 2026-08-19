@@ -17,7 +17,7 @@ class DownloadsContent(Vertical):
     COLS: ClassVar[list[tuple[str, str, int]]] = [
         ("No", "no_col", 2),
         ("Title", "title", 25),
-        ("St.", "status", 3),
+        ("Stat", "status", 4),
         ("Done", "done_percent", 4),
         ("Up", "up_speed", 6),
         ("Down", "down_speed", 6),
