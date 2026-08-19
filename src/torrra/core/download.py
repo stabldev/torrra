@@ -269,13 +269,21 @@ class DownloadManager:
             except (AttributeError, RuntimeError, OSError):
                 pass
 
+        connected_seeds = s.num_seeds
+        total_seeds = max(connected_seeds, getattr(s, "list_seeds", 0))
+        connected_peers = getattr(s, "num_peers", 0)
+        total_peers = max(connected_peers, getattr(s, "list_peers", 0))
+
         return TorrentStatus(
             state=s.state,
             progress=s.progress * 100,
             down_speed=s.download_rate,
             up_speed=s.upload_rate,
-            seeders=s.num_seeds,
-            leechers=s.num_peers,
+            seeders=connected_seeds,
+            total_seeders=total_seeds,
+            leechers=connected_peers,
+            peers=connected_peers,
+            total_peers=total_peers,
             is_paused=is_paused,
             eta=eta,
             is_seeding=is_seeding,

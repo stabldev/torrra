@@ -36,7 +36,7 @@ class Sidebar(Tree[Any]):
         super().__init__("Menu", id=id)
         self.show_horizontal_scrollbar: Reactive[bool] = reactive(False)
         self.show_root: bool = False
-        self.guide_depth: int = 3
+        self.guide_depth: int = 2
         self.can_focus: bool = False  # re-enable focus later
         self._show_search: bool = show_search
 

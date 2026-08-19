@@ -231,16 +231,18 @@ class DownloadsContent(Vertical):
             return
 
         magnet_uri = self._selected_torrent["magnet_uri"]
+        title = self._selected_torrent["title"]
+        short_title = (title[:50] + "...") if len(title) > 40 else title
+
         self._dm.remove_torrent(magnet_uri, delete_files=delete_files)
         self._tm.remove_torrent(magnet_uri)
 
         self._torrents = [t for t in self._torrents if t["magnet_uri"] != magnet_uri]
         self._statuses.pop(magnet_uri, None)
-        self._filter_table()
+        self._selected_torrent = None
         self._details_panel.add_class("hidden")
+        self._filter_table()
 
-        title = self._selected_torrent["title"]
-        short_title = (title[:50] + "...") if len(title) > 40 else title
         msg = (
             f"Removed [b]{short_title}[/b] and its data"
             if delete_files
@@ -250,7 +252,6 @@ class DownloadsContent(Vertical):
             msg,
             title="Torrent Removed",
         )
-        self._selected_torrent = None
 
     def on_details_panel_closed(self):
         self._selected_torrent = None
@@ -397,9 +398,11 @@ class DownloadsContent(Vertical):
         down_speed = f"{human_readable_size(status['down_speed'])}/s"
         eta_text = human_readable_eta(status["eta"], is_seeding=status["is_seeding"])
 
+        seeders_text = f"{status.get('seeders', 0)}/{status.get('total_seeders', 0)}"
+        peers_text = f"{status.get('peers', 0)}/{status.get('total_peers', 0)}"
         details = f"""
 [b]Size:[/b] {size} · [b]Status:[/b] {state_text} · [b]Source:[/b] {current_torrent["source"]}
-[b]S/L:[/b] {status["seeders"]}/{status["leechers"]} · [b]Up:[/b] {up_speed} · [b]Down:[/b] {down_speed} · [b]ETA:[/b] {eta_text}
+[b]Seeders:[/b] {seeders_text} · [b]Peers:[/b] {peers_text} · [b]Up:[/b] {up_speed} · [b]Down:[/b] {down_speed} · [b]ETA:[/b] {eta_text}
 
 [dim]\\[p] pause/resume · \\[f] select files · \\[d] delete · \\[D] delete w/ data · \\[esc] close[/dim]
 """
