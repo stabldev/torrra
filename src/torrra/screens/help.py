@@ -52,8 +52,21 @@ SHORTCUTS: list[tuple[str, list[tuple[str, str]]]] = [
         [
             ("enter / l", "show download details"),
             ("p", "pause or resume"),
+            ("f", "select files to download"),
             ("d", "remove torrent"),
             ("D", "remove and delete files"),
+        ],
+    ),
+    (
+        "File selection",
+        [
+            ("space", "toggle file selection"),
+            ("a", "select all files"),
+            ("n", "select no files"),
+            ("i", "invert file selection"),
+            ("enter", "confirm and download"),
+            ("d", "download all (skip wait)"),
+            ("esc", "cancel"),
         ],
     ),
     (
@@ -65,6 +78,15 @@ SHORTCUTS: list[tuple[str, list[tuple[str, str]]]] = [
         ],
     ),
 ]
+
+
+class HelpContent(VerticalScroll):
+    """Scrollable container for help shortcuts with hidden scrollbar."""
+
+    def watch_scroll_y(self, old_value: float, new_value: float) -> None:
+        super().watch_scroll_y(old_value, new_value)
+        if isinstance(self.screen, HelpScreen):
+            self.screen.update_remaining(new_value)
 
 
 class HelpScreen(ModalScreen[None]):
@@ -83,7 +105,9 @@ class HelpScreen(ModalScreen[None]):
 
     def __init__(self) -> None:
         super().__init__()
-        self._container: VerticalScroll
+        self._container: HelpContent
+        self._remaining_label: Static
+        self._row_positions: list[int] | None = None
         self._last_g_press: float = 0
 
     @override
@@ -91,7 +115,7 @@ class HelpScreen(ModalScreen[None]):
         with Vertical(id="help-container"):
             yield Label("[b]Keyboard Shortcuts[/b]")
             yield Label("j/k: scroll - esc: close", classes="help-subtitle")
-            with VerticalScroll(id="help-content"):
+            with HelpContent(id="help-content"):
                 for title, shortcuts in SHORTCUTS:
                     with Vertical(classes="help-group"):
                         yield Static(f"[b]{title}[/b]", classes="help-section")
@@ -100,9 +124,48 @@ class HelpScreen(ModalScreen[None]):
                                 f"[$accent]{keys:<12}[/$accent] {description}",
                                 classes="help-row",
                             )
+            yield Static("", id="help-remaining", classes="hidden")
 
     def on_mount(self) -> None:
-        self._container = self.query_one("#help-content", VerticalScroll)
+        self._container = self.query_one("#help-content", HelpContent)
+        self._container.show_vertical_scrollbar = False
+        self._remaining_label = self.query_one("#help-remaining", Static)
+        self.call_after_refresh(self.update_remaining)
+
+    def on_resize(self) -> None:
+        self._row_positions = None
+        self.call_after_refresh(self.update_remaining)
+
+    def update_remaining(self, scroll_y: float | None = None) -> None:
+        if not hasattr(self, "_container") or not hasattr(self, "_remaining_label"):
+            return
+
+        current_scroll = self._container.scroll_y if scroll_y is None else scroll_y
+        visible_height = self._container.size.height
+        if visible_height <= 0:
+            return
+
+        visible_end = current_scroll + visible_height
+
+        if self._row_positions is None:
+            groups = list(self.query(".help-group"))
+            positions: list[int] = []
+            for g in groups:
+                gy = g.virtual_region.y
+                for r in g.query(".help-row"):
+                    positions.append(gy + r.virtual_region.y)
+            self._row_positions = positions
+
+        if not self._row_positions:
+            return
+
+        below_count = sum(1 for y in self._row_positions if y + 1 > visible_end)
+        if below_count > 0:
+            self._remaining_label.update(f"({below_count} more)")
+            self._remaining_label.remove_class("hidden")
+        else:
+            self._remaining_label.update("")
+            self._remaining_label.add_class("hidden")
 
     # this list only grows as bindings are added, and it already overflows on a
     # short terminal, so the panel scrolls with the same keys the rest of the

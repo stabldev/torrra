@@ -125,3 +125,29 @@ async def test_help_scrolls_with_the_same_keys_as_the_rest_of_the_app(
             assert 1 < actual <= bottom
         else:  # page up from bottom
             assert 0 <= actual < bottom
+
+
+async def test_help_remaining_shortcuts_indicator(app: TorrraApp):
+    from textual.widgets import Static
+
+    async with app.run_test(size=(90, 30)) as pilot:
+        app.screen.set_focus(None)
+        await pilot.press("question_mark")
+        assert isinstance(app.screen, HelpScreen)
+
+        remaining_label = app.screen.query_one("#help-remaining", Static)
+        initial_text = str(remaining_label.content)
+        assert "more" in initial_text
+        assert not remaining_label.has_class("hidden")
+
+        # Scroll down with j
+        await pilot.press("j")
+        await pilot.pause()
+        scrolled_text = str(remaining_label.content)
+        assert "more" in scrolled_text
+
+        # Scroll to bottom with G
+        await pilot.press("G")
+        await pilot.pause()
+        assert str(remaining_label.content) == ""
+        assert remaining_label.has_class("hidden")

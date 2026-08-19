@@ -4,9 +4,10 @@ from textual.app import ComposeResult
 from textual.containers import Vertical
 from typing_extensions import override
 
-from torrra._types import TorrentRecord, TorrentStatus
+from torrra._types import Torrent, TorrentRecord, TorrentStatus
 from torrra.core.download import DownloadManager, get_download_manager
 from torrra.core.torrent import TorrentManager, get_torrent_manager
+from torrra.screens.file_selection import FileSelectionScreen
 from torrra.utils.helpers import human_readable_eta, human_readable_size
 from torrra.widgets.data_table import AutoResizingDataTable
 from torrra.widgets.details_panel import DetailsPanel
@@ -25,6 +26,7 @@ class DownloadsContent(Vertical):
     BINDINGS: ClassVar[list[tuple[str, str]]] = [
         ("d", "delete_torrent"),
         ("D", "delete_torrent_with_data"),
+        ("f", "select_files"),
     ]
 
     def __init__(self) -> None:
@@ -54,13 +56,20 @@ class DownloadsContent(Vertical):
             self._table.add_column(label, width=width, key=key)
 
     def on_show(self) -> None:
+        self.refresh_torrents()
+
+    def refresh_torrents(self) -> None:
         self._torrents = self._tm.get_all_torrents()
 
         self._table.clear()
         self._table.border_title = f"all ({len(self._torrents)})"
 
         for idx, torrent in enumerate(self._torrents):
-            self._dm.add_torrent(torrent["magnet_uri"], is_paused=torrent["is_paused"])
+            self._dm.add_torrent(
+                torrent["magnet_uri"],
+                is_paused=torrent["is_paused"],
+                file_priorities=torrent.get("file_priorities"),
+            )
             self._table.add_row(
                 str(idx + 1),
                 torrent["title"],
@@ -107,6 +116,49 @@ class DownloadsContent(Vertical):
 
     def action_delete_torrent_with_data(self) -> None:
         self._remove_selected_torrent(delete_files=True)
+
+    def action_select_files(self) -> None:
+        if not self._selected_torrent:
+            return
+
+        magnet_uri = self._selected_torrent["magnet_uri"]
+        current_priorities = self._dm.get_file_priorities(
+            magnet_uri
+        ) or self._selected_torrent.get("file_priorities")
+
+        self.app.push_screen(
+            FileSelectionScreen(
+                torrent=Torrent(
+                    magnet_uri=self._selected_torrent["magnet_uri"],
+                    title=self._selected_torrent["title"],
+                    size=self._selected_torrent["size"],
+                    source=self._selected_torrent["source"],
+                    seeders=0,
+                    leechers=0,
+                    file_priorities=current_priorities,
+                ),
+                existing_priorities=current_priorities,
+                is_edit_mode=True,
+            ),
+            self._on_edit_files_done,
+        )
+
+    def _on_edit_files_done(self, priorities: list[int] | None) -> None:
+        if priorities is None or not self._selected_torrent:
+            return
+
+        magnet_uri = self._selected_torrent["magnet_uri"]
+        self._selected_torrent["file_priorities"] = priorities
+
+        self._dm.set_file_priorities(magnet_uri, priorities)
+        self._tm.update_torrent_file_priorities(magnet_uri, priorities)
+
+        title = self._selected_torrent["title"]
+        short_title = (title[:50] + "...") if len(title) > 40 else title
+        self.notify(
+            f"Updated file selection for [b]{short_title}[/b]",
+            title="Files Updated",
+        )
 
     def _remove_selected_torrent(self, delete_files: bool = False) -> None:
         if not self._selected_torrent:
@@ -159,11 +211,16 @@ class DownloadsContent(Vertical):
         self._table.focus()
 
     def update_table_data(self, statuses: dict[str, TorrentStatus | None]) -> None:
+        # First, update the torrent list from the database to catch new or updated torrents
+        updated_torrents = self._tm.get_all_torrents()
+        current_uris = [t["magnet_uri"] for t in self._torrents]
+        updated_uris = [t["magnet_uri"] for t in updated_torrents]
+        if current_uris != updated_uris:
+            self.refresh_torrents()
+
         if not self._torrents:
             return
 
-        # First, update the torrent list from the database to catch metadata updates
-        updated_torrents = self._tm.get_all_torrents()
         torrent_map = {t["magnet_uri"]: t for t in updated_torrents}
 
         for torrent in self._torrents:
@@ -254,7 +311,7 @@ class DownloadsContent(Vertical):
 [b]Size:[/b] {size} - [b]Status:[/b] {state_text} - [b]Source:[/b] {current_torrent["source"]}
 [b]S/L:[/b] {status["seeders"]}/{status["leechers"]} - [b]Up:[/b] {up_speed} - [b]Down:[/b] {down_speed} - [b]ETA:[/b] {eta_text}
 
-[dim]Press 'p' to pause/resume, 'd' to delete, 'D' to delete w/ data, or 'esc' to close.[/dim]
+[dim]Press 'p' to pause/resume, 'f' to select files, 'd' to delete, 'D' to delete w/ data, or 'esc' to close.[/dim]
 """
         # update details panel internal widgets
         self._details_panel.update_content(

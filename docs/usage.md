@@ -130,12 +130,25 @@ These work in both the search results and the downloads list.
 
 ### Downloads
 
-| Key           | Action                                                     |
-| :------------ | :--------------------------------------------------------- |
-| `Enter` / `l` | Show details and progress for the highlighted download     |
+| Key           | Action                                                       |
+| :------------ | :----------------------------------------------------------- |
+| `Enter` / `l` | Show details and progress for the highlighted download       |
 | `p`           | Pause or resume the selected download (the same key toggles) |
-| `d`           | Remove the selected torrent, keeping any downloaded files  |
-| `D`           | Remove the selected torrent **and** delete its files       |
+| `f`           | Open the file selection modal to choose files to download    |
+| `d`           | Remove the selected torrent, keeping any downloaded files    |
+| `D`           | Remove the selected torrent **and** delete its files         |
+
+### File selection
+
+| Key     | Action                                                        |
+| :------ | :------------------------------------------------------------ |
+| `Space` | Toggle selection of the highlighted file                      |
+| `a`     | Select all files                                              |
+| `n`     | Select no files (clear selection)                             |
+| `i`     | Invert selection                                              |
+| `Enter` | Confirm selection and start download                          |
+| `d`     | Download all files immediately (skip metadata fetching wait) |
+| `Esc`   | Cancel file selection                                         |
 
 ### Discovering Shortcuts In the App
 

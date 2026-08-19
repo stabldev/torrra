@@ -64,10 +64,11 @@ class HomeScreen(Screen[None]):
             dm.add_torrent(
                 torrent["magnet_uri"],
                 is_paused=torrent["is_paused"],
+                file_priorities=torrent.get("file_priorities"),
             )
 
-        if self.show_downloads and not self.direct_download:
-            # When merely showing downloads, set sidebar active node to downloads
+        if self.show_downloads or self.direct_download:
+            # When showing downloads or handling direct download, set sidebar active node to downloads
             self._sidebar.select_node_by_group_id("downloads_content")
             self._downloads_content.focus_table()
 
@@ -77,7 +78,6 @@ class HomeScreen(Screen[None]):
 
             from torrra.utils.direct_download import handle_direct_download
 
-            self._downloads_content.focus_table()
             asyncio.create_task(handle_direct_download(self, str(self.direct_download)))
 
         # start timer to update data on both sidebar
