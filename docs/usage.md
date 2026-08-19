@@ -43,6 +43,10 @@ The `search` command also supports the `--no-cache` option:
 torrra search "ubuntu iso" --no-cache
 ```
 
+## Welcome Screen
+
+Running `torrra` with no arguments opens the welcome screen, where you type a search query. You can skip searching and go straight to the Downloads view by pressing `ctrl+d`.
+
 ## Direct Download
 
 You can download torrents directly from magnet URIs or .torrent files without searching using the `download` command:

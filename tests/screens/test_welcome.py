@@ -86,5 +86,18 @@ async def test_welcome_screen_keybinds_display(app: TorrraApp):
         assert "ctrl+q" in commands_text
         assert "[t]heme switcher" in commands_text
         assert "ctrl+t" in commands_text
+        assert "[d]ownloads" in commands_text
+        assert "ctrl+d" in commands_text
         assert "shortcuts" in commands_text
         assert "?" in commands_text
+
+
+async def test_welcome_screen_ctrl_d_go_to_downloads(app: TorrraApp):
+    async with app.run_test() as pilot:
+        assert isinstance(app.screen, WelcomeScreen)
+
+        await pilot.press("ctrl+d")
+
+        # should open HomeScreen on the downloads view without a search
+        assert isinstance(app.screen, HomeScreen)
+        assert app.screen.show_downloads is True
