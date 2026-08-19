@@ -50,7 +50,6 @@ class DownloadsContent(Vertical):
         self._table.expand_col = "title"
 
         self._details_panel = self.query_one(DetailsPanel)
-        self._details_panel.border_title = "details"
         # setup table
         for label, key, width in self.COLS:
             self._table.add_column(label, width=width, key=key)
@@ -198,6 +197,7 @@ class DownloadsContent(Vertical):
         )
 
         if self._selected_torrent:
+            self._details_panel.border_title = self._selected_torrent["title"]
             if status := self._dm.get_torrent_status(
                 self._selected_torrent["magnet_uri"]
             ):
@@ -307,13 +307,13 @@ class DownloadsContent(Vertical):
         eta_text = human_readable_eta(status["eta"], is_seeding=status["is_seeding"])
 
         details = f"""
-[b]{current_torrent["title"]}[/b]
 [b]Size:[/b] {size} - [b]Status:[/b] {state_text} - [b]Source:[/b] {current_torrent["source"]}
 [b]S/L:[/b] {status["seeders"]}/{status["leechers"]} - [b]Up:[/b] {up_speed} - [b]Down:[/b] {down_speed} - [b]ETA:[/b] {eta_text}
 
-[dim]Press 'p' to pause/resume, 'f' to select files, 'd' to delete, 'D' to delete w/ data, or 'esc' to close.[/dim]
+[dim]\\[p] pause/resume · \\[f] select files · \\[d] delete · \\[D] delete w/ data · \\[esc] close[/dim]
 """
         # update details panel internal widgets
+        self._details_panel.border_title = current_torrent["title"]
         self._details_panel.update_content(
             details.strip(),
             progress=status["progress"],

@@ -158,7 +158,6 @@ class SearchContent(Vertical):
         self._table.border_title = "results"
 
         self._details_panel = self.query_one(DetailsPanel)
-        self._details_panel.border_title = "details"
 
         self._loader = self.query_one("#loader", Vertical)
         # setup table

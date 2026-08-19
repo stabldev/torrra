@@ -38,6 +38,8 @@ DataTable {
 DetailsPanel {
   padding: 0 1;
   border: solid $secondary-muted;
+  border-title-color: $foreground-muted;
+  border-title-style: bold;
   height: auto;
   &:focus {
     border: solid $secondary;
