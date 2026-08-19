@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import asyncio
-import subprocess
 from typing import Any, ClassVar, cast
 
 import httpx
@@ -196,33 +194,11 @@ class SearchContent(Vertical):
         config = get_config()
         if config.get("general.download_in_external_client", False):
             self._is_selecting_files = False
-            if config.get("general.use_transmission", False):
-                tran_user = config.get("general.transmission_user", "")
-                tran_pass = config.get("general.transmission_pass", "")
-
-                await asyncio.to_thread(
-                    subprocess.run,
-                    [
-                        "transmission-remote",
-                        "--auth",
-                        f"{tran_user}:{tran_pass}",
-                        "-a",
-                        resolved_magnet_uri,
-                    ],
-                    capture_output=True,
-                    text=True,
-                    check=False,
-                )
-                self.notify(
-                    "Opened in [b]transmission-remote[/b]",
-                    title="Torrent Opened",
-                )
-            else:
-                self.app.open_url(resolved_magnet_uri)
-                self.notify(
-                    "Opened in default magnet: handler",
-                    title="Torrent Opened",
-                )
+            self.app.open_url(resolved_magnet_uri)
+            self.notify(
+                "Opened in default magnet: handler",
+                title="Torrent Opened",
+            )
         else:  # continue with libtorrent file selection
             self.app.push_screen(
                 FileSelectionScreen(
