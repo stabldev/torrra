@@ -111,14 +111,10 @@ HomeScreen #main_layout {
     dock: left;
     width: auto;
     min-width: 20;
-    padding-right: 1;
     border: solid $secondary-muted;
     background: transparent;
     &:focus {
       border: solid $secondary;
-    }
-    & > .tree--highlight-line {
-      background: $primary-muted;
     }
   }
   #search_content {
