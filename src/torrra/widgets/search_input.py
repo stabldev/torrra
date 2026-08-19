@@ -10,4 +10,3 @@ class SearchInput(Input):
         if (key == "question_mark" or character == "?") and not self.value.strip():
             return False
         return super().check_consume_key(key, character)
-
