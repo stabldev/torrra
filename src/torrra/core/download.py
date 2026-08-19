@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from functools import lru_cache
 from typing import ClassVar
 
@@ -9,7 +11,7 @@ from torrra.utils.magnet import enhance_magnet_uri, fix_magnet_uri
 
 
 @lru_cache
-def get_download_manager() -> "DownloadManager":
+def get_download_manager() -> DownloadManager:
     return DownloadManager()
 
 
@@ -22,7 +24,7 @@ class DownloadManager:
     }
 
     def __init__(self) -> None:
-        settings = {
+        settings: lt.settings_pack = {
             "listen_interfaces": "0.0.0.0:6881,[::]:6881,0.0.0.0:0",
             "enable_dht": True,
             "dht_bootstrap_nodes": "router.bittorrent.com:6881,dht.transmissionbt.com:6881,router.utorrent.com:6881,dht.libtorrent.org:25401",
