@@ -159,6 +159,7 @@ HelpScreen {
     #help-content {
       margin-top: 1;
       height: 1fr;
+      scrollbar-size: 0 0;
       .help-group {
         height: auto;
         margin-bottom: 1;
@@ -169,6 +170,9 @@ HelpScreen {
       .help-row {
         color: $text-muted;
       }
+    }
+    #help-remaining {
+      color: $text-muted;
     }
   }
 }
