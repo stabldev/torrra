@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from functools import lru_cache
 from typing import ClassVar
 
@@ -17,10 +18,14 @@ def get_download_manager() -> DownloadManager:
 
 class DownloadManager:
     _STATE_MAP: ClassVar[dict[int, tuple[str, str]]] = {
-        lt.torrent_status.states.downloading: ("Downloading", "DL"),
-        lt.torrent_status.states.seeding: ("Seeding", "SE"),
-        lt.torrent_status.states.finished: ("Completed", "CD"),
-        lt.torrent_status.states.downloading_metadata: ("Fetching", "FE"),
+        lt.torrent_status.states.downloading: ("Downloading", "DOWN"),
+        lt.torrent_status.states.seeding: ("Seeding", "SEED"),
+        lt.torrent_status.states.finished: ("Completed", "DONE"),
+        lt.torrent_status.states.downloading_metadata: ("Fetching", "META"),
+        lt.torrent_status.states.checking_files: ("Checking", "CHCK"),
+        lt.torrent_status.states.checking_resume_data: ("Checking", "CHCK"),
+        lt.torrent_status.states.queued_for_checking: ("Checking", "CHCK"),
+        lt.torrent_status.states.allocating: ("Allocating", "ALOC"),
     }
 
     def __init__(self) -> None:
@@ -187,6 +192,14 @@ class DownloadManager:
             handle.unset_flags(lt.torrent_flags.auto_managed)
             handle.pause()
 
+    def recheck_torrent(self, magnet_uri: str) -> None:
+        handle = self.torrents.get(magnet_uri)
+        if handle and handle.is_valid():
+            try:
+                handle.force_recheck()
+            except (AttributeError, RuntimeError):
+                pass
+
     def get_torrent_status(self, magnet_uri: str) -> TorrentStatus | None:
         handle = self.torrents.get(magnet_uri)
         if not handle or not handle.is_valid():
@@ -205,24 +218,122 @@ class DownloadManager:
             if remaining_bytes > 0 and s.download_rate > 0:
                 eta = remaining_bytes / s.download_rate
 
+        error_msg: str | None = None
+        if s.errc and s.errc.value() != 0:
+            error_msg = s.errc.message()
+        elif s.error:
+            error_msg = s.error
+
+        error_file = getattr(s, "error_file", -1)
+
+        is_paused = (s.flags & lt.torrent_flags.paused) != 0
+        is_auto_managed = (s.flags & lt.torrent_flags.auto_managed) != 0
+        is_queued = is_paused and is_auto_managed
+
+        is_missing_files = False
+        if error_msg and (
+            error_file >= 0
+            or "no such file" in error_msg.lower()
+            or "not found" in error_msg.lower()
+            or "missing" in error_msg.lower()
+        ):
+            is_missing_files = True
+
+        if (
+            not is_missing_files
+            and s.has_metadata
+            and (is_seeding or s.progress >= 1.0)
+        ):
+            try:
+                info = handle.torrent_file()
+                if info:
+                    save_path = s.save_path or get_config().get("general.download_path")
+                    if save_path:
+                        fs = info.files()
+                        priorities = self.get_file_priorities(magnet_uri)
+                        for i in range(fs.num_files()):
+                            if (
+                                priorities is not None
+                                and i < len(priorities)
+                                and priorities[i] == 0
+                            ):
+                                continue
+                            if hasattr(lt.file_storage, "flag_pad_file") and (
+                                fs.file_flags(i) & lt.file_storage.flag_pad_file
+                            ):
+                                continue
+                            file_path = os.path.join(save_path, fs.file_path(i))
+                            if not os.path.exists(file_path):
+                                is_missing_files = True
+                                break
+            except (AttributeError, RuntimeError, OSError):
+                pass
+
+        connected_seeds = s.num_seeds
+        total_seeds = max(connected_seeds, getattr(s, "list_seeds", 0))
+        connected_peers = getattr(s, "num_peers", 0)
+        total_peers = max(connected_peers, getattr(s, "list_peers", 0))
+
         return TorrentStatus(
             state=s.state,
             progress=s.progress * 100,
             down_speed=s.download_rate,
             up_speed=s.upload_rate,
-            seeders=s.num_seeds,
-            leechers=s.num_peers,
-            is_paused=(s.flags & lt.torrent_flags.paused) != 0,
+            seeders=connected_seeds,
+            total_seeders=total_seeds,
+            leechers=connected_peers,
+            peers=connected_peers,
+            total_peers=total_peers,
+            is_paused=is_paused,
             eta=eta,
             is_seeding=is_seeding,
+            error=error_msg,
+            error_file=error_file,
+            is_missing_files=is_missing_files,
+            is_queued=is_queued,
         )
 
     def get_torrent_state_text(self, status: TorrentStatus, short: bool = False) -> str:
-        if status["is_paused"]:
-            return "Paused" if not short else "PD"
+        # Check missing files and errors first
+        if status.get("is_missing_files"):
+            return "MISS" if short else "Missing Files"
 
+        if error := status.get("error"):
+            error_msg = error.lower()
+            if (
+                status.get("error_file", -1) >= 0
+                or "no such file" in error_msg
+                or "not found" in error_msg
+                or "missing" in error_msg
+            ):
+                return "MISS" if short else "Missing Files"
+            return "ERRO" if short else "Error"
+
+        # Check paused and queued states
+        if status.get("is_paused"):
+            if status.get("is_queued"):
+                return "QUEU" if short else "Queued"
+            return "PAUS" if short else "Paused"
+
+        state = status.get("state")
+
+        # Stalled download
+        if (
+            state == lt.torrent_status.states.downloading
+            and status.get("down_speed", 0) == 0
+        ):
+            return "STAL" if short else "Stalled"
+
+        # Seeding fallback when is_seeding is set but state is not finished
+        if state != lt.torrent_status.states.finished and status.get("is_seeding"):
+            return "SEED" if short else "Seeding"
+
+        # Standard state lookup from _STATE_MAP
         idx = 1 if short else 0
-        return self._STATE_MAP.get(status["state"], ("N/A", "N/A"))[idx]
+        if state is not None and state in self._STATE_MAP:
+            return self._STATE_MAP[state][idx]
+
+        return "N/A"
 
     def check_metadata_updates(self) -> None:
         from torrra.core.torrent import get_torrent_manager
@@ -236,7 +347,6 @@ class DownloadManager:
                 and handle.is_valid()
                 and handle.status().has_metadata
             ):
-                # Get the torrent info
                 try:
                     torrent_info = handle.torrent_file()
                     if torrent_info:
@@ -247,10 +357,7 @@ class DownloadManager:
                         if magnet_uri in self._file_priorities:
                             handle.prioritize_files(self._file_priorities[magnet_uri])
 
-                        # Update the database with the actual metadata
                         tm.update_torrent_metadata(magnet_uri, title, size)
-                        # Mark this torrent as having its metadata updated
                         self._metadata_updated.add(magnet_uri)
                 except (AttributeError, RuntimeError):
-                    # Skip if metadata is not fully available yet
                     continue

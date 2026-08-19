@@ -17,7 +17,7 @@ class DownloadsContent(Vertical):
     COLS: ClassVar[list[tuple[str, str, int]]] = [
         ("No", "no_col", 2),
         ("Title", "title", 25),
-        ("St.", "status", 3),
+        ("Stat", "status", 4),
         ("Done", "done_percent", 4),
         ("Up", "up_speed", 6),
         ("Down", "down_speed", 6),
@@ -33,6 +33,8 @@ class DownloadsContent(Vertical):
         super().__init__(id="downloads_content")
         self._torrents: list[TorrentRecord] = []
         self._selected_torrent: TorrentRecord | None = None
+        self._group_filter: str | None = None
+        self._statuses: dict[str, TorrentStatus | None] = {}
 
         self._dm: DownloadManager = get_download_manager()
         self._tm: TorrentManager = get_torrent_manager()
@@ -50,7 +52,6 @@ class DownloadsContent(Vertical):
         self._table.expand_col = "title"
 
         self._details_panel = self.query_one(DetailsPanel)
-        self._details_panel.border_title = "details"
         # setup table
         for label, key, width in self.COLS:
             self._table.add_column(label, width=width, key=key)
@@ -58,27 +59,92 @@ class DownloadsContent(Vertical):
     def on_show(self) -> None:
         self.refresh_torrents()
 
+    def set_group_filter(self, group_type: str | None) -> None:
+        if self._group_filter != group_type:
+            self._group_filter = group_type
+            self._filter_table()
+
+    def _matches_filter(self, status: TorrentStatus | None) -> bool:
+        if self._group_filter is None:
+            return True
+        if not status:
+            return False
+        state_text = self._dm.get_torrent_state_text(status)
+        if self._group_filter == "Downloading":
+            return state_text in ("Downloading", "Fetching", "Allocating")
+        if self._group_filter == "Stalled":
+            return state_text == "Stalled"
+        if self._group_filter == "Seeding":
+            return state_text == "Seeding"
+        if self._group_filter == "Paused":
+            return state_text in ("Paused", "Queued")
+        if self._group_filter == "Completed":
+            return state_text == "Completed"
+        if self._group_filter == "Checking":
+            return state_text == "Checking"
+        if self._group_filter == "Error":
+            return state_text in ("Missing Files", "Error")
+        return state_text == self._group_filter
+
+    def _filter_table(self) -> None:
+        if not hasattr(self, "_table") or not self._table.columns:
+            return
+
+        self._table.clear()
+        matching_torrents = [
+            t
+            for t in self._torrents
+            if self._matches_filter(self._statuses.get(t["magnet_uri"]))
+        ]
+        title_prefix = (
+            "all" if self._group_filter is None else self._group_filter.lower()
+        )
+        self._table.border_title = f"{title_prefix} ({len(matching_torrents)})"
+
+        for idx, torrent in enumerate(matching_torrents):
+            status = self._statuses.get(torrent["magnet_uri"])
+            state_text = (
+                self._dm.get_torrent_state_text(status, short=True) if status else "N/A"
+            )
+            progress_text = f"{int(status['progress'])}%" if status else "0%"
+            up_text = (
+                f"{human_readable_size(status['up_speed'], short=True)}/s"
+                if status
+                else "0 B/s"
+            )
+            down_text = (
+                f"{human_readable_size(status['down_speed'], short=True)}/s"
+                if status
+                else "0 B/s"
+            )
+
+            self._table.add_row(
+                str(idx + 1),
+                torrent["title"],
+                state_text,
+                progress_text,
+                up_text,
+                down_text,
+                key=torrent["magnet_uri"],
+            )
+
+        if self._selected_torrent and self._selected_torrent["magnet_uri"] not in [
+            t["magnet_uri"] for t in matching_torrents
+        ]:
+            self._details_panel.add_class("hidden")
+            self._selected_torrent = None
+
     def refresh_torrents(self) -> None:
         self._torrents = self._tm.get_all_torrents()
 
-        self._table.clear()
-        self._table.border_title = f"all ({len(self._torrents)})"
-
-        for idx, torrent in enumerate(self._torrents):
+        for torrent in self._torrents:
             self._dm.add_torrent(
                 torrent["magnet_uri"],
                 is_paused=torrent["is_paused"],
                 file_priorities=torrent.get("file_priorities"),
             )
-            self._table.add_row(
-                str(idx + 1),
-                torrent["title"],
-                "N/A",
-                "0%",
-                "0 B/s",
-                "0 B/s",
-                key=torrent["magnet_uri"],
-            )
+
+        self._filter_table()
 
     def key_p(self) -> None:
         if not self._selected_torrent:
@@ -165,16 +231,18 @@ class DownloadsContent(Vertical):
             return
 
         magnet_uri = self._selected_torrent["magnet_uri"]
+        title = self._selected_torrent["title"]
+        short_title = (title[:50] + "...") if len(title) > 40 else title
+
         self._dm.remove_torrent(magnet_uri, delete_files=delete_files)
         self._tm.remove_torrent(magnet_uri)
 
-        self._table.remove_row(magnet_uri)
         self._torrents = [t for t in self._torrents if t["magnet_uri"] != magnet_uri]
-        self._table.border_title = f"all ({len(self._torrents)})"
+        self._statuses.pop(magnet_uri, None)
+        self._selected_torrent = None
         self._details_panel.add_class("hidden")
+        self._filter_table()
 
-        title = self._selected_torrent["title"]
-        short_title = (title[:50] + "...") if len(title) > 40 else title
         msg = (
             f"Removed [b]{short_title}[/b] and its data"
             if delete_files
@@ -184,7 +252,6 @@ class DownloadsContent(Vertical):
             msg,
             title="Torrent Removed",
         )
-        self._selected_torrent = None
 
     def on_details_panel_closed(self):
         self._selected_torrent = None
@@ -198,6 +265,7 @@ class DownloadsContent(Vertical):
         )
 
         if self._selected_torrent:
+            self._details_panel.border_title = self._selected_torrent["title"]
             if status := self._dm.get_torrent_status(
                 self._selected_torrent["magnet_uri"]
             ):
@@ -211,12 +279,15 @@ class DownloadsContent(Vertical):
         self._table.focus()
 
     def update_table_data(self, statuses: dict[str, TorrentStatus | None]) -> None:
+        self._statuses = statuses
+
         # First, update the torrent list from the database to catch new or updated torrents
         updated_torrents = self._tm.get_all_torrents()
         current_uris = [t["magnet_uri"] for t in self._torrents]
         updated_uris = [t["magnet_uri"] for t in updated_torrents]
         if current_uris != updated_uris:
             self.refresh_torrents()
+            return
 
         if not self._torrents:
             return
@@ -235,35 +306,56 @@ class DownloadsContent(Vertical):
                     torrent.update(
                         {"title": db_torrent["title"], "size": db_torrent["size"]}
                     )
-                    # Update the table title
-                    self._table.update_cell(
-                        torrent["magnet_uri"], "title", db_torrent["title"]
-                    )
+                    try:
+                        self._table.update_cell(
+                            torrent["magnet_uri"], "title", db_torrent["title"]
+                        )
+                    except KeyError:
+                        pass
+
+        # If a filter is active, check if visible row set needs updating
+        if self._group_filter is not None:
+            matching_uris = [
+                t["magnet_uri"]
+                for t in self._torrents
+                if self._matches_filter(self._statuses.get(t["magnet_uri"]))
+            ]
+            table_uris = [str(k.value) for k in self._table.rows]
+            if matching_uris != table_uris:
+                self._filter_table()
+                return
+
+        for torrent in self._torrents:
+            if not self._matches_filter(statuses.get(torrent["magnet_uri"])):
+                continue
 
             status = statuses.get(torrent["magnet_uri"])
             if not status:
                 continue
 
-            self._table.update_cell(
-                torrent["magnet_uri"],
-                "status",
-                self._dm.get_torrent_state_text(status, short=True),
-            )
-            self._table.update_cell(
-                torrent["magnet_uri"],
-                "done_percent",
-                f"{int(status['progress'])}%",
-            )
-            self._table.update_cell(
-                torrent["magnet_uri"],
-                "up_speed",
-                f"{human_readable_size(status['up_speed'], short=True)}/s",
-            )
-            self._table.update_cell(
-                torrent["magnet_uri"],
-                "down_speed",
-                f"{human_readable_size(status['down_speed'], short=True)}/s",
-            )
+            try:
+                self._table.update_cell(
+                    torrent["magnet_uri"],
+                    "status",
+                    self._dm.get_torrent_state_text(status, short=True),
+                )
+                self._table.update_cell(
+                    torrent["magnet_uri"],
+                    "done_percent",
+                    f"{int(status['progress'])}%",
+                )
+                self._table.update_cell(
+                    torrent["magnet_uri"],
+                    "up_speed",
+                    f"{human_readable_size(status['up_speed'], short=True)}/s",
+                )
+                self._table.update_cell(
+                    torrent["magnet_uri"],
+                    "down_speed",
+                    f"{human_readable_size(status['down_speed'], short=True)}/s",
+                )
+            except KeyError:
+                pass
 
             # check if torrent is already downloaded/notified
             # if not, send notification and update record
@@ -306,14 +398,16 @@ class DownloadsContent(Vertical):
         down_speed = f"{human_readable_size(status['down_speed'])}/s"
         eta_text = human_readable_eta(status["eta"], is_seeding=status["is_seeding"])
 
+        seeders_text = f"{status.get('seeders', 0)}/{status.get('total_seeders', 0)}"
+        peers_text = f"{status.get('peers', 0)}/{status.get('total_peers', 0)}"
         details = f"""
-[b]{current_torrent["title"]}[/b]
-[b]Size:[/b] {size} - [b]Status:[/b] {state_text} - [b]Source:[/b] {current_torrent["source"]}
-[b]S/L:[/b] {status["seeders"]}/{status["leechers"]} - [b]Up:[/b] {up_speed} - [b]Down:[/b] {down_speed} - [b]ETA:[/b] {eta_text}
+[b]Size:[/b] {size} · [b]Status:[/b] {state_text} · [b]Source:[/b] {current_torrent["source"]}
+[b]Seeders:[/b] {seeders_text} · [b]Peers:[/b] {peers_text} · [b]Up:[/b] {up_speed} · [b]Down:[/b] {down_speed} · [b]ETA:[/b] {eta_text}
 
-[dim]Press 'p' to pause/resume, 'f' to select files, 'd' to delete, 'D' to delete w/ data, or 'esc' to close.[/dim]
+[dim]\\[p] pause/resume · \\[f] select files · \\[d] delete · \\[D] delete w/ data · \\[esc] close[/dim]
 """
         # update details panel internal widgets
+        self._details_panel.border_title = current_torrent["title"]
         self._details_panel.update_content(
             details.strip(),
             progress=status["progress"],
