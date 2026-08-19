@@ -19,7 +19,9 @@ async def handle_direct_download(home_screen: "HomeScreen", input_path: str) -> 
 
     magnet_uri, torrent_info = await resolve_torrent(input_path)
     if not magnet_uri:
-        home_screen.app.notify("Failed to resolve torrent or magnet URI", severity="error")
+        home_screen.app.notify(
+            "Failed to resolve torrent or magnet URI", severity="error"
+        )
         return
 
     title = input_path
@@ -28,7 +30,9 @@ async def handle_direct_download(home_screen: "HomeScreen", input_path: str) -> 
         title = torrent_info.name()
         size = torrent_info.total_size()
     elif magnet_uri.startswith("magnet:"):
-        dn_list = urllib.parse.parse_qs(urllib.parse.urlsplit(magnet_uri).query).get("dn")
+        dn_list = urllib.parse.parse_qs(urllib.parse.urlsplit(magnet_uri).query).get(
+            "dn"
+        )
         if dn_list and dn_list[0]:
             title = dn_list[0]
 
@@ -70,4 +74,3 @@ async def handle_direct_download(home_screen: "HomeScreen", input_path: str) -> 
         FileSelectionScreen(torrent=torrent_record, torrent_info=torrent_info),
         on_files_selected,
     )
-

@@ -94,4 +94,3 @@ def test_download_command_invalid_input():
 
     assert result.exit_code == 0
     assert "Invalid input" in result.output
-

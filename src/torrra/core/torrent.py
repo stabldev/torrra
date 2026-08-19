@@ -16,7 +16,9 @@ class TorrentManager:
     def add_torrent(
         self, torrent: Torrent, file_priorities: list[int] | None = None
     ) -> None:
-        prios = file_priorities if file_priorities is not None else torrent.file_priorities
+        prios = (
+            file_priorities if file_priorities is not None else torrent.file_priorities
+        )
         priorities_json = json.dumps(prios) if prios is not None else None
         with get_db_connection() as conn:
             cursor = conn.cursor()
@@ -91,9 +93,7 @@ class TorrentManager:
         with get_db_connection() as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
-            cursor.execute(
-                "SELECT * FROM torrents WHERE magnet_uri = ?", (magnet_uri,)
-            )
+            cursor.execute("SELECT * FROM torrents WHERE magnet_uri = ?", (magnet_uri,))
             row = cursor.fetchone()
             if not row:
                 return None

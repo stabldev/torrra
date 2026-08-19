@@ -300,7 +300,9 @@ async def test_file_selection_screen_edit_mode():
 
     async with app.run_test() as pilot:
         await pilot.pause()
-        assert "Ubuntu 24.04 Pack" in str(app.screen.query_one("#torrent-name", Static).content)
+        assert "Ubuntu 24.04 Pack" in str(
+            app.screen.query_one("#torrent-name", Static).content
+        )
         footer = app.screen.query_one("#shortcuts-hint", Static)
         assert "save" in str(footer.content)
 
@@ -350,7 +352,9 @@ async def test_search_content_one_step_enter(mock_indexer: MagicMock):
         assert isinstance(app.screen, HomeScreen)
 
 
-async def test_torrent_manager_file_priorities_persistence(tmp_path: Any, monkeypatch: pytest.MonkeyPatch):
+async def test_torrent_manager_file_priorities_persistence(
+    tmp_path: Any, monkeypatch: pytest.MonkeyPatch
+):
     from torrra.core import db as db_module
     from torrra.core.torrent import TorrentManager
 
@@ -391,7 +395,9 @@ async def test_download_manager_file_priorities():
     assert dm.get_file_priorities(uri) == [4, 0, 4]
 
 
-async def test_downloads_content_action_select_files(tmp_path: Any, monkeypatch: pytest.MonkeyPatch):
+async def test_downloads_content_action_select_files(
+    tmp_path: Any, monkeypatch: pytest.MonkeyPatch
+):
     from torrra._types import Indexer
     from torrra.app import TorrraApp
     from torrra.core import db as db_module
@@ -534,5 +540,3 @@ async def test_direct_download_modal_cancel(
         sidebar = home_screen.query_one("#sidebar", Sidebar)
         assert sidebar.cursor_node is not None
         assert sidebar.cursor_node.data.get("group_id") == "downloads_content"
-
-

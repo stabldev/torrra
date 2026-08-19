@@ -59,10 +59,7 @@ class DownloadManager:
                 # If handle is invalid, remove it and add the torrent fresh
                 del self.torrents[magnet_uri]
             else:
-                if (
-                    file_priorities is not None
-                    and handle.status().has_metadata
-                ):
+                if file_priorities is not None and handle.status().has_metadata:
                     try:
                         handle.prioritize_files(file_priorities)
                     except (AttributeError, RuntimeError):
@@ -93,7 +90,9 @@ class DownloadManager:
                 atp.ti = torrent_info
 
             if is_paused:
-                if torrent_info is not None or (hasattr(atp, "ti") and atp.ti is not None):
+                if torrent_info is not None or (
+                    hasattr(atp, "ti") and atp.ti is not None
+                ):
                     atp.flags |= lt.torrent_flags.paused
                     atp.flags &= ~lt.torrent_flags.auto_managed
                 else:
