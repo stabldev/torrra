@@ -1,14 +1,13 @@
-import os
+import urllib.parse
 from typing import TYPE_CHECKING
 
-import libtorrent as lt
 from textual.widgets import ContentSwitcher
 
 from torrra._types import Torrent
 from torrra.core.download import get_download_manager
 from torrra.core.torrent import get_torrent_manager
 from torrra.screens.file_selection import FileSelectionScreen
-from torrra.utils.magnet import resolve_magnet_uri, resolve_torrent
+from torrra.utils.magnet import resolve_torrent
 from torrra.widgets.sidebar import Sidebar
 
 if TYPE_CHECKING:
@@ -28,15 +27,10 @@ async def handle_direct_download(home_screen: "HomeScreen", input_path: str) -> 
     if torrent_info is not None:
         title = torrent_info.name()
         size = torrent_info.total_size()
-    elif magnet_uri.startswith("magnet:") and "dn=" in magnet_uri:
-        try:
-            import urllib.parse
-            for param in magnet_uri.split("?")[1].split("&"):
-                if param.startswith("dn="):
-                    title = urllib.parse.unquote(param[3:])
-                    break
-        except Exception:
-            pass
+    elif magnet_uri.startswith("magnet:"):
+        dn_list = urllib.parse.parse_qs(urllib.parse.urlsplit(magnet_uri).query).get("dn")
+        if dn_list and dn_list[0]:
+            title = dn_list[0]
 
     torrent_record = Torrent(
         magnet_uri=magnet_uri,

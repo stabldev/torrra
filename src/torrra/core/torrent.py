@@ -97,11 +97,7 @@ class TorrentManager:
             row = cursor.fetchone()
             if not row:
                 return None
-            prio_raw = (
-                row["file_priorities"]
-                if "file_priorities" in row.keys()
-                else None
-            )
+            prio_raw = dict(row).get("file_priorities")
             file_priorities = json.loads(prio_raw) if prio_raw else None
             return TorrentRecord(
                 magnet_uri=row["magnet_uri"],
@@ -122,11 +118,7 @@ class TorrentManager:
 
             result = []
             for row in rows:
-                prio_raw = (
-                    row["file_priorities"]
-                    if "file_priorities" in row.keys()
-                    else None
-                )
+                prio_raw = dict(row).get("file_priorities")
                 file_priorities = json.loads(prio_raw) if prio_raw else None
                 result.append(
                     TorrentRecord(

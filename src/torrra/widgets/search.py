@@ -35,7 +35,7 @@ from torrra.indexers.base import BaseIndexer
 from torrra.screens.file_selection import FileSelectionScreen
 from torrra.screens.sort_selector import SortSelectorScreen
 from torrra.utils.helpers import human_readable_size, lazy_import
-from torrra.utils.magnet import resolve_magnet_uri, resolve_torrent
+from torrra.utils.magnet import resolve_torrent
 from torrra.widgets.data_table import AutoResizingDataTable
 from torrra.widgets.details_panel import DetailsPanel
 from torrra.widgets.spinner import Spinner
@@ -87,7 +87,7 @@ class SearchContent(Vertical):
         *args: Any,
         **kwargs: Any,
     ) -> None:
-        super().__init__(id="search_content", *args, **kwargs)
+        super().__init__(*args, id="search_content", **kwargs)
         self.indexer: Indexer = indexer
         self.search_query: str = search_query
         self.use_cache: bool = use_cache

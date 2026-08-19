@@ -2,9 +2,8 @@ from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
-from textual.app import App, ComposeResult
-from textual.containers import Vertical
-from textual.widgets import Button, Static
+from textual.app import App
+from textual.widgets import Static
 
 from torrra._types import Torrent
 from torrra.core.download import get_download_manager
@@ -310,12 +309,10 @@ async def test_file_selection_screen_edit_mode():
 
 
 async def test_search_content_one_step_enter(mock_indexer: MagicMock):
-    from torrra.app import TorrraApp
     from torrra._types import Indexer
-    from torrra.widgets.search import SearchContent
+    from torrra.app import TorrraApp
     from torrra.widgets.data_table import AutoResizingDataTable
 
-    mock_ti = create_mock_torrent_info()
     mock_indexer.search.return_value = [
         Torrent(
             magnet_uri="magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567",
@@ -335,7 +332,7 @@ async def test_search_content_one_step_enter(mock_indexer: MagicMock):
 
     async with app.run_test() as pilot:
         await pilot.pause()
-        table = app.screen.query_one(AutoResizingDataTable)
+        assert app.screen.query_one(AutoResizingDataTable) is not None
         # Select first row directly with enter
         await pilot.press("enter")
         await pilot.pause()
@@ -386,10 +383,9 @@ async def test_download_manager_file_priorities():
 
 
 async def test_downloads_content_action_select_files(tmp_path: Any, monkeypatch: pytest.MonkeyPatch):
-    from torrra.app import TorrraApp
     from torrra._types import Indexer
+    from torrra.app import TorrraApp
     from torrra.core import db as db_module
-    from torrra.core.torrent import get_torrent_manager
     from torrra.widgets.downloads import DownloadsContent
 
     temp_db = tmp_path / "test.db"
