@@ -97,6 +97,41 @@ def run_with_indexer(
         click.secho(str(e), fg="red", err=True)
 
 
+def run_without_indexer(
+    *,
+    no_cache: bool,
+    direct_download: str | None = None,
+    show_downloads: bool = False,
+) -> None:
+    """Launch the app without an indexer.
+
+    Used by entry points that only touch downloads - `torrra download` and
+    `torrra downloads`. These never search, so no indexer needs to be
+    configured or health-checked; the app opens straight to the downloads
+    view with search disabled.
+    """
+    config = get_config()
+
+    # load app only when needed (heavy stuff)
+    from torrra.app import TorrraApp
+
+    try:
+        use_cache = config.get("general.use_cache", True)
+        if no_cache:  # --no-cache flag overrides config
+            use_cache = False
+
+        app = TorrraApp(
+            indexer=None,
+            use_cache=use_cache,
+            search_query=None,
+            direct_download=direct_download,
+            show_downloads=show_downloads,
+        )
+        app.run()
+    except RuntimeError as e:
+        click.secho(str(e), fg="red", err=True)
+
+
 def run_with_default_indexer(
     *,
     no_cache: bool,

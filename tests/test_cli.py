@@ -78,13 +78,14 @@ def test_config_commands_flow():
 
 def test_download_command_valid_magnet(monkeypatch: pytest.MonkeyPatch):
     mock_run_func = MagicMock()
-    monkeypatch.setattr("torrra.utils.indexer.run_with_default_indexer", mock_run_func)
+    monkeypatch.setattr("torrra.utils.indexer.run_without_indexer", mock_run_func)
 
     runner = CliRunner()
     magnet = "magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567&dn=test"
     result = runner.invoke(cli, ["download", magnet, "--no-cache"])
 
     assert result.exit_code == 0
+    # direct download must not require an indexer
     mock_run_func.assert_called_once_with(no_cache=True, direct_download=magnet)
 
 
@@ -94,3 +95,17 @@ def test_download_command_invalid_input():
 
     assert result.exit_code == 0
     assert "Invalid input" in result.output
+
+
+def test_downloads_command_calls_runner_without_indexer(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    # the downloads view must launch without an indexer configured
+    mock_run_func = MagicMock()
+    monkeypatch.setattr("torrra.utils.indexer.run_without_indexer", mock_run_func)
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["downloads", "--no-cache"])
+
+    assert result.exit_code == 0
+    mock_run_func.assert_called_once_with(no_cache=True, show_downloads=True)

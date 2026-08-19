@@ -25,7 +25,7 @@ def download(magnet_uri_or_file: str, no_cache: bool) -> None:
     import os
     import re
 
-    from torrra.utils.indexer import run_with_default_indexer
+    from torrra.utils.indexer import run_without_indexer
 
     # Validate input - can be magnet URI, URL, or local torrent file
     is_magnet = magnet_uri_or_file.startswith("magnet:")
@@ -42,8 +42,8 @@ def download(magnet_uri_or_file: str, no_cache: bool) -> None:
         )
         return
 
-    # detect indexer from config and execute with direct download
-    run_with_default_indexer(no_cache=no_cache, direct_download=magnet_uri_or_file)
+    # direct download needs no indexer - launch straight into downloads
+    run_without_indexer(no_cache=no_cache, direct_download=magnet_uri_or_file)
 
 
 # --------------------------------------------------
@@ -65,10 +65,10 @@ def search(search_query: str, no_cache: bool) -> None:
 @cli.command(help="Show the downloads view directly.")
 @click.option("--no-cache", is_flag=True, help="Disable caching mechanism.")
 def downloads(no_cache: bool) -> None:
-    from torrra.utils.indexer import run_with_default_indexer
+    from torrra.utils.indexer import run_without_indexer
 
-    # detect indexer from config and execute with show_downloads
-    run_with_default_indexer(no_cache=no_cache, show_downloads=True)
+    # the downloads view needs no indexer - launch straight into it
+    run_without_indexer(no_cache=no_cache, show_downloads=True)
 
 
 # --------------------------------------------------

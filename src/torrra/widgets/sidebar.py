@@ -29,12 +29,13 @@ class Sidebar(Tree[Any]):
             self.group_type: str | None = group_type
             super().__init__()
 
-    def __init__(self, id: str) -> None:
+    def __init__(self, id: str, show_search: bool = True) -> None:
         super().__init__("Menu", id=id)
         self.show_horizontal_scrollbar: Reactive[bool] = reactive(False)
         self.show_root: bool = False
         self.guide_depth: int = 3
         self.can_focus: bool = False  # re-enable focus later
+        self._show_search: bool = show_search
 
         self._downloads_root_node: TreeNode[Any]
         self._downloads_nodes: dict[str, TreeNode[Any]] = {}
@@ -43,8 +44,13 @@ class Sidebar(Tree[Any]):
     def compose(self) -> ComposeResult:
         root = self.root
         # NODES
-        search = root.add("Search", allow_expand=False)
-        search.data = {"group_id": "search_content"}
+        # search is only offered when an indexer is configured; downloads-only
+        # entry points (torrra download / torrra downloads) hide it
+        default_node: TreeNode[Any] | None = None
+        if self._show_search:
+            search = root.add("Search", allow_expand=False)
+            search.data = {"group_id": "search_content"}
+            default_node = search
 
         downloads_node = root.add("Downloads (0)", expand=True, allow_expand=False)
         downloads_node.data = {"group_id": "downloads_content"}
@@ -56,7 +62,8 @@ class Sidebar(Tree[Any]):
             self._downloads_nodes[item] = node
         self._downloads_root_node = downloads_node
 
-        self.select_node(search)  # default
+        # fall back to downloads as the default when search is hidden
+        self.select_node(default_node or downloads_node)
         return super().compose()
 
     def on_tree_node_selected(self, event: Tree.NodeSelected[dict[str, str]]) -> None:

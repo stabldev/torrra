@@ -53,6 +53,7 @@ async def test_welcome_screen_version_display(app: TorrraApp):
 
         # version should be same
         assert __version__ in version_text
+        assert app.indexer is not None
         assert app.indexer.name in version_text
 
 
