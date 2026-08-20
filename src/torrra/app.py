@@ -101,34 +101,13 @@ class TorrraApp(App[None]):
         assert self.indexer is not None
         result = await self.push_screen_wait(WelcomeScreen(indexer=self.indexer))
 
-        if result == GO_TO_DOWNLOADS:
-            await self.push_screen(
-                HomeScreen(
-                    indexer=self.indexer,
-                    search_query="",
-                    use_cache=self.use_cache,
-                    direct_download=None,
-                    show_downloads=True,
-                )
+        is_search = bool(result and result != GO_TO_DOWNLOADS)
+        await self.push_screen(
+            HomeScreen(
+                indexer=self.indexer,
+                search_query=result if is_search else "",
+                use_cache=self.use_cache,
+                direct_download=None,
+                show_downloads=not is_search,
             )
-        elif result:
-            await self.push_screen(
-                HomeScreen(
-                    indexer=self.indexer,
-                    search_query=result,
-                    use_cache=self.use_cache,
-                    direct_download=None,
-                    show_downloads=self.show_downloads,
-                )
-            )
-        else:
-            # safety net: an empty dismiss must not leave the app screen-less
-            await self.push_screen(
-                HomeScreen(
-                    indexer=self.indexer,
-                    search_query="",
-                    use_cache=self.use_cache,
-                    direct_download=None,
-                    show_downloads=True,
-                )
-            )
+        )
