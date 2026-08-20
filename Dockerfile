@@ -16,7 +16,7 @@ COPY src ./src
 RUN uv pip install --system --no-cache-dir -r requirements.txt
 
 # stage 2: final image
-FROM python:3.13-alpine
+FROM python:3.13-slim
 
 WORKDIR /app
 
@@ -26,13 +26,13 @@ ENV PYTHONUNBUFFERED=1
 ENV PIP_ROOT_USER_ACTION=ignore
 
 # create a non-root user and group
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+RUN useradd -m -u 1000 appuser
 
 # copy installed packages from the builder stage
 COPY --from=builder /usr/local/lib/python3.13/site-packages /usr/local/lib/python3.13/site-packages
 
 # copy the application source and executable
-COPY --from=builder --chown=appuser:appgroup /app/src ./src
+COPY --from=builder --chown=appuser:appuser /app/src ./src
 COPY --from=builder /usr/local/bin/torrra /usr/local/bin/torrra
 
 # switch to the non-root user
