@@ -279,7 +279,7 @@ FileSelectionScreen {
     #file-selection-body {
       height: 1fr;
       margin: 0;
-      SelectionList {
+      FileSelectionTree {
         height: 1fr;
         border: none;
         scrollbar-size: 0 0;

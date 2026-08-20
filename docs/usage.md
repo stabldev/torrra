@@ -144,15 +144,19 @@ These work in both the search results and the downloads list.
 
 ### File selection
 
-| Key     | Action                                                        |
-| :------ | :------------------------------------------------------------ |
-| `Space` | Toggle selection of the highlighted file                      |
-| `a`     | Select all files                                              |
-| `n`     | Select no files (clear selection)                             |
-| `i`     | Invert selection                                              |
-| `Enter` | Confirm selection and start download                          |
-| `d`     | Download all files immediately (skip metadata fetching wait) |
-| `Esc`   | Cancel file selection                                         |
+Files are shown in a collapsible folder tree. Folders are expanded by default; use the arrow keys to navigate, `←`/`→` to collapse/expand a folder, and `Space` to toggle the highlighted file — or a whole folder subtree.
+
+| Key            | Action                                                      |
+| :------------- | :---------------------------------------------------------- |
+| `Space`        | Toggle selection of the highlighted file / folder subtree   |
+| `←` / `→`      | Collapse / expand the highlighted folder                    |
+| `j` / `k`      | Move the selection cursor up / down                         |
+| `a`            | Select all files                                            |
+| `n`            | Select no files (clear selection)                           |
+| `i`            | Invert selection                                            |
+| `Enter`        | Confirm selection and start download                        |
+| `d`            | Download all files immediately (skip metadata fetching wait) |
+| `Esc`          | Cancel file selection                                       |
 
 ### Discovering Shortcuts In the App
 

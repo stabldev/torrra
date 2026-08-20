@@ -8,7 +8,7 @@ from textual.widgets import Static
 from torrra._types import Torrent
 from torrra.core.download import get_download_manager
 from torrra.core.torrent import get_torrent_manager
-from torrra.screens.file_selection import FileSelectionList, FileSelectionScreen
+from torrra.screens.file_selection import FileSelectionScreen, FileSelectionTree
 
 
 def create_mock_torrent_info() -> MagicMock:
@@ -58,18 +58,16 @@ async def test_file_selection_screen_initial_state():
         await pilot.pause()
         assert isinstance(app.screen, FileSelectionScreen)
 
-        selection_list = app.screen.query_one(FileSelectionList)
+        selection_tree = app.screen.query_one(FileSelectionTree)
         # All 3 files should be initially selected
-        assert set(selection_list.selected) == {0, 1, 2}
+        assert selection_tree.selected == {0, 1, 2}
 
-        # Redundant root directory "Ubuntu/" should be removed from displayed prompts
-        prompt_0 = str(selection_list.get_option_at_index(0).prompt)
-        prompt_1 = str(selection_list.get_option_at_index(1).prompt)
-        prompt_2 = str(selection_list.get_option_at_index(2).prompt)
-        assert prompt_0.startswith("ubuntu-24.04-desktop.iso")
-        assert not prompt_0.startswith("Ubuntu/")
-        assert prompt_1.startswith("SHA256SUMS")
-        assert prompt_2.startswith("README.md")
+        # Redundant root directory "Ubuntu/" should be removed from the tree
+        labels = selection_tree.file_labels()
+        assert labels[0].startswith("[x] ubuntu-24.04-desktop.iso")
+        assert "Ubuntu/" not in labels[0]
+        assert labels[1].startswith("[x] SHA256SUMS")
+        assert labels[2].startswith("[x] README.md")
 
         stats = app.screen.query_one("#selection-stats", Static)
         assert "3/3" in str(stats.content)
@@ -104,17 +102,18 @@ async def test_file_selection_screen_strips_root_preserves_subdirs():
 
     async with app.run_test() as pilot:
         await pilot.pause()
-        selection_list = app.screen.query_one(FileSelectionList)
-        p0 = str(selection_list.get_option_at_index(0).prompt)
-        p1 = str(selection_list.get_option_at_index(1).prompt)
-        p2 = str(selection_list.get_option_at_index(2).prompt)
-        assert p0.startswith("Season 1/S01E01.mkv")
-        assert p1.startswith("Season 2/S02E01.mkv")
-        assert p2.startswith("info.nfo")
+        selection_tree = app.screen.query_one(FileSelectionTree)
+        labels = selection_tree.file_labels()
+        assert labels[0].startswith("[x] S01E01.mkv")
+        assert labels[1].startswith("[x] S02E01.mkv")
+        assert labels[2].startswith("[x] info.nfo")
+
+        folders = selection_tree.folder_labels()
+        assert set(folders) == {"Season 1", "Season 2"}
 
 
 async def test_file_selection_screen_filename_truncation_with_size():
-    long_name = "Very.Long.Series.Title.2026.S01E01.1080p.BluRay.x265.10bit.DTS-HD.MA.7.1-GROUP/Subs/English_Full_SDH_Commentary.srt"
+    long_name = "Very.Long.Series.Title.2026.S01E01.1080p.BluRay.x265.10bit.DTS-HD.MA.7.1-GROUP.mkv"
     mock_ti = MagicMock()
     mock_ti.name.return_value = "Long Torrent Title"
     mock_files = MagicMock()
@@ -138,8 +137,8 @@ async def test_file_selection_screen_filename_truncation_with_size():
 
     async with app.run_test() as pilot:
         await pilot.pause()
-        selection_list = app.screen.query_one(FileSelectionList)
-        prompt_text = str(selection_list.get_option_at_index(0).prompt)
+        selection_tree = app.screen.query_one(FileSelectionTree)
+        prompt_text = selection_tree.file_labels()[0]
         assert "..." in prompt_text
         assert "48.83 KB" in prompt_text
 
@@ -160,17 +159,17 @@ async def test_file_selection_screen_select_none_and_all():
 
     async with app.run_test() as pilot:
         await pilot.pause()
-        selection_list = app.screen.query_one(FileSelectionList)
+        selection_tree = app.screen.query_one(FileSelectionTree)
 
         # Press 'n' for none
         await pilot.press("n")
         await pilot.pause()
-        assert len(selection_list.selected) == 0
+        assert len(selection_tree.selected) == 0
 
         # Press 'a' for all
         await pilot.press("a")
         await pilot.pause()
-        assert set(selection_list.selected) == {0, 1, 2}
+        assert selection_tree.selected == {0, 1, 2}
 
 
 async def test_file_selection_screen_invert():
@@ -193,13 +192,210 @@ async def test_file_selection_screen_invert():
 
     async with app.run_test() as pilot:
         await pilot.pause()
-        selection_list = app.screen.query_one(FileSelectionList)
-        assert set(selection_list.selected) == {0}
+        selection_tree = app.screen.query_one(FileSelectionTree)
+        assert selection_tree.selected == {0}
 
         # Press 'i' to invert
         await pilot.press("i")
         await pilot.pause()
-        assert set(selection_list.selected) == {1, 2}
+        assert selection_tree.selected == {1, 2}
+
+
+async def test_file_selection_tree_expand_collapse_folder():
+    mock_ti = MagicMock()
+    mock_ti.name.return_value = "Series Pack"
+    fs = MagicMock()
+    fs.num_files.return_value = 3
+    fs.file_flags.return_value = 0
+    fs.file_path.side_effect = lambda i: [
+        "Series Pack/Season 1/S01E01.mkv",
+        "Series Pack/Season 2/S02E01.mkv",
+        "Series Pack/info.nfo",
+    ][i]
+    fs.file_size.side_effect = lambda i: [1_000_000, 1_000_000, 500][i]
+    mock_ti.files.return_value = fs
+
+    torrent = Torrent(
+        magnet_uri="magnet:?xt=urn:btih:mockseries",
+        title="Series Pack",
+        size=2_000_500,
+        seeders=5,
+        leechers=1,
+        source="Mock",
+    )
+
+    screen = FileSelectionScreen(torrent=torrent, torrent_info=mock_ti)
+    app = DummyHostApp(screen)
+
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        selection_tree = app.screen.query_one(FileSelectionTree)
+        folders = selection_tree.folder_nodes()
+        assert len(folders) == 2
+
+        # Cursor starts on the first folder (Season 1), expanded by default
+        assert selection_tree.cursor_node is folders[0]
+        assert folders[0].is_expanded
+
+        # 'right' on an already-expanded folder does nothing harmful
+        await pilot.press("right")
+        await pilot.pause()
+        assert folders[0].is_expanded
+
+        # 'left' collapses it, 'right' expands it again
+        await pilot.press("left")
+        await pilot.pause()
+        assert folders[0].is_collapsed
+
+        await pilot.press("right")
+        await pilot.pause()
+        assert folders[0].is_expanded
+
+
+async def test_file_selection_tree_folder_toggle():
+    mock_ti = MagicMock()
+    mock_ti.name.return_value = "Series Pack"
+    fs = MagicMock()
+    fs.num_files.return_value = 3
+    fs.file_flags.return_value = 0
+    fs.file_path.side_effect = lambda i: [
+        "Series Pack/Season 1/S01E01.mkv",
+        "Series Pack/Season 1/S01E02.mkv",
+        "Series Pack/info.nfo",
+    ][i]
+    fs.file_size.side_effect = lambda i: [1_000_000, 1_000_000, 500][i]
+    mock_ti.files.return_value = fs
+
+    torrent = Torrent(
+        magnet_uri="magnet:?xt=urn:btih:mockseries",
+        title="Series Pack",
+        size=2_000_500,
+        seeders=5,
+        leechers=1,
+        source="Mock",
+    )
+
+    screen = FileSelectionScreen(torrent=torrent, torrent_info=mock_ti)
+    app = DummyHostApp(screen)
+
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        selection_tree = app.screen.query_one(FileSelectionTree)
+        folder = selection_tree.folder_nodes()[0]
+        assert folder.is_expanded
+
+        # Deselect all, then space on the folder selects all its files only
+        await pilot.press("n")
+        await pilot.pause()
+        await pilot.press("space")
+        await pilot.pause()
+        assert selection_tree.selected == {0, 1}
+
+        # Space again on the folder deselects its subtree
+        await pilot.press("space")
+        await pilot.pause()
+        assert selection_tree.selected == set()
+
+        # Folder label reflects the aggregate selection
+        folder_label = selection_tree.folder_labels()["Season 1"]
+        assert "[ ]" in folder_label and "0/2" in folder_label
+
+
+async def test_file_selection_tree_nested_folder_toggle():
+    mock_ti = MagicMock()
+    mock_ti.name.return_value = "Deep Series Pack"
+    fs = MagicMock()
+    fs.num_files.return_value = 3
+    fs.file_flags.return_value = 0
+    fs.file_path.side_effect = lambda i: [
+        "Deep Series Pack/Season 1/Extras/behind_the_scenes.mp4",
+        "Deep Series Pack/Season 1/S01E01.mkv",
+        "Deep Series Pack/info.nfo",
+    ][i]
+    fs.file_size.side_effect = lambda i: [500_000, 1_000_000, 500][i]
+    mock_ti.files.return_value = fs
+
+    torrent = Torrent(
+        magnet_uri="magnet:?xt=urn:btih:mockdeep",
+        title="Deep Series Pack",
+        size=1_500_500,
+        seeders=5,
+        leechers=1,
+        source="Mock",
+    )
+
+    screen = FileSelectionScreen(torrent=torrent, torrent_info=mock_ti)
+    app = DummyHostApp(screen)
+
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        selection_tree = app.screen.query_one(FileSelectionTree)
+
+        # Initially all selected
+        assert "[x] Season 1 (2/2)" in selection_tree.folder_labels()["Season 1"]
+        assert "[x] Extras (1/1)" in selection_tree.folder_labels()["Extras"]
+
+        # Deselect Season 1 subtree
+        await pilot.press("space")
+        await pilot.pause()
+
+        # Both Season 1 and nested Extras should update properly
+        assert "[ ] Season 1 (0/2)" in selection_tree.folder_labels()["Season 1"]
+        assert "[ ] Extras (0/1)" in selection_tree.folder_labels()["Extras"]
+
+
+async def test_file_selection_tree_vim_navigation_and_parent_jump():
+    mock_ti = MagicMock()
+    mock_ti.name.return_value = "Series Pack"
+    fs = MagicMock()
+    fs.num_files.return_value = 2
+    fs.file_flags.return_value = 0
+    fs.file_path.side_effect = lambda i: [
+        "Series Pack/Season 1/S01E01.mkv",
+        "Series Pack/info.nfo",
+    ][i]
+    fs.file_size.side_effect = lambda i: [1_000_000, 500][i]
+    mock_ti.files.return_value = fs
+
+    torrent = Torrent(
+        magnet_uri="magnet:?xt=urn:btih:mockseries",
+        title="Series Pack",
+        size=1_000_500,
+        seeders=5,
+        leechers=1,
+        source="Mock",
+    )
+
+    screen = FileSelectionScreen(torrent=torrent, torrent_info=mock_ti)
+    app = DummyHostApp(screen)
+
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        selection_tree = app.screen.query_one(FileSelectionTree)
+        folder = selection_tree.folder_nodes()[0]
+        assert selection_tree.cursor_node is folder
+        assert folder.is_expanded
+
+        # 'h' collapses the folder
+        await pilot.press("h")
+        await pilot.pause()
+        assert folder.is_collapsed
+
+        # 'l' expands the folder
+        await pilot.press("l")
+        await pilot.pause()
+        assert folder.is_expanded
+
+        # Move down to child using 'j'
+        await pilot.press("j")
+        await pilot.pause()
+        assert selection_tree.cursor_node is not folder
+        assert selection_tree.cursor_node.parent is folder
+
+        # 'h' or 'left' on a child moves cursor back to parent folder
+        await pilot.press("h")
+        await pilot.pause()
+        assert selection_tree.cursor_node is folder
 
 
 async def test_file_selection_screen_confirm_with_enter():
@@ -225,8 +421,8 @@ async def test_file_selection_screen_confirm_with_enter():
         await pilot.press("space")
         await pilot.pause()
 
-        selection_list = app.screen.query_one(FileSelectionList)
-        assert set(selection_list.selected) == {0}
+        selection_tree = app.screen.query_one(FileSelectionTree)
+        assert selection_tree.selected == {0}
 
         # Confirm with enter
         await pilot.press("enter")
@@ -306,8 +502,8 @@ async def test_file_selection_screen_edit_mode():
         footer = app.screen.query_one("#shortcuts-hint", Static)
         assert "save" in str(footer.content)
 
-        selection_list = app.screen.query_one(FileSelectionList)
-        assert set(selection_list.selected) == {0, 2}
+        selection_tree = app.screen.query_one(FileSelectionTree)
+        assert selection_tree.selected == {0, 2}
 
 
 async def test_search_content_one_step_enter(mock_indexer: MagicMock):
