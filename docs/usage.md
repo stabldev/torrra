@@ -173,8 +173,6 @@ it never interferes with typing — though when the search box is empty, pressin
 
 ### Sorting and Filtering Results
 
-![Sorting and filtering search results](_static/sort-filter-demo.gif)
-
 Indexers return results in their own order, which is usually a relevance guess and often buries the copies that will actually download quickly. Sorting and filtering let you reorder and narrow what you already have, without querying your indexer again — `torrra` keeps the full result set in memory, so it's instant.
 
 #### A first walkthrough
