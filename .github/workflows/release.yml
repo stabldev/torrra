@@ -153,3 +153,14 @@ jobs:
           pkgver: ${{ steps.version.outputs.version }}
           pkgbuild_template: ./pkgbuild-template/torrra-bin/PKGBUILD
           aur_ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+
+  winget:
+    name: Publish to WinGet
+    needs: build_and_attach_bin
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish to Windows Package Manager Repository
+        uses: vedantmgoyal2009/winget-releaser@v2
+        with:
+          identifier: stabldev.torrra
+          token: ${{ secrets.WINGET_TOKEN }}

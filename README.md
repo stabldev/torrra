@@ -24,7 +24,7 @@ uv tool install torrra
 # or pipx install torrra
 ```
 
-Other options: [`AUR`](https://aur.archlinux.org/packages/torrra), [`standalone binaries`](https://github.com/stabldev/torrra/releases), [`Homebrew`](https://github.com/Maniacsan/homebrew-torrra) or [`Docker`](https://hub.docker.com/r/stabldev/torrra).
+Other options: [`WinGet`](https://torrra.readthedocs.io/en/latest/installation.html#windows), [`AUR`](https://aur.archlinux.org/packages/torrra), [`Homebrew`](https://github.com/Maniacsan/homebrew-torrra), [`standalone binaries`](https://github.com/stabldev/torrra/releases), or [`Docker`](https://hub.docker.com/r/stabldev/torrra).
 
 [See full install options →](https://torrra.readthedocs.io/en/latest/installation.html)
 
