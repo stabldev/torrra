@@ -158,6 +158,7 @@ jobs:
     name: Publish to WinGet
     needs: build_and_attach_bin
     runs-on: ubuntu-latest
+    permissions: {}
     steps:
       - name: Publish to Windows Package Manager Repository
         uses: vedantmgoyal2009/winget-releaser@v2
