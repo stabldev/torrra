@@ -161,7 +161,7 @@ jobs:
     permissions: {}
     steps:
       - name: Publish to Windows Package Manager Repository
-        uses: vedantmgoyal2009/winget-releaser@v2
+        uses: vedantmgoyal2009/winget-releaser@main
         with:
           identifier: stabldev.torrra
           token: ${{ secrets.WINGET_TOKEN }}
