@@ -13,7 +13,7 @@ from torrra.core.config import get_config
 from torrra.screens.help import HelpScreen
 from torrra.screens.home import HomeScreen
 from torrra.screens.theme_selector import ThemeSelectorScreen
-from torrra.screens.welcome import WelcomeScreen
+from torrra.screens.welcome import GO_TO_DOWNLOADS, WelcomeScreen
 from torrra.utils.fs import get_resource_path
 
 
@@ -99,15 +99,15 @@ class TorrraApp(App[None]):
     async def _show_welcome_and_search(self) -> None:
         # only ever called with an indexer configured (see on_mount)
         assert self.indexer is not None
-        if search_query := await self.push_screen_wait(
-            WelcomeScreen(indexer=self.indexer)
-        ):  # show both screens
-            await self.push_screen(
-                HomeScreen(
-                    indexer=self.indexer,
-                    search_query=search_query,
-                    use_cache=self.use_cache,
-                    direct_download=None,
-                    show_downloads=self.show_downloads,
-                )
+        result = await self.push_screen_wait(WelcomeScreen(indexer=self.indexer))
+
+        is_search = bool(result and result != GO_TO_DOWNLOADS)
+        await self.push_screen(
+            HomeScreen(
+                indexer=self.indexer,
+                search_query=result if is_search else "",
+                use_cache=self.use_cache,
+                direct_download=None,
+                show_downloads=not is_search,
             )
+        )
