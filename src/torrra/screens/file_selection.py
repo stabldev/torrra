@@ -51,6 +51,8 @@ class FileSelectionTree(Tree[int]):
         Binding("up", "cursor_up", "Up", show=False),
         Binding("left", "collapse_node", "Collapse folder", show=False),
         Binding("right", "expand_node", "Expand folder", show=False),
+        Binding("h", "collapse_node", "Collapse folder", show=False),
+        Binding("l", "expand_node", "Expand folder", show=False),
         Binding("enter", "confirm_selection", "Confirm", show=False),
     ]
 
@@ -168,10 +170,9 @@ class FileSelectionTree(Tree[int]):
         base = self._base_labels[node]
         if self._is_folder(node):
             files = self._node_files[node]
-            mark = _selection_mark(len(files & self._selected), len(files))
-            node.set_label(
-                f"{mark} {base} ({len(files & self._selected)}/{len(files)})"
-            )
+            selected_count = self._selected_count(node)
+            mark = _selection_mark(selected_count, len(files))
+            node.set_label(f"{mark} {base} [dim]({selected_count}/{len(files)})[/dim]")
         else:
             mark = _selection_mark(1 if node.data in self._selected else 0, 1)
             node.set_label(f"{mark} {base}")
@@ -187,10 +188,6 @@ class FileSelectionTree(Tree[int]):
             self._update_node_label(node)
         for node in self._nodes_by_index.values():
             self._update_node_label(node)
-
-    def _refresh_files(self, indices: set[int]) -> None:
-        for index in indices:
-            self._update_node_label(self._nodes_by_index[index])
 
     def action_toggle_selection(self) -> None:
         node = self.cursor_node
@@ -219,9 +216,7 @@ class FileSelectionTree(Tree[int]):
             self._selected -= files
         else:
             self._selected |= files
-        self._refresh_files(files)
-        self._update_node_label(node)
-        self._update_ancestors(node)
+        self._refresh_all_labels()
         self.post_message(self.SelectionChanged())
 
     def select_all(self) -> None:
@@ -246,6 +241,8 @@ class FileSelectionTree(Tree[int]):
             return
         if self._is_folder(node) and node.is_expanded:
             node.collapse()
+        elif node.parent is not None and node.parent is not self.root:
+            self.move_cursor(node.parent)
 
     def action_expand_node(self) -> None:
         node = self.cursor_node
@@ -318,7 +315,7 @@ class FileSelectionScreen(ModalScreen[list[int] | None]):
 
             with Vertical(id="file-selection-footer", classes="hidden"):
                 yield Static(
-                    f"[dim]\\[space] toggle · \\[a] all · \\[n] none · \\[i] invert · \\[left/right] folders\n\\[enter] {action_verb} · \\[esc] cancel[/dim]",
+                    f"[dim]\\[space] toggle · \\[a] all · \\[n] none · \\[i] invert\n\\[h/l/←/→] folders · \\[enter] {action_verb} · \\[esc] cancel[/dim]",
                     id="shortcuts-hint",
                 )
 

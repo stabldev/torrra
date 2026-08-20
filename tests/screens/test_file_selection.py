@@ -301,6 +301,103 @@ async def test_file_selection_tree_folder_toggle():
         assert "[ ]" in folder_label and "0/2" in folder_label
 
 
+async def test_file_selection_tree_nested_folder_toggle():
+    mock_ti = MagicMock()
+    mock_ti.name.return_value = "Deep Series Pack"
+    fs = MagicMock()
+    fs.num_files.return_value = 3
+    fs.file_flags.return_value = 0
+    fs.file_path.side_effect = lambda i: [
+        "Deep Series Pack/Season 1/Extras/behind_the_scenes.mp4",
+        "Deep Series Pack/Season 1/S01E01.mkv",
+        "Deep Series Pack/info.nfo",
+    ][i]
+    fs.file_size.side_effect = lambda i: [500_000, 1_000_000, 500][i]
+    mock_ti.files.return_value = fs
+
+    torrent = Torrent(
+        magnet_uri="magnet:?xt=urn:btih:mockdeep",
+        title="Deep Series Pack",
+        size=1_500_500,
+        seeders=5,
+        leechers=1,
+        source="Mock",
+    )
+
+    screen = FileSelectionScreen(torrent=torrent, torrent_info=mock_ti)
+    app = DummyHostApp(screen)
+
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        selection_tree = app.screen.query_one(FileSelectionTree)
+
+        # Initially all selected
+        assert "[x] Season 1 (2/2)" in selection_tree.folder_labels()["Season 1"]
+        assert "[x] Extras (1/1)" in selection_tree.folder_labels()["Extras"]
+
+        # Deselect Season 1 subtree
+        await pilot.press("space")
+        await pilot.pause()
+
+        # Both Season 1 and nested Extras should update properly
+        assert "[ ] Season 1 (0/2)" in selection_tree.folder_labels()["Season 1"]
+        assert "[ ] Extras (0/1)" in selection_tree.folder_labels()["Extras"]
+
+
+async def test_file_selection_tree_vim_navigation_and_parent_jump():
+    mock_ti = MagicMock()
+    mock_ti.name.return_value = "Series Pack"
+    fs = MagicMock()
+    fs.num_files.return_value = 2
+    fs.file_flags.return_value = 0
+    fs.file_path.side_effect = lambda i: [
+        "Series Pack/Season 1/S01E01.mkv",
+        "Series Pack/info.nfo",
+    ][i]
+    fs.file_size.side_effect = lambda i: [1_000_000, 500][i]
+    mock_ti.files.return_value = fs
+
+    torrent = Torrent(
+        magnet_uri="magnet:?xt=urn:btih:mockseries",
+        title="Series Pack",
+        size=1_000_500,
+        seeders=5,
+        leechers=1,
+        source="Mock",
+    )
+
+    screen = FileSelectionScreen(torrent=torrent, torrent_info=mock_ti)
+    app = DummyHostApp(screen)
+
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        selection_tree = app.screen.query_one(FileSelectionTree)
+        folder = selection_tree.folder_nodes()[0]
+        assert selection_tree.cursor_node is folder
+        assert folder.is_expanded
+
+        # 'h' collapses the folder
+        await pilot.press("h")
+        await pilot.pause()
+        assert folder.is_collapsed
+
+        # 'l' expands the folder
+        await pilot.press("l")
+        await pilot.pause()
+        assert folder.is_expanded
+
+        # Move down to child using 'j'
+        await pilot.press("j")
+        await pilot.pause()
+        assert selection_tree.cursor_node is not folder
+        assert selection_tree.cursor_node.parent is folder
+
+        # 'h' or 'left' on a child moves cursor back to parent folder
+        await pilot.press("h")
+        await pilot.pause()
+        assert selection_tree.cursor_node is folder
+
+
 async def test_file_selection_screen_confirm_with_enter():
     mock_ti = create_mock_torrent_info()
     torrent = Torrent(
