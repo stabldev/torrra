@@ -12,6 +12,8 @@ $repo = "stabldev/torrra"
 $binDir = Join-Path $env:LOCALAPPDATA "torrra\bin"
 $exe = Join-Path $binDir "torrra.exe"
 
+Write-Host "Installing torrra..."
+
 try {
   $release = Invoke-RestMethod "https://api.github.com/repos/$repo/releases/latest" -Headers @{ "User-Agent" = "torrra-installer" } -UseBasicParsing
   $url = ($release.assets | Where-Object name -like "*windows*.exe" | Select-Object -First 1).browser_download_url
@@ -42,6 +44,6 @@ if (($env:Path -split ';') -replace '\\$' -notcontains $binDir) {
   $env:Path = "$binDir;$env:Path"
 }
 
-Write-Host "`ntorrra $version installed successfully!" -ForegroundColor Green
-Write-Host "Location: $exe" -ForegroundColor DarkGray
-Write-Host "Run: torrra --help" -ForegroundColor Yellow
+Write-Host "`ntorrra $version installed successfully!"
+Write-Host "Location: $exe"
+Write-Host "Run: torrra --help"
