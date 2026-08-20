@@ -9,7 +9,7 @@
 from torrra._version import __version__
 
 project = "Torrra"
-copyright = "2025, stabldev"
+copyright = "2026, Stabldev"
 author = "stabldev"
 release = __version__
 
@@ -27,7 +27,3 @@ html_theme_options = {
     "source_branch": "main",
     "source_directory": "docs/",
 }
-
-templates_path = ["_templates"]
-html_static_path = ["_static"]
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
