@@ -10,9 +10,7 @@
 [![Docs](https://readthedocs.org/projects/torrra/badge/?version=latest&style=flat-square)](https://torrra.readthedocs.io/)
 [![License](https://img.shields.io/github/license/stabldev/torrra?style=flat-square)](https://github.com/stabldev/torrra/blob/main/LICENSE)
 
-![demo](./docs/_static/demo.gif)
-
-![sorting and filtering search results](./docs/_static/sort-filter-demo.gif)
+![demo](./docs/assets/demo.gif)
 
 _Torrra_ provides a streamlined command-line interface for torrent search and downloads, powered by Jackett/Prowlarr and Libtorrent. Built with Textual, it offers a beautiful
 TUI with pause/resume support - all without leaving your terminal.
@@ -22,8 +20,8 @@ TUI with pause/resume support - all without leaving your terminal.
 ## Installation
 
 ```bash
-pipx install torrra
-# or uv tool install torrra
+uv tool install torrra
+# or pipx install torrra
 ```
 
 Other options: [`AUR`](https://aur.archlinux.org/packages/torrra), [`standalone binaries`](https://github.com/stabldev/torrra/releases), [`Homebrew`](https://github.com/Maniacsan/homebrew-torrra) or [`Docker`](https://hub.docker.com/r/stabldev/torrra).
@@ -113,7 +111,7 @@ Whether it's reporting a bug, submitting a feature request, or writing code, we 
 
 ## License
 
-[MIT](LICENSE) © 2025 ^\_^ [`@stabldev`](https://github.com/stabldev)
+[MIT](LICENSE) © 2026 ^\_^ [`@stabldev`](https://github.com/stabldev)
 
 ## Like my work?
 
