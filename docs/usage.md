@@ -82,6 +82,7 @@ These subcommands allow you to manage `torrra`'s configuration directly from the
 | `torrra config get <key>`         | Retrieves the value associated with a specific configuration key |
 | `torrra config set <key> <value>` | Sets a configuration key to a specified value                    |
 | `torrra config list`              | Lists all currently set configuration values                     |
+| `torrra config edit`              | Opens the configuration file in the default editor               |
 
 ### Indexer Options
 

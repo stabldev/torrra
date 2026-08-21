@@ -1,5 +1,4 @@
 import ast
-import sys
 from contextlib import suppress
 from functools import lru_cache
 from pathlib import Path
@@ -17,11 +16,7 @@ from torrra.core.constants import (
     DEFAULT_TIMEOUT,
 )
 from torrra.core.exceptions import ConfigError
-
-if sys.version_info >= (3, 11):
-    import tomllib
-else:  # Python <3.11
-    import tomli as tomllib  # type: ignore
+from torrra.utils.helpers import get_tomllib
 
 CONFIG_DIR = Path(user_config_dir("torrra"))
 CONFIG_FILE = CONFIG_DIR / "config.toml"
@@ -120,6 +115,7 @@ class Config:
             self._create_default_config()
             self._save_config()
 
+        tomllib = get_tomllib()
         try:
             with open(CONFIG_FILE, "rb") as f:
                 self.config = tomllib.load(f)

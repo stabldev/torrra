@@ -152,5 +152,43 @@ def config_list():
         click.secho(e, fg="red", err=True)
 
 
+@config.command(name="edit", help="Open the configuration file in the default editor.")
+@click.option(
+    "-e",
+    "--editor",
+    required=False,
+    help="Editor command to use (defaults to $VISUAL, $EDITOR, or system default).",
+)
+def config_edit(editor: str | None = None):
+    from torrra.core.config import CONFIG_FILE, get_config
+    from torrra.utils.helpers import get_tomllib
+
+    tomllib = get_tomllib()
+
+    # Ensure config file exists before editing
+    get_config()
+
+    try:
+        click.edit(filename=str(CONFIG_FILE), editor=editor)
+    except (click.ClickException, OSError) as e:
+        click.secho(f"Failed to open editor: {e}", fg="red", err=True)
+        return
+
+    # Clear cached config instance so subsequent calls reload changes
+    get_config.cache_clear()
+
+    # Validate TOML syntax after editing
+    try:
+        with open(CONFIG_FILE, "rb") as f:
+            tomllib.load(f)
+    except (OSError, tomllib.TOMLDecodeError) as e:
+        click.secho(
+            f"Warning: Configuration file contains invalid TOML: {e}",
+            fg="yellow",
+            err=True,
+        )
+
+
 if __name__ == "__main__":
     cli()
+

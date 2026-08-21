@@ -100,7 +100,7 @@ If the selected indexer is not defined in the config file, `torrra` will show an
 
 `torrra` provides built-in command-line tools to inspect and modify your configuration settings without directly editing the `config.toml` file. This is particularly useful for scripting or quick adjustments.
 
-Use the `torrra config` subcommand followed by `get`, `set`, or `list`.
+Use the `torrra config` subcommand followed by `get`, `set`, `list`, or `edit`.
 
 ### Retrieving a Configuration Value
 
@@ -131,3 +131,18 @@ torrra config list
 ```
 
 This command will display a comprehensive list of all configured settings and their current values, including general preferences and indexer-related entries.
+
+### Editing Configuration in an Editor
+
+To open the `config.toml` file directly in your default command-line editor (or the editor set in `$VISUAL` / `$EDITOR`):
+
+```bash
+torrra config edit
+```
+
+You can also specify a custom editor using the `--editor` (or `-e`) option:
+
+```bash
+torrra config edit --editor nano
+```
+
