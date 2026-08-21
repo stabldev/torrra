@@ -149,7 +149,7 @@ def test_config_edit_invalid_toml_warning(
     result = runner.invoke(cli, ["config", "edit"])
 
     assert result.exit_code == 0
-    assert "Warning: Configuration file contains invalid TOML" in result.output
+    assert "Invalid Configuration" in result.output
 
 
 def test_config_edit_error_handling(
