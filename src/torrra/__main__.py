@@ -182,11 +182,7 @@ def config_edit(editor: str | None = None):
         with open(CONFIG_FILE, "rb") as f:
             tomllib.load(f)
     except (OSError, tomllib.TOMLDecodeError) as e:
-        click.secho(
-            f"Warning: Configuration file contains invalid TOML: {e}",
-            fg="yellow",
-            err=True,
-        )
+        click.secho(f"Invalid Configuration: {e}", fg="yellow", err=True)
 
 
 if __name__ == "__main__":
