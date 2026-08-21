@@ -54,3 +54,14 @@ def lazy_import(dotted_path: str):
         return getattr(module, obj_name)
     except (ModuleNotFoundError, AttributeError) as e:
         raise ImportError(f"failed to import: {dotted_path}\n{e}")
+
+
+def get_tomllib():
+    import sys
+
+    if sys.version_info >= (3, 11):
+        import tomllib
+    else:  # Python <3.11
+        import tomli as tomllib  # type: ignore
+
+    return tomllib

@@ -1,6 +1,11 @@
 import pytest
 
-from torrra.utils.helpers import human_readable_eta, human_readable_size, lazy_import
+from torrra.utils.helpers import (
+    get_tomllib,
+    human_readable_eta,
+    human_readable_size,
+    lazy_import,
+)
 
 
 def test_human_readable_size():
@@ -37,3 +42,12 @@ def test_lazy_import_failure():
 
     assert "nonexistent_mod.func" in str(exc.value)
     assert "No module named" in str(exc.value)
+
+
+def test_get_tomllib():
+    tomllib = get_tomllib()
+    assert hasattr(tomllib, "load")
+    assert hasattr(tomllib, "loads")
+    assert hasattr(tomllib, "TOMLDecodeError")
+    parsed = tomllib.loads('key = "value"')
+    assert parsed == {"key": "value"}
