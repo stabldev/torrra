@@ -227,12 +227,6 @@ class SearchContent(Vertical):
             torrent_info=getattr(self, "_current_torrent_info", None),
         )
 
-        title = self._selected_torrent.title
-        short_title = (title[:30] + "...") if len(title) > 30 else title
-        self.notify(
-            f"Started downloading [b]{short_title}[/b]",
-            title="Download Started",
-        )
         self.post_message(self.DownloadRequested(self._selected_torrent))
 
     def on_input_submitted(self, event: Input.Submitted) -> None:
@@ -329,7 +323,7 @@ class SearchContent(Vertical):
         # are declared with once a search returns a few hundred results
         self._table.fit_columns()
 
-    def _refresh_view(self, message: str) -> None:
+    def _refresh_view(self) -> None:
         """Re-render after a sort/filter change, unless nothing is loaded yet."""
         if not self._view.total:
             return
@@ -337,7 +331,6 @@ class SearchContent(Vertical):
         self._selected_torrent = None
         self._render_rows()
         self._table.focus()
-        self.notify(message, title="Results Updated")
 
     def action_open_sort_menu(self) -> None:
         if not self._view.total:
@@ -350,32 +343,23 @@ class SearchContent(Vertical):
         if key is None:  # cancelled
             return
         self._view.set_sort(key)
-        self._refresh_view(f"Sorted by [b]{self._view.sort_label}[/b]")
+        self._refresh_view()
 
     def action_toggle_sort_order(self) -> None:
         self._view.toggle_direction()
-        self._refresh_view(f"Sorted by [b]{self._view.sort_label}[/b]")
+        self._refresh_view()
 
     def action_toggle_seeded_only(self) -> None:
         filters = self._view.filters
         filters.min_seeders = 0 if filters.min_seeders else 1
-        self._refresh_view(
-            "Hiding results with [b]0 seeders[/b]"
-            if filters.min_seeders
-            else "Showing [b]all[/b] results"
-        )
+        self._refresh_view()
 
     def action_clear_filters(self) -> None:
         # back to the configured baseline rather than hardcoded relevance, so a
         # configured default_sort stays reachable instead of being startup-only
         sort_key, descending, min_seeders = self._config_defaults()
         self._view.reset_to(sort_key, descending, min_seeders)
-
-        message = f"Reset to [b]{self._view.sort_label}[/b]"
-        if min_seeders:
-            plural = "" if min_seeders == 1 else "s"
-            message += f", hiding under [b]{min_seeders}[/b] seeder{plural}"
-        self._refresh_view(message)
+        self._refresh_view()
 
     @on(AutoResizingDataTable.HeaderSelected)
     def on_header_selected(self, event: AutoResizingDataTable.HeaderSelected) -> None:
@@ -391,7 +375,7 @@ class SearchContent(Vertical):
         else:
             self._view.set_sort(key)
 
-        self._refresh_view(f"Sorted by [b]{self._view.sort_label}[/b]")
+        self._refresh_view()
 
     def _get_indexer_instance(self) -> BaseIndexer:
         if self._indexer_instance_cache:
