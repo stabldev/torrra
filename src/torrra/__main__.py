@@ -191,4 +191,3 @@ def config_edit(editor: str | None = None):
 
 if __name__ == "__main__":
     cli()
-

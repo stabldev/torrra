@@ -190,9 +190,7 @@ def test_config_edit_creates_default_file_if_not_exists(
 
     assert result.exit_code == 0
     assert temp_config_file.exists()
-    mock_edit.assert_called_once_with(
-        filename=str(temp_config_file), editor=None
-    )
+    mock_edit.assert_called_once_with(filename=str(temp_config_file), editor=None)
     config_module.get_config.cache_clear()
 
 

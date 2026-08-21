@@ -51,4 +51,3 @@ def test_get_tomllib():
     assert hasattr(tomllib, "TOMLDecodeError")
     parsed = tomllib.loads('key = "value"')
     assert parsed == {"key": "value"}
-
