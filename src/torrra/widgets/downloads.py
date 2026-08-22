@@ -155,8 +155,6 @@ class DownloadsContent(Vertical):
             return
 
         magnet_uri = self._selected_torrent["magnet_uri"]
-        title = self._selected_torrent["title"]
-        short_title = (title[:50] + "...") if len(title) > 40 else title
 
         status = self._dm.get_torrent_status(magnet_uri)
         if not status:
@@ -169,17 +167,6 @@ class DownloadsContent(Vertical):
 
         if self._selected_torrent:
             self._selected_torrent["is_paused"] = target_paused
-
-        if target_paused:
-            self.notify(
-                f"Paused download of [b]{short_title}[/b]",
-                title="Download Paused",
-            )
-        else:
-            self.notify(
-                f"Resumed download of [b]{short_title}[/b]",
-                title="Download Resumed",
-            )
 
     def action_delete_torrent(self) -> None:
         self._remove_selected_torrent()
@@ -255,20 +242,11 @@ class DownloadsContent(Vertical):
         self._dm.set_file_priorities(magnet_uri, priorities)
         self._tm.update_torrent_file_priorities(magnet_uri, priorities)
 
-        title = self._selected_torrent["title"]
-        short_title = (title[:50] + "...") if len(title) > 40 else title
-        self.notify(
-            f"Updated file selection for [b]{short_title}[/b]",
-            title="Files Updated",
-        )
-
     def _remove_selected_torrent(self, delete_files: bool = False) -> None:
         if not self._selected_torrent:
             return
 
         magnet_uri = self._selected_torrent["magnet_uri"]
-        title = self._selected_torrent["title"]
-        short_title = (title[:50] + "...") if len(title) > 40 else title
 
         self._dm.remove_torrent(magnet_uri, delete_files=delete_files)
         self._tm.remove_torrent(magnet_uri)
@@ -278,16 +256,6 @@ class DownloadsContent(Vertical):
         self._selected_torrent = None
         self._details_panel.add_class("hidden")
         self._filter_table()
-
-        msg = (
-            f"Removed [b]{short_title}[/b] and its data"
-            if delete_files
-            else f"Removed [b]{short_title}[/b] from list"
-        )
-        self.notify(
-            msg,
-            title="Torrent Removed",
-        )
 
     def on_details_panel_closed(self):
         self._selected_torrent = None

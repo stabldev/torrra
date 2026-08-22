@@ -6,7 +6,7 @@ from typing import ClassVar
 
 import libtorrent as lt
 
-from torrra._types import TorrentFileInfo, TorrentStatus
+from torrra._types import SessionStats, TorrentFileInfo, TorrentStatus
 from torrra.core.config import get_config
 from torrra.utils.magnet import enhance_magnet_uri, fix_magnet_uri
 
@@ -432,3 +432,32 @@ class DownloadManager:
                         self._metadata_updated.add(magnet_uri)
                 except (AttributeError, RuntimeError):
                     continue
+
+    def get_session_stats(self) -> SessionStats:
+        try:
+            import warnings
+
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", DeprecationWarning)
+                status = self.session.status()
+            return SessionStats(
+                download_rate=float(status.download_rate),
+                upload_rate=float(status.upload_rate),
+                dht_nodes=int(status.dht_nodes),
+            )
+        except (AttributeError, RuntimeError):
+            down_speed = 0.0
+            up_speed = 0.0
+            for handle in self.torrents.values():
+                if handle.is_valid():
+                    try:
+                        s = handle.status()
+                        down_speed += s.download_rate
+                        up_speed += s.upload_rate
+                    except (AttributeError, RuntimeError):
+                        pass
+            return SessionStats(
+                download_rate=down_speed,
+                upload_rate=up_speed,
+                dht_nodes=0,
+            )
