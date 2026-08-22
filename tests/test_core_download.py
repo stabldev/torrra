@@ -386,4 +386,3 @@ def test_get_torrent_status_save_path_expanded(
     status = dm.get_torrent_status(magnet)
     assert status is not None
     assert status["is_missing_files"] is False
-

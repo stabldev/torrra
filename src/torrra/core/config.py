@@ -1,7 +1,7 @@
 import ast
+import os
 from contextlib import suppress
 from functools import lru_cache
-import os
 from pathlib import Path
 from typing import Any, cast
 

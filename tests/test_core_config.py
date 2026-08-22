@@ -105,4 +105,3 @@ def test_config_get_download_path_default_expansion(mock_config: Config):
     result = mock_config.get("general.download_path", "~/fallback_downloads")
     expected = os.path.abspath(os.path.expanduser("~/fallback_downloads"))
     assert result == expected
-
