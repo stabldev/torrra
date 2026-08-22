@@ -733,8 +733,8 @@ def test_status_bar_turtle_badge(mock_config):
 
     badge = sb._limit_badge()
     assert "TURTLE" in badge
-    assert "↓1 MB/s" in badge
-    assert "↑2 MB/s" in badge
+    assert "↓ 1 MB/s" in badge
+    assert "↑ 2 MB/s" in badge
 
     # unlimited entries are omitted from the badge
     mock_config.set("speed_limit.upload_limit", "0")

@@ -42,8 +42,8 @@ class StatusBar(Horizontal):
         ):
             limit = int(config.get(key, 0) or 0)
             if limit > 0:
-                parts.append(f"{arrow}{human_readable_size(limit, short=True)}/s")
-        label = "TURTLE" + (" " + "·".join(parts) if parts else "")
+                parts.append(f"{arrow} {human_readable_size(limit, short=True)}/s")
+        label = "TURTLE" + (" " + " · ".join(parts) if parts else "")
         return f"[reverse] {label} [/] "
 
     def _refresh_display(self) -> None:
