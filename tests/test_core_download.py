@@ -244,12 +244,27 @@ def test_get_torrent_status_abi2_error_handling():
     handle_mock = MagicMock()
     handle_mock.is_valid.return_value = True
 
-    status_mock = MagicMock(spec=[
-        "state", "progress", "download_rate", "upload_rate", "total_wanted",
-        "total_wanted_done", "errc", "error_file", "flags", "is_seeding",
-        "is_finished", "has_metadata", "save_path", "num_seeds", "num_peers",
-        "list_seeds", "list_peers"
-    ])
+    status_mock = MagicMock(
+        spec=[
+            "state",
+            "progress",
+            "download_rate",
+            "upload_rate",
+            "total_wanted",
+            "total_wanted_done",
+            "errc",
+            "error_file",
+            "flags",
+            "is_seeding",
+            "is_finished",
+            "has_metadata",
+            "save_path",
+            "num_seeds",
+            "num_peers",
+            "list_seeds",
+            "list_peers",
+        ]
+    )
     status_mock.state = lt.torrent_status.states.downloading
     status_mock.progress = 0.5
     status_mock.download_rate = 0
