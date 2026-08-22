@@ -20,6 +20,7 @@ SHORTCUTS: list[tuple[str, list[tuple[str, str]]]] = [
         [
             ("tab", "move focus"),
             ("ctrl+t", "change theme"),
+            ("t", "toggle turtle mode"),
             ("?", "show this help"),
             ("ctrl+q", "quit torrra"),
         ],

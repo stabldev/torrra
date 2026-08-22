@@ -47,6 +47,9 @@ class DownloadManager:
         self._metadata_updated: set[str] = (
             set()
         )  # Track torrents whose metadata has been updated
+        # apply session-wide speed limits from config ("turtle mode"),
+        # a no-op when disabled or unset
+        self.apply_global_limits()
 
     def add_torrent(
         self,
@@ -196,9 +199,40 @@ class DownloadManager:
                 pass
         return self._limits.get(magnet_uri)
 
-    def _apply_stored_limits(
-        self, handle: lt.torrent_handle, magnet_uri: str
-    ) -> None:
+    def apply_global_limits(self) -> None:
+        # session-wide bandwidth caps from [speed_limit] in config.toml.
+        # 0 means unlimited, which is also libtorrent's sentinel value,
+        # so values pass through unchanged. caps coexist with per-torrent
+        # limits (the effective rate is the lower of the two).
+        config = get_config()
+        up = int(config.get("speed_limit.upload_limit", 0) or 0)
+        down = int(config.get("speed_limit.download_limit", 0) or 0)
+        try:
+            self.session.apply_settings(
+                {
+                    "upload_rate_limit": max(0, up),
+                    "download_rate_limit": max(0, down),
+                }
+            )
+        except (AttributeError, RuntimeError):
+            pass
+
+    def is_speed_limit_enabled(self) -> bool:
+        return bool(get_config().get("speed_limit.enabled", False))
+
+    def set_speed_limit_enabled(self, enabled: bool) -> None:
+        get_config().set("speed_limit.enabled", str(enabled).lower())
+        if enabled:
+            self.apply_global_limits()
+        else:
+            try:
+                self.session.apply_settings(
+                    {"upload_rate_limit": 0, "download_rate_limit": 0}
+                )
+            except (AttributeError, RuntimeError):
+                pass
+
+    def _apply_stored_limits(self, handle: lt.torrent_handle, magnet_uri: str) -> None:
         limits = self._limits.get(magnet_uri)
         if limits is None:
             return
