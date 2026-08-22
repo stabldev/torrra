@@ -9,7 +9,6 @@ from torrra._types import Indexer
 from torrra.app import TorrraApp
 from torrra.core import config as config_module
 from torrra.core import db as db_module
-from torrra.core.config import Config
 from torrra.core.download import get_download_manager
 from torrra.core.torrent import get_torrent_manager
 
@@ -91,8 +90,12 @@ def mock_config(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     # return a cached instance that was created before our patch was applied.
     config_module.get_config.cache_clear()
 
-    # this will now create a Config instance using the tmp_path
-    yield Config()
+    # this will now create a Config instance using the tmp_path, seeded into
+    # the lru_cache so every get_config() call returns this same instance
+    # (otherwise a divergent copy gets cached on first use)
+    config_instance = config_module.get_config()
+
+    yield config_instance
 
     # drop the temp instance so later tests don't resolve a deleted tmp_path
     config_module.get_config.cache_clear()
