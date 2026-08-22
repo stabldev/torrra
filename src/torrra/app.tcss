@@ -57,6 +57,22 @@ Toast {
   background: $surface;
 }
 
+StatusBar {
+  dock: bottom;
+  height: 1;
+  width: 100%;
+  padding: 0 1;
+  background: $surface;
+  color: $foreground-muted;
+  #shortcuts {
+    width: auto;
+  }
+  #stats {
+    width: 1fr;
+    text-align: right;
+  }
+}
+
 /* ------------------------- */
 /* WELCOME SCREEN            */
 /* ------------------------- */
@@ -235,7 +251,6 @@ FileSelectionScreen {
     background: $surface;
     border: tall $secondary;
     padding: 0 1;
-
     #file-selection-header {
       height: auto;
       margin-bottom: 1;
@@ -252,7 +267,6 @@ FileSelectionScreen {
         color: $foreground-muted;
       }
     }
-
     #file-selection-loading {
       height: 1fr;
       #loading-spinner-area {
@@ -275,7 +289,6 @@ FileSelectionScreen {
         color: $foreground-muted;
       }
     }
-
     #file-selection-body {
       height: 1fr;
       margin: 0;
@@ -285,7 +298,6 @@ FileSelectionScreen {
         scrollbar-size: 0 0;
       }
     }
-
     #file-selection-footer {
       height: auto;
       margin-top: 1;

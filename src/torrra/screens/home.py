@@ -10,6 +10,7 @@ from torrra.core.torrent import get_torrent_manager
 from torrra.widgets.downloads import DownloadsContent
 from torrra.widgets.search import SearchContent
 from torrra.widgets.sidebar import DOWNLOADS_GROUP, Sidebar
+from torrra.widgets.status_bar import StatusBar
 
 
 class HomeScreen(Screen[None]):
@@ -31,6 +32,7 @@ class HomeScreen(Screen[None]):
         self._sidebar: Sidebar
         self._content_switcher: ContentSwitcher
         self._downloads_content: DownloadsContent
+        self._status_bar: StatusBar
 
     @override
     def compose(self) -> ComposeResult:
@@ -52,6 +54,7 @@ class HomeScreen(Screen[None]):
                         search_query=self.search_query,
                         use_cache=self.use_cache,
                     )
+        yield StatusBar(id="status_bar")
 
     def on_mount(self) -> None:
         self._sidebar = self.query_one(Sidebar)
@@ -59,6 +62,7 @@ class HomeScreen(Screen[None]):
 
         self._content_switcher = self.query_one(ContentSwitcher)
         self._downloads_content = self.query_one(DownloadsContent)
+        self._status_bar = self.query_one(StatusBar)
 
         # start torrents in background
         tm, dm = get_torrent_manager(), get_download_manager()
@@ -104,6 +108,14 @@ class HomeScreen(Screen[None]):
 
         # Check for metadata updates
         dm.check_metadata_updates()
+
+        # Update status bar stats
+        stats = dm.get_session_stats()
+        self._status_bar.update_stats(
+            stats.get("download_rate", 0.0),
+            stats.get("upload_rate", 0.0),
+            stats.get("dht_nodes", 0),
+        )
 
         magnet_uris = list(dm.torrents.keys())
 

@@ -50,6 +50,14 @@ class TorrentRecord(TypedDict, total=False):
     file_priorities: list[int] | None
 
 
+class SessionStats(TypedDict, total=False):
+    """Session statistics for overall download/upload speeds and DHT."""
+
+    download_rate: float
+    upload_rate: float
+    dht_nodes: int
+
+
 @dataclass
 class TorrentFileInfo:
     """Information for a single file in a torrent."""
