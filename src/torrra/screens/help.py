@@ -47,16 +47,17 @@ SHORTCUTS: list[tuple[str, list[tuple[str, str]]]] = [
             ("x", "reset to your defaults"),
         ],
     ),
-    (
-        "Downloads",
-        [
-            ("enter / l", "show download details"),
-            ("p", "pause or resume"),
-            ("f", "select files to download"),
-            ("d", "remove torrent"),
-            ("D", "remove and delete files"),
-        ],
-    ),
+        (
+            "Downloads",
+            [
+                ("enter / l", "show download details"),
+                ("p", "pause or resume"),
+                ("f", "select files to download"),
+                ("s", "set upload / download speed limit"),
+                ("d", "remove torrent"),
+                ("D", "remove and delete files"),
+            ],
+        ),
     (
         "File selection",
         [

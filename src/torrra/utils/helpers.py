@@ -12,9 +12,9 @@ def human_readable_size(size_bytes: float, short: bool = False) -> str:
 
     # short version
     if size_bytes < 1024:
-        return f"{int(size_bytes)}B"
+        return f"{int(size_bytes)} B"
 
-    for unit in ["K", "M", "G", "T"]:
+    for unit in ["KB", "MB", "GB", "TB"]:
         size_bytes /= 1024.0
         if size_bytes < 1024.0:
             number = (
@@ -22,8 +22,9 @@ def human_readable_size(size_bytes: float, short: bool = False) -> str:
                 if size_bytes < 10
                 else str(int(size_bytes))
             )
-            return f"{number}{unit}"
-    return f"{int(size_bytes)}P"
+            return f"{number} {unit}"
+    size_bytes /= 1024.0
+    return f"{int(size_bytes)} PB"
 
 
 def human_readable_eta(seconds: float | None, is_seeding: bool = False) -> str:
@@ -43,6 +44,44 @@ def human_readable_eta(seconds: float | None, is_seeding: bool = False) -> str:
         if val > 0:
             return f"{val}{unit} {sub_val}{sub_unit}" if sub_val > 0 else f"{val}{unit}"
     return f"{secs}s"
+
+
+def parse_speed_limit(text: str) -> int:
+    """Parse a human speed limit into bytes/second.
+
+    Returns ``-1`` for unlimited (empty, ``0``, ``unlimited`` or ``off``).
+    Accepts suffixes ``K``/``KB`` (1024), ``M``/``MB`` (1024**2) and
+    ``G``/``GB`` (1024**3), optionally followed by ``/s``. Raises
+    ``ValueError`` on invalid input.
+    """
+    cleaned = (text or "").strip().lower()
+    if cleaned.endswith("/s"):
+        cleaned = cleaned[:-2].strip()
+    if cleaned in ("", "0", "unlimited", "off", "none"):
+        return -1
+
+    units = {
+        "k": 1024,
+        "kb": 1024,
+        "m": 1024**2,
+        "mb": 1024**2,
+        "g": 1024**3,
+        "gb": 1024**3,
+    }
+
+    for suffix, multiplier in sorted(units.items(), key=lambda kv: -len(kv[0])):
+        if cleaned.endswith(suffix):
+            number_part = cleaned[: -len(suffix)].strip()
+            value = float(number_part) * multiplier
+            if value < 0:
+                raise ValueError("speed limit must not be negative")
+            return int(value)
+
+    # bare number => bytes/second
+    value = float(cleaned)
+    if value < 0:
+        raise ValueError("speed limit must not be negative")
+    return int(value)
 
 
 def lazy_import(dotted_path: str):

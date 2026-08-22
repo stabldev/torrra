@@ -8,6 +8,7 @@ from torrra._types import Torrent, TorrentRecord, TorrentStatus
 from torrra.core.download import DownloadManager, get_download_manager
 from torrra.core.torrent import TorrentManager, get_torrent_manager
 from torrra.screens.file_selection import FileSelectionScreen
+from torrra.screens.speed_limit import SpeedLimitScreen
 from torrra.utils.helpers import human_readable_eta, human_readable_size
 from torrra.widgets.data_table import AutoResizingDataTable
 from torrra.widgets.details_panel import DetailsPanel
@@ -19,14 +20,15 @@ class DownloadsContent(Vertical):
         ("Title", "title", 25),
         ("Stat", "status", 4),
         ("Done", "done_percent", 4),
-        ("Up", "up_speed", 6),
-        ("Down", "down_speed", 6),
+        ("Up", "up_speed", 9),
+        ("Down", "down_speed", 10),
     ]
 
     BINDINGS: ClassVar[list[tuple[str, str]]] = [
         ("d", "delete_torrent"),
         ("D", "delete_torrent_with_data"),
         ("f", "select_files"),
+        ("s", "set_speed_limit"),
     ]
 
     def __init__(self) -> None:
@@ -142,6 +144,8 @@ class DownloadsContent(Vertical):
                 torrent["magnet_uri"],
                 is_paused=torrent["is_paused"],
                 file_priorities=torrent.get("file_priorities"),
+                upload_limit=torrent.get("upload_limit"),
+                download_limit=torrent.get("download_limit"),
             )
 
         self._filter_table()
@@ -208,6 +212,38 @@ class DownloadsContent(Vertical):
             ),
             self._on_edit_files_done,
         )
+
+    def action_set_speed_limit(self) -> None:
+        if not self._selected_torrent:
+            return
+
+        magnet_uri = self._selected_torrent["magnet_uri"]
+        title = self._selected_torrent["title"]
+        short_title = (title[:50] + "...") if len(title) > 40 else title
+
+        limits = self._dm.get_torrent_limits(magnet_uri)
+        up, down = limits if limits is not None else (None, None)
+
+        self.app.push_screen(
+            SpeedLimitScreen(
+                title=short_title,
+                upload_limit=up,
+                download_limit=down,
+            ),
+            self._on_speed_limit_set,
+        )
+
+    def _on_speed_limit_set(self, limits: tuple[int, int] | None) -> None:
+        if limits is None or not self._selected_torrent:
+            return
+
+        up, down = limits
+        magnet_uri = self._selected_torrent["magnet_uri"]
+        self._dm.set_torrent_limits(magnet_uri, up, down)
+
+        # refresh the details panel so the new limits are visible
+        if status := self._dm.get_torrent_status(magnet_uri):
+            self._update_details_panel(status)
 
     def _on_edit_files_done(self, priorities: list[int] | None) -> None:
         if priorities is None or not self._selected_torrent:
@@ -398,13 +434,29 @@ class DownloadsContent(Vertical):
         down_speed = f"{human_readable_size(status['down_speed'])}/s"
         eta_text = human_readable_eta(status["eta"], is_seeding=status["is_seeding"])
 
+        limits = self._dm.get_torrent_limits(self._selected_torrent["magnet_uri"])
+        if limits is not None:
+            up_limit_text = (
+                "∞"
+                if limits[0] is None or limits[0] < 0
+                else f"{human_readable_size(limits[0], short=True)}/s"
+            )
+            down_limit_text = (
+                "∞"
+                if limits[1] is None or limits[1] < 0
+                else f"{human_readable_size(limits[1], short=True)}/s"
+            )
+            limit_line = f" · [b]Up lim:[/b] {up_limit_text} · [b]Down lim:[/b] {down_limit_text}"
+        else:
+            limit_line = ""
+
         seeders_text = f"{status.get('seeders', 0)}/{status.get('total_seeders', 0)}"
         peers_text = f"{status.get('peers', 0)}/{status.get('total_peers', 0)}"
         details = f"""
 [b]Size:[/b] {size} · [b]Status:[/b] {state_text} · [b]Source:[/b] {current_torrent["source"]}
-[b]Seeders:[/b] {seeders_text} · [b]Peers:[/b] {peers_text} · [b]Up:[/b] {up_speed} · [b]Down:[/b] {down_speed} · [b]ETA:[/b] {eta_text}
+[b]Seeders:[/b] {seeders_text} · [b]Peers:[/b] {peers_text} · [b]Up:[/b] {up_speed} · [b]Down:[/b] {down_speed} · [b]ETA:[/b] {eta_text}{limit_line}
 
-[dim]\\[p] pause/resume · \\[f] select files · \\[d] delete · \\[D] delete w/ data · \\[esc] close[/dim]
+[dim]\\[p] pause/resume · \\[f] select files · \\[s] speed limit · \\[d] delete · \\[D] delete w/ data · \\[esc] close[/dim]
 """
         # update details panel internal widgets
         self._details_panel.border_title = current_torrent["title"]
