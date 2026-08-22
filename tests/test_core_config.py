@@ -67,3 +67,42 @@ def test_config_list_flattens_correctly(mock_config: Config):
     assert "new.section.bool=true" in config_list
     # check a default value is also present
     assert "general.download_in_external_client=false" in config_list
+
+
+def test_config_get_download_path_expands_tilde(mock_config: Config):
+    import os
+
+    mock_config.set("general.download_path", "~/my_downloads")
+    expected = os.path.abspath(os.path.expanduser("~/my_downloads"))
+    assert mock_config.get("general.download_path") == expected
+
+
+def test_config_get_download_path_expands_env_vars(
+    mock_config: Config, monkeypatch: pytest.MonkeyPatch
+):
+    import os
+
+    monkeypatch.setenv("TEST_DOWNLOAD_DIR", "custom_downloads")
+    mock_config.set("general.download_path", "~/$TEST_DOWNLOAD_DIR")
+    expected = os.path.abspath(
+        os.path.expanduser(os.path.expandvars("~/$TEST_DOWNLOAD_DIR"))
+    )
+    assert mock_config.get("general.download_path") == expected
+
+
+def test_config_get_download_path_relative_to_absolute(mock_config: Config):
+    import os
+
+    mock_config.set("general.download_path", "some_relative_path")
+    expected = os.path.abspath("some_relative_path")
+    assert mock_config.get("general.download_path") == expected
+
+
+def test_config_get_download_path_default_expansion(mock_config: Config):
+    import os
+
+    del mock_config.config["general"]["download_path"]
+    result = mock_config.get("general.download_path", "~/fallback_downloads")
+    expected = os.path.abspath(os.path.expanduser("~/fallback_downloads"))
+    assert result == expected
+

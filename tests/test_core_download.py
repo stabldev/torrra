@@ -1,4 +1,7 @@
+from typing import Any
+
 import libtorrent as lt
+import pytest
 
 from torrra._types import TorrentStatus
 from torrra.core.download import DownloadManager
@@ -308,3 +311,79 @@ def test_state_map_abi2():
         lt.torrent_status.states.checking_resume_data,
     }
     assert set(DownloadManager._STATE_MAP.keys()) == expected_states
+
+
+def test_add_torrent_save_path_expanded(
+    monkeypatch: pytest.MonkeyPatch, mock_config: Any
+):
+    import os
+    from unittest.mock import MagicMock
+
+    mock_config.set("general.download_path", "~/custom_dl_path")
+    dm = DownloadManager()
+    captured_atp = []
+
+    def mock_add_torrent(atp: Any):
+        captured_atp.append(atp)
+        handle = MagicMock()
+        handle.is_valid.return_value = True
+        handle.status.return_value.has_metadata = False
+        return handle
+
+    monkeypatch.setattr(dm.session, "add_torrent", mock_add_torrent)
+    dm.add_torrent("magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567")
+
+    assert len(captured_atp) == 1
+    expected = os.path.abspath(os.path.expanduser("~/custom_dl_path"))
+    assert captured_atp[0].save_path == expected
+
+
+def test_get_torrent_status_save_path_expanded(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Any, mock_config: Any
+):
+    from pathlib import Path
+    from unittest.mock import MagicMock
+
+    dm = DownloadManager()
+    handle_mock = MagicMock()
+    handle_mock.is_valid.return_value = True
+
+    status_mock = MagicMock()
+    status_mock.state = lt.torrent_status.states.seeding
+    status_mock.progress = 1.0
+    status_mock.download_rate = 0
+    status_mock.upload_rate = 0
+    status_mock.total_wanted = 1000
+    status_mock.total_wanted_done = 1000
+    status_mock.flags = 0
+    status_mock.is_seeding = True
+    status_mock.is_finished = True
+    status_mock.has_metadata = True
+    status_mock.save_path = str(tmp_path)
+    status_mock.num_seeds = 1
+    status_mock.num_peers = 1
+    status_mock.list_seeds = 1
+    status_mock.list_peers = 1
+    status_mock.error_file = -1
+    status_mock.errc = None
+
+    # Create dummy file
+    test_file = Path(tmp_path) / "test.txt"
+    test_file.write_text("hello")
+
+    torrent_info_mock = MagicMock()
+    fs_mock = MagicMock()
+    fs_mock.num_files.return_value = 1
+    fs_mock.file_path.return_value = "test.txt"
+    fs_mock.file_flags.return_value = 0
+    torrent_info_mock.files.return_value = fs_mock
+    handle_mock.torrent_file.return_value = torrent_info_mock
+
+    handle_mock.status.return_value = status_mock
+    magnet = "magnet:?xt=urn:btih:mock_save_path_test"
+    dm.torrents = {magnet: handle_mock}
+
+    status = dm.get_torrent_status(magnet)
+    assert status is not None
+    assert status["is_missing_files"] is False
+

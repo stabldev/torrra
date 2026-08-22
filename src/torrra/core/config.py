@@ -1,6 +1,7 @@
 import ast
 from contextlib import suppress
 from functools import lru_cache
+import os
 from pathlib import Path
 from typing import Any, cast
 
@@ -48,10 +49,18 @@ class Config:
                 raise ConfigError(
                     f"key does not contain a value (it's a section): {key_path}"
                 )
+
+            if key_path == "general.download_path" and isinstance(current, str):
+                return os.path.abspath(os.path.expanduser(os.path.expandvars(current)))
+
             return current
 
         except (KeyError, TypeError):
             if default is not _sentinel:
+                if key_path == "general.download_path" and isinstance(default, str):
+                    return os.path.abspath(
+                        os.path.expanduser(os.path.expandvars(default))
+                    )
                 return default
 
             if len(keys) > 1:
