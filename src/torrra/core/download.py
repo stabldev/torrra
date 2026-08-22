@@ -245,6 +245,9 @@ class DownloadManager:
                 if info:
                     save_path = s.save_path or get_config().get("general.download_path")
                     if save_path:
+                        save_path = os.path.abspath(
+                            os.path.expanduser(os.path.expandvars(save_path))
+                        )
                         fs = info.files()
                         priorities = self.get_file_priorities(magnet_uri)
                         for i in range(fs.num_files()):
