@@ -16,6 +16,7 @@ def test_human_readable_size():
     assert human_readable_size(1024 * 1024 * 5) == "5.00 MB"
     assert human_readable_size(1024**4) == "1.00 TB"
 
+
 def test_human_readable_size_short():
     assert human_readable_size(820, short=True) == "820 B"
     assert human_readable_size(10240, short=True) == "10 KB"
@@ -78,6 +79,7 @@ def test_parse_speed_limit_units():
     assert parse_speed_limit("1.5M") == int(1.5 * 1024**2)
     assert parse_speed_limit("1G") == 1024**3
     assert parse_speed_limit("1024") == 1024
+
 
 def test_parse_speed_limit_per_sec_suffix():
     assert parse_speed_limit("500 KB/s") == 500 * 1024

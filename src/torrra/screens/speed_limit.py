@@ -14,9 +14,9 @@ def _format_prefill(value: int | None) -> str:
     if value is None or value < 0:
         return ""
     if value % (1024**3) == 0:
-        return f"{value // (1024 ** 3)} GB/s"
+        return f"{value // (1024**3)} GB/s"
     if value % (1024**2) == 0:
-        return f"{value // (1024 ** 2)} MB/s"
+        return f"{value // (1024**2)} MB/s"
     if value % 1024 == 0:
         return f"{value // 1024} KB/s"
     return f"{value} B/s"
@@ -97,15 +97,9 @@ class SpeedLimitScreen(ModalScreen[tuple[int, int] | None]):
             error_widget.remove_class("hidden")
             return
 
-        up_text = (
-            "unlimited"
-            if up < 0
-            else f"{human_readable_size(up, short=True)}/s"
-        )
+        up_text = "unlimited" if up < 0 else f"{human_readable_size(up, short=True)}/s"
         down_text = (
-            "unlimited"
-            if down < 0
-            else f"{human_readable_size(down, short=True)}/s"
+            "unlimited" if down < 0 else f"{human_readable_size(down, short=True)}/s"
         )
         self.dismiss((up, down))
         self.notify(

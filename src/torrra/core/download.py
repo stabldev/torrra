@@ -196,9 +196,7 @@ class DownloadManager:
                 pass
         return self._limits.get(magnet_uri)
 
-    def _apply_stored_limits(
-        self, handle: lt.torrent_handle, magnet_uri: str
-    ) -> None:
+    def _apply_stored_limits(self, handle: lt.torrent_handle, magnet_uri: str) -> None:
         limits = self._limits.get(magnet_uri)
         if limits is None:
             return
