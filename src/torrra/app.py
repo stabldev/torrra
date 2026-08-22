@@ -3,6 +3,7 @@ from typing import ClassVar
 from textual import work
 from textual.app import App
 from textual.binding import Binding, BindingType
+from textual.css.query import NoMatches
 from textual.reactive import Reactive
 from textual.types import CSSPathType
 from textual.widgets import Input
@@ -15,6 +16,7 @@ from torrra.screens.home import HomeScreen
 from torrra.screens.theme_selector import ThemeSelectorScreen
 from torrra.screens.welcome import GO_TO_DOWNLOADS, WelcomeScreen
 from torrra.utils.fs import get_resource_path
+from torrra.widgets.status_bar import StatusBar
 
 
 class TorrraApp(App[None]):
@@ -25,6 +27,7 @@ class TorrraApp(App[None]):
     ENABLE_COMMAND_PALETTE: ClassVar[bool] = False
     BINDINGS: ClassVar[list[BindingType]] = [
         Binding("ctrl+t", "switch_theme"),
+        Binding("t", "toggle_speed_limit"),
         Binding("question_mark", "show_help", priority=True),
     ]
 
@@ -94,6 +97,79 @@ class TorrraApp(App[None]):
             self.pop_screen()
         else:
             self.push_screen(HelpScreen())
+
+    def _format_limit_text(self, limit: int) -> str:
+        from torrra.utils.helpers import human_readable_size
+
+        return (
+            "unlimited" if limit <= 0 else f"{human_readable_size(limit, short=True)}/s"
+        )
+
+    def _refresh_status_bar(self) -> None:
+        status_bar = self._find_status_bar()
+        if status_bar is not None:
+            status_bar.update_stats(*status_bar._last_stats)
+
+    def _find_status_bar(self) -> "StatusBar | None":
+        # the status bar lives on the home screen, which may be buried under
+        # other screens (welcome/help) or not mounted at all yet
+        for screen in self.screen_stack:
+            try:
+                return screen.query_one(StatusBar)
+            except NoMatches:
+                continue
+        return None
+
+    def action_toggle_speed_limit(self) -> None:
+        from torrra.core.download import get_download_manager
+        from torrra.screens.speed_limit import SpeedLimitScreen
+
+        dm = get_download_manager()
+        config = get_config()
+
+        if dm.is_speed_limit_enabled():
+            dm.set_speed_limit_enabled(False)
+            self.notify("Turtle mode off — unlimited speed", title="Speed Limit")
+            self._refresh_status_bar()
+            return
+
+        up = int(config.get("speed_limit.upload_limit", 0) or 0)
+        down = int(config.get("speed_limit.download_limit", 0) or 0)
+
+        def _enable_and_notify() -> None:
+            up = int(config.get("speed_limit.upload_limit", 0) or 0)
+            down = int(config.get("speed_limit.download_limit", 0) or 0)
+            self.notify(
+                f"Turtle mode on — [b]↓[/b] {self._format_limit_text(down)}"
+                f" · [b]↑[/b] {self._format_limit_text(up)}",
+                title="Speed Limit",
+            )
+            self._refresh_status_bar()
+
+        if up <= 0 and down <= 0:
+            # no global limits configured yet; collect them once via the modal
+            def _on_limits_set(limits: tuple[int, int] | None) -> None:
+                if limits is None:
+                    return
+                modal_up, modal_down = limits
+                config.set("speed_limit.upload_limit", str(modal_up))
+                config.set("speed_limit.download_limit", str(modal_down))
+                dm.set_speed_limit_enabled(True)
+                _enable_and_notify()
+
+            self.push_screen(
+                SpeedLimitScreen(
+                    title="",
+                    upload_limit=None,
+                    download_limit=None,
+                    global_mode=True,
+                ),
+                _on_limits_set,
+            )
+            return
+
+        dm.set_speed_limit_enabled(True)
+        _enable_and_notify()
 
     @work(exclusive=True)
     async def _show_welcome_and_search(self) -> None:

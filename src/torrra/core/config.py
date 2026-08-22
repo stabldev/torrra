@@ -13,6 +13,8 @@ from torrra.core.constants import (
     DEFAULT_MIN_SEEDERS,
     DEFAULT_SORT,
     DEFAULT_SORT_ORDER,
+    DEFAULT_SPEED_LIMIT_DOWNLOAD,
+    DEFAULT_SPEED_LIMIT_UPLOAD,
     DEFAULT_TIMEOUT,
 )
 from torrra.core.exceptions import ConfigError
@@ -135,7 +137,12 @@ class Config:
                 "default_sort": DEFAULT_SORT,
                 "default_sort_order": DEFAULT_SORT_ORDER,
                 "min_seeders": DEFAULT_MIN_SEEDERS,
-            }
+            },
+            "speed_limit": {
+                "upload_limit": DEFAULT_SPEED_LIMIT_UPLOAD,
+                "download_limit": DEFAULT_SPEED_LIMIT_DOWNLOAD,
+                "enabled": False,
+            },
         }
 
     def _save_config(self) -> None:

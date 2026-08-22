@@ -213,6 +213,41 @@ ThemeSelectorScreen {
   }
 }
 
+SpeedLimitScreen {
+  align: center middle;
+  #speed-limit-container {
+    height: auto;
+    max-width: 44;
+    width: 44;
+    padding: 1 2;
+    background: $surface;
+    border: tall $secondary;
+    Label {
+      width: 100%;
+      text-align: left;
+    }
+    #speed-limit-name {
+      color: $text-muted;
+      margin-bottom: 1;
+    }
+    #speed-limit-fields {
+      margin: 1 0;
+      height: auto;
+      Input {
+        margin-bottom: 1;
+      }
+    }
+    .error-text {
+      color: $error;
+    }
+    #speed-limit-footer {
+      color: $text-muted;
+      text-align: center;
+      margin-top: 1;
+    }
+  }
+}
+
 /* ------------------------- */
 /* SORT SELECT SCREEN        */
 /* ------------------------- */

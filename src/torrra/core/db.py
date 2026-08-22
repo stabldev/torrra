@@ -30,7 +30,9 @@ def init_db() -> None:
                 source TEXT,
                 is_paused BOOLEAN DEFAULT 0,
                 is_notified BOOLEAN DEFAULT 0,
-                file_priorities TEXT DEFAULT NULL
+                file_priorities TEXT DEFAULT NULL,
+                upload_limit INTEGER DEFAULT NULL,
+                download_limit INTEGER DEFAULT NULL
             )
             """
         )
@@ -42,5 +44,13 @@ def init_db() -> None:
         with suppress(sqlite3.OperationalError):
             cursor.execute(
                 "ALTER TABLE torrents ADD COLUMN file_priorities TEXT DEFAULT NULL"
+            )
+        with suppress(sqlite3.OperationalError):
+            cursor.execute(
+                "ALTER TABLE torrents ADD COLUMN upload_limit INTEGER DEFAULT NULL"
+            )
+        with suppress(sqlite3.OperationalError):
+            cursor.execute(
+                "ALTER TABLE torrents ADD COLUMN download_limit INTEGER DEFAULT NULL"
             )
         conn.commit()

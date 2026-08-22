@@ -31,6 +31,11 @@ default_sort = "relevance"                    # Initial sort for search results:
 default_sort_order = "auto"                   # Direction for the initial sort: "auto", "desc" or "asc". "auto" uses each field's natural direction (title A-Z, seeders/size/leechers high-to-low). Ignored when default_sort is "relevance".
 min_seeders = 0                               # Hide results with fewer seeders than this. 0 shows everything.
 
+[speed_limit]
+upload_limit = 0                              # Global upload cap in bytes/sec (turtle mode). 0 = unlimited.
+download_limit = 0                            # Global download cap in bytes/sec (turtle mode). 0 = unlimited.
+enabled = false                               # Whether turtle mode is currently active. Toggled at runtime with the `t` key.
+
 [indexers]
 default = "jackett"                           # The name of the default indexer to use if none is specified at runtime
 
@@ -44,6 +49,26 @@ api_key = "your-prowlarr-api-key"             # API key for authentication
 ```
 
 You can create or edit this file manually with a text editor.
+
+### Global Speed Limits (Turtle Mode)
+
+The `[speed_limit]` section defines session-wide bandwidth caps, similar to
+"alt-speed" in Transmission or qBittorrent:
+
+```toml
+[speed_limit]
+upload_limit = 1048576    # bytes/sec (1 MB/s); 0 = unlimited
+download_limit = 2097152  # bytes/sec (2 MB/s); 0 = unlimited
+enabled = false           # whether turtle mode is currently active
+```
+
+When `enabled` is `true`, all traffic in every `torrra` session is capped at
+these rates. Inside the TUI you can toggle this on/off instantly with the `t`
+key — the status bar shows a `TURTLE` badge while active. If you press `t`
+before configuring any limits, a dialog asks for them once.
+
+These global caps coexist with per-torrent limits set via `s` in the Downloads
+view; each torrent is limited by whichever cap is lower.
 
 ### Theme Configuration
 
