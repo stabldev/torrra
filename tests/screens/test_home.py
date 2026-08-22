@@ -15,6 +15,7 @@ from torrra.core.results import SortKey
 from torrra.screens.home import HomeScreen
 from torrra.screens.sort_selector import SortSelectorScreen
 from torrra.widgets.search import SearchContent
+from torrra.widgets.status_bar import StatusBar
 
 
 @pytest.fixture
@@ -691,3 +692,35 @@ async def test_title_column_keeps_a_usable_width_in_a_narrow_terminal(
         table = _table_of(wide_value_app)
         declared = {key: width for _, key, width in SearchContent.COLS}
         assert _col_width(table, "title_col") >= declared["title_col"]
+
+
+async def test_home_screen_contains_status_bar(app: TorrraApp):
+    async with app.run_test():
+        assert isinstance(app.screen, HomeScreen)
+        status_bar = app.screen.query_one(StatusBar)
+        assert status_bar is not None
+        assert "? for shortcuts" in str(status_bar._shortcuts_widget.content)
+        assert "DHT:" in str(status_bar._stats_widget.content)
+
+
+def test_status_bar_formatting():
+    sb = StatusBar()
+    assert "? for shortcuts" in str(sb._shortcuts_widget.content)
+
+    sb.update_stats(0.0, 0.0, 0)
+    assert (
+        str(sb._stats_widget.content)
+        == "[b]↓[/b] 0 B/s · [b]↑[/b] 0 B/s · [b]DHT:[/b] 0 nodes"
+    )
+
+    sb.update_stats(1048576.0, 524288.0, 1)
+    assert (
+        str(sb._stats_widget.content)
+        == "[b]↓[/b] 1.00 MB/s · [b]↑[/b] 512.00 KB/s · [b]DHT:[/b] 1 node"
+    )
+
+    sb.update_stats(2097152.0, 1024.0, 42)
+    assert (
+        str(sb._stats_widget.content)
+        == "[b]↓[/b] 2.00 MB/s · [b]↑[/b] 1.00 KB/s · [b]DHT:[/b] 42 nodes"
+    )

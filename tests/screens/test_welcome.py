@@ -6,6 +6,7 @@ from torrra._version import __version__
 from torrra.app import TorrraApp
 from torrra.screens.home import HomeScreen
 from torrra.screens.welcome import WelcomeScreen
+from torrra.widgets.status_bar import StatusBar
 
 
 @pytest.fixture
@@ -101,3 +102,9 @@ async def test_welcome_screen_ctrl_d_go_to_downloads(app: TorrraApp):
         # should open HomeScreen on the downloads view without a search
         assert isinstance(app.screen, HomeScreen)
         assert app.screen.show_downloads is True
+
+
+async def test_welcome_screen_does_not_contain_status_bar(app: TorrraApp):
+    async with app.run_test():
+        assert isinstance(app.screen, WelcomeScreen)
+        assert len(app.screen.query(StatusBar)) == 0

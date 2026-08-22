@@ -202,3 +202,36 @@ def test_state_text_seeding_completed_fetching():
     }
     assert dm.get_torrent_state_text(meta_status) == "Fetching"
     assert dm.get_torrent_state_text(meta_status, short=True) == "META"
+
+
+def test_get_session_stats():
+    dm = DownloadManager()
+    stats = dm.get_session_stats()
+    assert "download_rate" in stats
+    assert "upload_rate" in stats
+    assert "dht_nodes" in stats
+    assert isinstance(stats["download_rate"], (int, float))
+    assert isinstance(stats["upload_rate"], (int, float))
+    assert isinstance(stats["dht_nodes"], int)
+
+
+def test_get_session_stats_fallback():
+    from unittest.mock import MagicMock
+
+    dm = DownloadManager()
+    dm.session = MagicMock()
+    dm.session.status.side_effect = RuntimeError("session status failed")
+
+    handle_mock = MagicMock()
+    handle_mock.is_valid.return_value = True
+    handle_status_mock = MagicMock()
+    handle_status_mock.download_rate = 1048576
+    handle_status_mock.upload_rate = 524288
+    handle_mock.status.return_value = handle_status_mock
+
+    dm.torrents = {"magnet:?xt=urn:btih:mock": handle_mock}
+
+    stats = dm.get_session_stats()
+    assert stats["download_rate"] == 1048576.0
+    assert stats["upload_rate"] == 524288.0
+    assert stats["dht_nodes"] == 0
