@@ -92,7 +92,7 @@ def test_state_text_missing_files_and_error():
     assert dm.get_torrent_state_text(error_status, short=True) == "ERRO"
 
 
-def test_state_text_checking_and_allocating():
+def test_state_text_checking():
     dm = DownloadManager()
 
     checking_status: TorrentStatus = {
@@ -109,8 +109,8 @@ def test_state_text_checking_and_allocating():
     assert dm.get_torrent_state_text(checking_status) == "Checking"
     assert dm.get_torrent_state_text(checking_status, short=True) == "CHCK"
 
-    alloc_status: TorrentStatus = {
-        "state": lt.torrent_status.states.allocating,
+    resume_status: TorrentStatus = {
+        "state": lt.torrent_status.states.checking_resume_data,
         "progress": 0.0,
         "down_speed": 0.0,
         "up_speed": 0.0,
@@ -120,8 +120,8 @@ def test_state_text_checking_and_allocating():
         "eta": None,
         "is_seeding": False,
     }
-    assert dm.get_torrent_state_text(alloc_status) == "Allocating"
-    assert dm.get_torrent_state_text(alloc_status, short=True) == "ALOC"
+    assert dm.get_torrent_state_text(resume_status) == "Checking"
+    assert dm.get_torrent_state_text(resume_status, short=True) == "CHCK"
 
 
 def test_state_text_paused_and_queued():
@@ -235,3 +235,61 @@ def test_get_session_stats_fallback():
     assert stats["download_rate"] == 1048576.0
     assert stats["upload_rate"] == 524288.0
     assert stats["dht_nodes"] == 0
+
+
+def test_get_torrent_status_abi2_error_handling():
+    from unittest.mock import MagicMock
+
+    dm = DownloadManager()
+    handle_mock = MagicMock()
+    handle_mock.is_valid.return_value = True
+
+    status_mock = MagicMock(spec=[
+        "state", "progress", "download_rate", "upload_rate", "total_wanted",
+        "total_wanted_done", "errc", "error_file", "flags", "is_seeding",
+        "is_finished", "has_metadata", "save_path", "num_seeds", "num_peers",
+        "list_seeds", "list_peers"
+    ])
+    status_mock.state = lt.torrent_status.states.downloading
+    status_mock.progress = 0.5
+    status_mock.download_rate = 0
+    status_mock.upload_rate = 0
+    status_mock.total_wanted = 1000
+    status_mock.total_wanted_done = 500
+    status_mock.flags = 0
+    status_mock.is_seeding = False
+    status_mock.is_finished = False
+    status_mock.has_metadata = False
+    status_mock.save_path = ""
+    status_mock.num_seeds = 0
+    status_mock.num_peers = 0
+    status_mock.list_seeds = 0
+    status_mock.list_peers = 0
+    status_mock.error_file = -1
+
+    # Simulate libtorrent ABI 2 errc without .error attribute
+    errc_mock = MagicMock()
+    errc_mock.value.return_value = 1
+    errc_mock.message.return_value = "No such file or directory"
+    status_mock.errc = errc_mock
+
+    handle_mock.status.return_value = status_mock
+    magnet = "magnet:?xt=urn:btih:abi2mocktest"
+    dm.torrents = {magnet: handle_mock}
+
+    status = dm.get_torrent_status(magnet)
+    assert status is not None
+    assert status["error"] == "No such file or directory"
+    assert status["is_missing_files"] is True
+
+
+def test_state_map_abi2():
+    expected_states = {
+        lt.torrent_status.states.downloading,
+        lt.torrent_status.states.seeding,
+        lt.torrent_status.states.finished,
+        lt.torrent_status.states.downloading_metadata,
+        lt.torrent_status.states.checking_files,
+        lt.torrent_status.states.checking_resume_data,
+    }
+    assert set(DownloadManager._STATE_MAP.keys()) == expected_states

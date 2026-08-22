@@ -24,8 +24,6 @@ class DownloadManager:
         lt.torrent_status.states.downloading_metadata: ("Fetching", "META"),
         lt.torrent_status.states.checking_files: ("Checking", "CHCK"),
         lt.torrent_status.states.checking_resume_data: ("Checking", "CHCK"),
-        lt.torrent_status.states.queued_for_checking: ("Checking", "CHCK"),
-        lt.torrent_status.states.allocating: ("Allocating", "ALOC"),
     }
 
     def __init__(self) -> None:
@@ -221,8 +219,6 @@ class DownloadManager:
         error_msg: str | None = None
         if s.errc and s.errc.value() != 0:
             error_msg = s.errc.message()
-        elif s.error:
-            error_msg = s.error
 
         error_file = getattr(s, "error_file", -1)
 
