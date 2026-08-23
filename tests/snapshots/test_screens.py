@@ -111,10 +111,8 @@ def test_help_screen_snapshot(app_factory: Any, snap_compare: Any):
 
 def test_file_selection_screen_snapshot(
     app_factory: Any,
-    mock_config: Config,
     snap_compare: Any,
 ):
-    mock_config.set("general.download_path", "/downloads")
     torrent_info = MagicMock()
     torrent_info.name.return_value = "Linux Images"
     files = MagicMock()
@@ -139,6 +137,7 @@ def test_file_selection_screen_snapshot(
                     source="Snapshot",
                 ),
                 torrent_info=torrent_info,
+                initial_save_path="/downloads",
             )
         )
         await pilot.pause()
