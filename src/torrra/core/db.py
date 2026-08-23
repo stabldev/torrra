@@ -31,6 +31,8 @@ def init_db() -> None:
                 is_paused BOOLEAN DEFAULT 0,
                 is_notified BOOLEAN DEFAULT 0,
                 file_priorities TEXT DEFAULT NULL,
+                upload_limit INTEGER DEFAULT NULL,
+                download_limit INTEGER DEFAULT NULL,
                 save_path TEXT DEFAULT NULL
             )
             """
@@ -47,6 +49,14 @@ def init_db() -> None:
         columns = {
             row[1] for row in cursor.execute("PRAGMA table_info(torrents)").fetchall()
         }
+        if "upload_limit" not in columns:
+            cursor.execute(
+                "ALTER TABLE torrents ADD COLUMN upload_limit INTEGER DEFAULT NULL"
+            )
+        if "download_limit" not in columns:
+            cursor.execute(
+                "ALTER TABLE torrents ADD COLUMN download_limit INTEGER DEFAULT NULL"
+            )
         if "save_path" not in columns:
             cursor.execute(
                 "ALTER TABLE torrents ADD COLUMN save_path TEXT DEFAULT NULL"

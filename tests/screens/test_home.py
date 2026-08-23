@@ -703,7 +703,7 @@ async def test_home_screen_contains_status_bar(app: TorrraApp):
         assert "DHT:" in str(status_bar._stats_widget.content)
 
 
-def test_status_bar_formatting():
+def test_status_bar_formatting(mock_config):
     sb = StatusBar()
     assert "? for shortcuts" in str(sb._shortcuts_widget.content)
 
@@ -712,6 +712,8 @@ def test_status_bar_formatting():
         str(sb._stats_widget.content)
         == "[b]↓[/b] 0 B/s · [b]↑[/b] 0 B/s · [b]DHT:[/b] 0 nodes"
     )
+    # turtle badge hidden when global speed limits are disabled
+    assert sb._limit_badge() == ""
 
     sb.update_stats(1048576.0, 524288.0, 1)
     assert (
@@ -719,8 +721,35 @@ def test_status_bar_formatting():
         == "[b]↓[/b] 1.00 MB/s · [b]↑[/b] 512.00 KB/s · [b]DHT:[/b] 1 node"
     )
 
+
+def test_status_bar_turtle_badge(mock_config):
+    sb = StatusBar()
+    assert sb._limit_badge() == ""
+
+    mock_config.set("speed_limit.enabled", "true")
+    mock_config.set("speed_limit.upload_limit", "2097152")
+    mock_config.set("speed_limit.download_limit", "1048576")
+    sb.update_stats(0.0, 0.0, 0)
+
+    badge = sb._limit_badge()
+    assert "TURTLE" in badge
+    stats_text = str(sb._stats_widget.content)
+    assert "[1 MB/s]" in stats_text
+    assert "[2 MB/s]" in stats_text
+
+    # unlimited entries are omitted from the bracketed limits
+    mock_config.set("speed_limit.upload_limit", "0")
+    sb.update_stats(0.0, 0.0, 0)
+    assert "TURTLE" in sb._limit_badge()
+    stats_text = str(sb._stats_widget.content)
+    assert "[1 MB/s]" in stats_text
+    assert "[0 B/s]" not in stats_text
+
+    # stats render unchanged again once limits are disabled
+    mock_config.set("speed_limit.enabled", "false")
     sb.update_stats(2097152.0, 1024.0, 42)
     assert (
         str(sb._stats_widget.content)
         == "[b]↓[/b] 2.00 MB/s · [b]↑[/b] 1.00 KB/s · [b]DHT:[/b] 42 nodes"
     )
+    assert sb._limit_badge() == ""

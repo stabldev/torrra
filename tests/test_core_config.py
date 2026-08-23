@@ -5,6 +5,10 @@ import pytest
 
 from torrra.core import config as config_module
 from torrra.core.config import Config
+from torrra.core.constants import (
+    DEFAULT_SPEED_LIMIT_DOWNLOAD,
+    DEFAULT_SPEED_LIMIT_UPLOAD,
+)
 from torrra.core.exceptions import ConfigError
 
 
@@ -55,6 +59,34 @@ def test_config_set_type_conversion(mock_config: Config):
     assert mock_config.get("types.bool_false") is False
     assert mock_config.get("types.integer") == 123
     assert mock_config.get("types.float") == 45.6
+
+
+def test_default_speed_limits_are_turtle_values(mock_config: Config):
+    # fresh config ships with qBittorrent-style 10 KB/s turtle limits
+    assert DEFAULT_SPEED_LIMIT_UPLOAD == 10 * 1024
+    assert DEFAULT_SPEED_LIMIT_DOWNLOAD == 10 * 1024
+    assert mock_config.get("speed_limit.upload_limit") == DEFAULT_SPEED_LIMIT_UPLOAD
+    assert mock_config.get("speed_limit.download_limit") == DEFAULT_SPEED_LIMIT_DOWNLOAD
+
+
+def test_config_set_speed_limit_parses_human_units(mock_config: Config):
+    # speed limit keys accept human-readable units and store bytes/sec
+    mock_config.set("speed_limit.download_limit", "2M")
+    mock_config.set("speed_limit.upload_limit", "500K")
+    mock_config.set("speed_limit.download_limit", "1.5 GB/s")
+
+    # last write wins
+    assert mock_config.get("speed_limit.download_limit") == int(1.5 * 1024**3)
+    assert mock_config.get("speed_limit.upload_limit") == 500 * 1024
+
+
+def test_config_set_speed_limit_unlimited_and_invalid(mock_config: Config):
+    # "unlimited"/"0" normalize to 0 bytes/sec
+    mock_config.set("speed_limit.upload_limit", "unlimited")
+    assert mock_config.get("speed_limit.upload_limit") == 0
+
+    with pytest.raises(ConfigError, match="invalid value"):
+        mock_config.set("speed_limit.download_limit", "abc")
 
 
 def test_config_list_flattens_correctly(mock_config: Config):

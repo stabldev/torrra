@@ -50,6 +50,8 @@ class TorrentRecord(TypedDict, total=False):
     is_paused: bool
     is_notified: bool
     file_priorities: list[int] | None
+    upload_limit: int | None
+    download_limit: int | None
     save_path: str | None
 
 

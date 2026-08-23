@@ -8,8 +8,13 @@ import libtorrent as lt
 
 from torrra._types import SessionStats, TorrentFileInfo, TorrentStatus
 from torrra.core.config import get_config
+from torrra.core.constants import (
+    DEFAULT_SPEED_LIMIT_DOWNLOAD,
+    DEFAULT_SPEED_LIMIT_UPLOAD,
+)
 from torrra.core.exceptions import DownloadError
 from torrra.core.paths import normalize_download_path, prepare_download_path
+from torrra.utils.helpers import coerce_speed_limit
 from torrra.utils.magnet import enhance_magnet_uri, fix_magnet_uri
 
 
@@ -44,9 +49,13 @@ class DownloadManager:
         self.torrents: dict[str, lt.torrent_handle] = {}
         self._metadata_only_torrents: set[str] = set()
         self._file_priorities: dict[str, list[int]] = {}
+        self._limits: dict[str, tuple[int, int]] = {}
         self._metadata_updated: set[str] = (
             set()
         )  # Track torrents whose metadata has been updated
+        # apply session-wide speed limits from config ("turtle mode"),
+        # a no-op when disabled or unset
+        self.apply_global_limits()
 
     def add_torrent(
         self,
@@ -54,6 +63,8 @@ class DownloadManager:
         is_paused: bool = False,
         file_priorities: list[int] | None = None,
         torrent_info: lt.torrent_info | None = None,
+        upload_limit: int | None = None,
+        download_limit: int | None = None,
         save_path: str | None = None,
         create_path: bool = True,
     ) -> lt.torrent_handle:
@@ -63,6 +74,8 @@ class DownloadManager:
             is_paused=is_paused,
             file_priorities=file_priorities,
             torrent_info=torrent_info,
+            upload_limit=upload_limit,
+            download_limit=download_limit,
             save_path=save_path,
             create_path=create_path,
             metadata_only=False,
@@ -85,6 +98,8 @@ class DownloadManager:
         is_paused: bool = False,
         file_priorities: list[int] | None = None,
         torrent_info: lt.torrent_info | None = None,
+        upload_limit: int | None = None,
+        download_limit: int | None = None,
         save_path: str | None = None,
         create_path: bool = True,
         metadata_only: bool = False,
@@ -95,6 +110,13 @@ class DownloadManager:
             else get_config().get("general.download_path")
         )
         selected_path = prepare_download_path(configured_path, create=create_path)
+
+        # Seed per-torrent speed limits (e.g. loaded from the database).
+        # -1 means unlimited, which is libtorrent's sentinel value.
+        if upload_limit is not None or download_limit is not None:
+            up = upload_limit if upload_limit is not None else -1
+            down = download_limit if download_limit is not None else -1
+            self._limits[magnet_uri] = (up, down)
 
         if magnet_uri in self.torrents:
             handle = self.torrents[magnet_uri]
@@ -123,6 +145,9 @@ class DownloadManager:
                         handle.prioritize_files(file_priorities)
                     except (AttributeError, RuntimeError):
                         pass
+
+                # Re-apply any stored per-torrent speed limits
+                self._apply_stored_limits(handle, magnet_uri)
 
                 # Check current paused state and update if different
                 current_status = handle.status()
@@ -173,6 +198,9 @@ class DownloadManager:
         if metadata_only:
             self._metadata_only_torrents.add(magnet_uri)
 
+        # apply any stored per-torrent speed limits
+        self._apply_stored_limits(handle, magnet_uri)
+
         if file_priorities is not None and handle.status().has_metadata:
             try:
                 handle.prioritize_files(file_priorities)
@@ -211,6 +239,93 @@ class DownloadManager:
             except (AttributeError, RuntimeError):
                 pass
         return self._file_priorities.get(magnet_uri)
+
+    def set_torrent_limits(
+        self, magnet_uri: str, upload_limit: int, download_limit: int
+    ) -> None:
+        # store limits keyed by magnet_uri; -1 means unlimited
+        self._limits[magnet_uri] = (upload_limit, download_limit)
+        handle = self.torrents.get(magnet_uri)
+        if handle and handle.is_valid():
+            self._apply_stored_limits(handle, magnet_uri)
+        # also persist to the database so limits survive restarts
+        self._tm_update_limits(magnet_uri, upload_limit, download_limit)
+
+    def get_torrent_limits(self, magnet_uri: str) -> tuple[int, int] | None:
+        handle = self.torrents.get(magnet_uri)
+        if handle and handle.is_valid():
+            try:
+                # libtorrent uses -1 (and 0) to mean unlimited; normalize so
+                # callers and the UI only ever see -1 for "no limit"
+                up = handle.upload_limit()
+                down = handle.download_limit()
+                return (
+                    -1 if up is None or up <= 0 else up,
+                    -1 if down is None or down <= 0 else down,
+                )
+            except (AttributeError, RuntimeError):
+                pass
+        return self._limits.get(magnet_uri)
+
+    def apply_global_limits(self) -> None:
+        # session-wide bandwidth caps from [speed_limit] in config.toml.
+        # 0 means unlimited, which is also libtorrent's sentinel value,
+        # so values pass through unchanged. caps coexist with per-torrent
+        # limits (the effective rate is the lower of the two).
+        config = get_config()
+        up = coerce_speed_limit(
+            config.get("speed_limit.upload_limit", DEFAULT_SPEED_LIMIT_UPLOAD)
+        )
+        down = coerce_speed_limit(
+            config.get("speed_limit.download_limit", DEFAULT_SPEED_LIMIT_DOWNLOAD)
+        )
+        try:
+            self.session.apply_settings(
+                {
+                    "upload_rate_limit": max(0, up),
+                    "download_rate_limit": max(0, down),
+                }
+            )
+        except (AttributeError, RuntimeError):
+            pass
+
+    def is_speed_limit_enabled(self) -> bool:
+        return bool(get_config().get("speed_limit.enabled", False))
+
+    def set_speed_limit_enabled(self, enabled: bool) -> None:
+        get_config().set("speed_limit.enabled", str(enabled).lower())
+        if enabled:
+            self.apply_global_limits()
+        else:
+            try:
+                self.session.apply_settings(
+                    {"upload_rate_limit": 0, "download_rate_limit": 0}
+                )
+            except (AttributeError, RuntimeError):
+                pass
+
+    def _apply_stored_limits(self, handle: lt.torrent_handle, magnet_uri: str) -> None:
+        limits = self._limits.get(magnet_uri)
+        if limits is None:
+            return
+        up, down = limits
+        try:
+            handle.set_upload_limit(up)
+            handle.set_download_limit(down)
+        except (AttributeError, RuntimeError):
+            pass
+
+    def _tm_update_limits(
+        self, magnet_uri: str, upload_limit: int, download_limit: int
+    ) -> None:
+        from torrra.core.torrent import get_torrent_manager
+
+        try:
+            get_torrent_manager().update_torrent_limits(
+                magnet_uri, upload_limit, download_limit
+            )
+        except (AttributeError, RuntimeError):
+            pass
 
     def get_torrent_files(self, magnet_uri: str) -> list[TorrentFileInfo] | None:
         handle = self.torrents.get(magnet_uri)
@@ -417,6 +532,9 @@ class DownloadManager:
                         # Apply pending file priorities if any
                         if magnet_uri in self._file_priorities:
                             handle.prioritize_files(self._file_priorities[magnet_uri])
+
+                        # Re-apply per-torrent speed limits
+                        self._apply_stored_limits(handle, magnet_uri)
 
                         tm.update_torrent_metadata(magnet_uri, title, size)
                         self._metadata_updated.add(magnet_uri)

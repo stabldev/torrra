@@ -66,6 +66,7 @@ def make_download_manager(session: FakeTorrentSession) -> DownloadManager:
     manager.torrents = {}
     manager._metadata_only_torrents = set()
     manager._file_priorities = {}
+    manager._limits = {}
     manager._metadata_updated = set()
     return manager
 
@@ -336,6 +337,76 @@ def test_state_text_seeding_completed_fetching():
     }
     assert dm.get_torrent_state_text(meta_status) == "Fetching"
     assert dm.get_torrent_state_text(meta_status, short=True) == "META"
+
+
+def _sample_magnet(suffix: str) -> str:
+    return f"magnet:?xt=urn:btih:{suffix * 40}"
+
+
+def test_set_and_get_torrent_limits():
+    dm = DownloadManager()
+    magnet = _sample_magnet("a")
+    dm.add_torrent(magnet)
+    assert magnet in dm.torrents
+
+    dm.set_torrent_limits(magnet, 1024 * 1024, 2 * 1024**2)
+    limits = dm.get_torrent_limits(magnet)
+    assert limits is not None
+    up, down = limits
+    assert up == 1024 * 1024
+    assert down == 2 * 1024**2
+
+    # unlimited
+    dm.set_torrent_limits(magnet, -1, -1)
+    limits = dm.get_torrent_limits(magnet)
+    assert limits is not None
+    up, down = limits
+    assert up == -1
+    assert down == -1
+
+
+def test_limits_seeded_on_add_are_applied():
+    dm = DownloadManager()
+    magnet = _sample_magnet("b")
+    dm.add_torrent(
+        magnet,
+        upload_limit=512 * 1024,
+        download_limit=1024 * 1024,
+    )
+    assert magnet in dm.torrents
+    limits = dm.get_torrent_limits(magnet)
+    assert limits is not None
+    up, down = limits
+    assert up == 512 * 1024
+    assert down == 1024 * 1024
+
+
+def test_torrent_limits_persisted_to_db():
+    from torrra._types import Torrent
+    from torrra.core.torrent import get_torrent_manager
+
+    magnet = _sample_magnet("c")
+    # the torrent must already exist in the database, as it would in the
+    # real flow where the user initiates a download
+    get_torrent_manager().add_torrent(
+        Torrent(
+            magnet_uri=magnet,
+            title="Test",
+            size=1000,
+            source="test",
+            seeders=0,
+            leechers=0,
+        )
+    )
+
+    dm = DownloadManager()
+    dm.add_torrent(magnet)
+    dm.set_torrent_limits(magnet, 1024, 2048)
+
+    record = get_torrent_manager().get_torrent(magnet)
+    assert record is not None
+    assert record.get("upload_limit") == 1024
+    assert record.get("download_limit") == 2048
 
 
 def test_get_session_stats():

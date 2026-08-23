@@ -112,6 +112,7 @@ The TUI has two views, **Search** and **Downloads**, which you switch between us
 | :------- | :----------------------------------------------------------- |
 | `Tab`    | Move focus between the search box, the sidebar and the list  |
 | `ctrl+t` | Open the theme switcher to change the application's appearance |
+| `t`      | Toggle turtle mode — cap all traffic at your configured global speed limits (set them in `config.toml` under `[speed_limit]`, e.g. `torrra config set speed_limit.download_limit 2M`) |
 | `?`      | Show all keyboard shortcuts                                  |
 | `ctrl+q` | Quit `torrra`                                                |
 
@@ -147,8 +148,13 @@ These work in both the search results and the downloads list.
 | `Enter` / `l` | Show details and progress for the highlighted download       |
 | `p`           | Pause or resume the selected download (the same key toggles) |
 | `f`           | Open the file selection modal to choose files to download    |
+| `s`           | Set upload / download speed limits for the selected torrent  |
 | `d`           | Remove the selected torrent, keeping any downloaded files    |
 | `D`           | Remove the selected torrent **and** delete its files         |
+
+While a download's details panel is open, per-torrent limits set with `s` are
+shown as `Up lim:` / `Down lim:` entries, and the status bar displays a
+`TURTLE` badge whenever turtle mode is on.
 
 ### File selection
 

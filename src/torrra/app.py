@@ -3,6 +3,7 @@ from typing import ClassVar
 from textual import work
 from textual.app import App
 from textual.binding import Binding, BindingType
+from textual.css.query import NoMatches
 from textual.reactive import Reactive
 from textual.types import CSSPathType
 from textual.widgets import Input
@@ -16,6 +17,7 @@ from torrra.screens.home import HomeScreen
 from torrra.screens.theme_selector import ThemeSelectorScreen
 from torrra.screens.welcome import GO_TO_DOWNLOADS, WelcomeScreen
 from torrra.utils.fs import get_resource_path
+from torrra.widgets.status_bar import StatusBar
 
 
 class TorrraApp(App[None]):
@@ -26,6 +28,7 @@ class TorrraApp(App[None]):
     ENABLE_COMMAND_PALETTE: ClassVar[bool] = False
     BINDINGS: ClassVar[list[BindingType]] = [
         Binding("ctrl+t", "switch_theme"),
+        Binding("t", "toggle_speed_limit"),
         Binding("question_mark", "show_help", priority=True),
     ]
 
@@ -106,6 +109,30 @@ class TorrraApp(App[None]):
             self.pop_screen()
         else:
             self.push_screen(HelpScreen())
+
+    def _refresh_status_bar(self) -> None:
+        status_bar = self._find_status_bar()
+        if status_bar is not None:
+            status_bar.update_stats(*status_bar._last_stats)
+
+    def _find_status_bar(self) -> "StatusBar | None":
+        # the status bar lives on the home screen, which may be buried under
+        # other screens (welcome/help) or not mounted at all yet
+        for screen in self.screen_stack:
+            try:
+                return screen.query_one(StatusBar)
+            except NoMatches:
+                continue
+        return None
+
+    def action_toggle_speed_limit(self) -> None:
+        from torrra.core.download import get_download_manager
+
+        dm = get_download_manager()
+        enable = not dm.is_speed_limit_enabled()
+
+        dm.set_speed_limit_enabled(enable)
+        self._refresh_status_bar()
 
     @work(exclusive=True)
     async def _show_welcome_and_search(self) -> None:

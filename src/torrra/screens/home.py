@@ -76,6 +76,8 @@ class HomeScreen(Screen[None]):
                     torrent["magnet_uri"],
                     is_paused=torrent["is_paused"],
                     file_priorities=torrent.get("file_priorities"),
+                    upload_limit=torrent.get("upload_limit"),
+                    download_limit=torrent.get("download_limit"),
                     save_path=torrent.get("save_path"),
                     create_path=torrent.get("save_path") is None,
                 )

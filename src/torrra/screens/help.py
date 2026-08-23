@@ -20,6 +20,7 @@ SHORTCUTS: list[tuple[str, list[tuple[str, str]]]] = [
         [
             ("tab", "move focus"),
             ("ctrl+t", "change theme"),
+            ("t", "toggle turtle mode"),
             ("?", "show this help"),
             ("ctrl+q", "quit torrra"),
         ],
@@ -53,6 +54,7 @@ SHORTCUTS: list[tuple[str, list[tuple[str, str]]]] = [
             ("enter / l", "show download details"),
             ("p", "pause or resume"),
             ("f", "select files to download"),
+            ("s", "set upload / download speed limit"),
             ("d", "remove torrent"),
             ("D", "remove and delete files"),
         ],
