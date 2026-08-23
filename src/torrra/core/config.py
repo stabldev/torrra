@@ -31,9 +31,13 @@ _PATH_KEYS = {"general.download_path"}
 
 def _resolve_path(value: str) -> str:
     expanded = os.path.expandvars(value)
-    if "$" in expanded:
+    resolved = os.path.expanduser(expanded)
+    # an unresolved variable is only harmful because it leaves the path
+    # relative, which anchors it to the cwd; a literal '$' in an absolute
+    # path is a valid filename character and must be left alone
+    if not (os.path.isabs(resolved) or resolved.startswith(("/", "\\"))) and "$" in expanded:
         raise ConfigError(f"unresolved environment variable in path: {value}")
-    return os.path.abspath(os.path.expanduser(expanded))
+    return os.path.abspath(resolved)
 
 
 @lru_cache

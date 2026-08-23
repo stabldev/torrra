@@ -1,3 +1,6 @@
+import os
+from pathlib import Path
+
 import pytest
 
 from torrra.core import config as config_module
@@ -107,9 +110,31 @@ def test_config_get_download_path_default_expansion(mock_config: Config):
     assert result == expected
 
 
-def test_config_get_download_path_undefined_env_var_raises_error(
+def test_config_get_download_path_allows_literal_dollar_in_absolute_path(
+    mock_config: Config,
+):
+    # '$' is a legal filename character; an absolute path containing one is
+    # valid and must not be mistaken for an unresolved environment variable
+    test_path = "/Volumes/My$Drive/Downloads"
+    mock_config.set("general.download_path", test_path)
+    assert mock_config.get("general.download_path") == os.path.abspath(test_path)
+
+
+def test_config_get_download_path_allows_literal_dollar_after_tilde(
+    mock_config: Config, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))
+    mock_config.set("general.download_path", "~/Music/AC$DC")
+    expected = os.path.join(str(tmp_path), "Music", "AC$DC")
+    assert mock_config.get("general.download_path") == expected
+
+
+def test_config_get_download_path_relative_with_dollar_raises_error(
     mock_config: Config, monkeypatch: pytest.MonkeyPatch
 ):
+    # a '$' that leaves the path relative is what anchors it to the cwd,
+    # which is the failure mode this validation exists to catch
     monkeypatch.delenv("UNDEFINED_VAR_TEST", raising=False)
     mock_config.set("general.download_path", "$UNDEFINED_VAR_TEST/downloads")
     with pytest.raises(ConfigError, match="unresolved environment variable"):
