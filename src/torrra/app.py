@@ -10,6 +10,7 @@ from typing_extensions import override
 
 from torrra._types import Indexer
 from torrra.core.config import get_config
+from torrra.core.exceptions import ConfigError
 from torrra.screens.help import HelpScreen
 from torrra.screens.home import HomeScreen
 from torrra.screens.theme_selector import ThemeSelectorScreen
@@ -51,6 +52,14 @@ class TorrraApp(App[None]):
                 + f"available themes: {', '.join(sorted(self.available_themes))}"
             )
         self.theme = theme
+
+        # validate the download path up front so a bad value is reported once,
+        # here, instead of surfacing as an uncaught error (or a silently
+        # skipped torrent) every time a download is added
+        try:
+            get_config().get("general.download_path")
+        except ConfigError as e:
+            raise RuntimeError(f"invalid download_path configured.\n{e}") from e
 
     async def on_mount(self) -> None:
         # the welcome screen only exists to collect a search query, so it is
