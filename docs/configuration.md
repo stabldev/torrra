@@ -19,7 +19,7 @@ Here's an example of what your `config.toml` might look like:
 
 ```toml
 [general]
-download_path = "/home/username/Downloads"    # The default folder where torrents will be saved
+download_path = "/home/username/Downloads"    # Fallback folder when a torrent has no custom save path
 download_in_external_client = false           # If true, opens magnet links in an external torrent client instead of downloading the .torrent file.
 theme = "textual-dark"                        # Theme for the application (e.g., "textual-dark", "textual-light", etc.).
 timeout = 10                                  # The timeout in seconds for requests to indexers.
@@ -44,6 +44,31 @@ api_key = "your-prowlarr-api-key"             # API key for authentication
 ```
 
 You can create or edit this file manually with a text editor.
+
+### Download Paths
+
+`general.download_path` is the fallback for torrents where **Save to** is left
+blank. When adding a torrent from search, a magnet URI, a URL, or a local
+`.torrent` file, you can enter a different directory in the file-selection
+screen. Direct downloads can also prefill it:
+
+```bash
+torrra download "magnet:?xt=urn:btih:..." --save-path /downloads/linux
+```
+
+Paths must be absolute, and missing directories are created when a new download
+is confirmed. Torrra shows an error rather than silently falling back if an
+explicit path is invalid or not writable.
+
+A torrent's custom path is stored in Torrra's SQLite data file and reused after
+a restart. Existing database rows without a stored path continue to use the
+current `general.download_path`. Changing or moving the path of a torrent that
+has already been added is not currently supported.
+
+The SQLite file is also placed by `platformdirs`: under
+`~/.local/share/torrra/torrra.db` on Linux,
+`~/Library/Application Support/torrra/torrra.db` on macOS, and
+`%LOCALAPPDATA%\torrra\torrra.db` on Windows.
 
 ### Theme Configuration
 
@@ -145,4 +170,3 @@ You can also specify a custom editor using the `--editor` (or `-e`) option:
 ```bash
 torrra config edit --editor nano
 ```
-

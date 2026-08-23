@@ -15,6 +15,7 @@ class TorrentDict(TypedDict, total=False):
     leechers: int
     source: str
     file_priorities: list[int] | None
+    save_path: str | None
 
 
 class TorrentStatus(TypedDict, total=False):
@@ -36,6 +37,7 @@ class TorrentStatus(TypedDict, total=False):
     error_file: int
     is_missing_files: bool
     is_queued: bool
+    save_path: str
 
 
 class TorrentRecord(TypedDict, total=False):
@@ -48,6 +50,7 @@ class TorrentRecord(TypedDict, total=False):
     is_paused: bool
     is_notified: bool
     file_priorities: list[int] | None
+    save_path: str | None
 
 
 class SessionStats(TypedDict, total=False):
@@ -78,6 +81,7 @@ class Torrent:
     leechers: int
     source: str
     file_priorities: list[int] | None = None
+    save_path: str | None = None
 
     @classmethod
     def from_dict(cls, d: TorrentDict) -> "Torrent":
@@ -85,6 +89,14 @@ class Torrent:
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
+
+
+@dataclass
+class DownloadSelection:
+    """Options confirmed before starting a torrent download."""
+
+    file_priorities: list[int] | None
+    save_path: str | None
 
 
 # INDEXER TYPES

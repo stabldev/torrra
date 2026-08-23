@@ -1,10 +1,81 @@
-from typing import Any
+from pathlib import Path
+from types import SimpleNamespace
+from typing import Any, cast
 
 import libtorrent as lt
 import pytest
 
 from torrra._types import TorrentStatus
 from torrra.core.download import DownloadManager
+from torrra.core.exceptions import DownloadError
+
+
+class FakeTorrentHandle:
+    def __init__(self, save_path: str, flags: Any) -> None:
+        self._valid = True
+        self._status = SimpleNamespace(
+            has_metadata=False,
+            flags=flags,
+            save_path=save_path,
+        )
+        self.metadata: object | None = None
+
+    def is_valid(self) -> bool:
+        return self._valid
+
+    def status(self) -> SimpleNamespace:
+        return self._status
+
+    def torrent_file(self) -> object | None:
+        return self.metadata
+
+    def prioritize_files(self, _priorities: list[int]) -> None:
+        return None
+
+    def set_flags(self, flags: Any) -> None:
+        self._status.flags |= flags
+
+    def unset_flags(self, flags: Any) -> None:
+        self._status.flags &= ~flags
+
+    def pause(self) -> None:
+        self._status.flags |= lt.torrent_flags.paused
+
+    def resume(self) -> None:
+        self._status.flags &= ~lt.torrent_flags.paused
+
+
+class FakeTorrentSession:
+    def __init__(self) -> None:
+        self.added: list[tuple[Any, FakeTorrentHandle]] = []
+        self.removed: list[FakeTorrentHandle] = []
+
+    def add_torrent(self, params: Any) -> FakeTorrentHandle:
+        handle = FakeTorrentHandle(params.save_path, params.flags)
+        self.added.append((params, handle))
+        return handle
+
+    def remove_torrent(self, handle: FakeTorrentHandle, _options: Any = None) -> None:
+        handle._valid = False
+        self.removed.append(handle)
+
+
+def make_download_manager(session: FakeTorrentSession) -> DownloadManager:
+    manager = DownloadManager.__new__(DownloadManager)
+    manager.session = cast(Any, session)
+    manager.torrents = {}
+    manager._metadata_only_torrents = set()
+    manager._file_priorities = {}
+    manager._metadata_updated = set()
+    return manager
+
+
+@pytest.fixture
+def fake_parse_magnet(monkeypatch: pytest.MonkeyPatch):
+    def parse(_uri: str) -> SimpleNamespace:
+        return SimpleNamespace(save_path="", flags=0, ti=None)
+
+    monkeypatch.setattr("torrra.core.download.lt.parse_magnet_uri", parse)
 
 
 def test_state_text_stalled_and_downloading():
@@ -39,6 +110,66 @@ def test_state_text_stalled_and_downloading():
     }
     assert dm.get_torrent_state_text(down_status) == "Downloading"
     assert dm.get_torrent_state_text(down_status, short=True) == "DOWN"
+
+
+def test_add_torrent_sets_explicit_save_path(tmp_path: Path, fake_parse_magnet: None):
+    session = FakeTorrentSession()
+    manager = make_download_manager(session)
+    destination = tmp_path / "custom"
+    magnet = "magnet:?xt=urn:btih:customsavepath"
+
+    manager.add_torrent(magnet, save_path=str(destination))
+
+    params, _handle = session.added[0]
+    assert params.save_path == str(destination)
+    assert not (params.flags & lt.torrent_flags.default_dont_download)
+
+
+def test_metadata_handle_is_replaced_with_final_save_path(
+    tmp_path: Path, fake_parse_magnet: None
+):
+    session = FakeTorrentSession()
+    manager = make_download_manager(session)
+    preview_path = tmp_path / "preview"
+    final_path = tmp_path / "final"
+    magnet = "magnet:?xt=urn:btih:metadatapromotion"
+
+    preview_handle = cast(
+        FakeTorrentHandle,
+        manager.fetch_metadata(magnet, save_path=str(preview_path)),
+    )
+    preview_params, _ = session.added[0]
+    assert preview_params.flags & lt.torrent_flags.default_dont_download
+
+    metadata = object()
+    preview_handle.status().has_metadata = True
+    preview_handle.metadata = metadata
+
+    final_handle = manager.add_torrent(magnet, save_path=str(final_path))
+
+    final_params, _ = session.added[1]
+    assert preview_handle in session.removed
+    assert final_handle is not preview_handle
+    assert final_params.save_path == str(final_path)
+    assert final_params.ti is metadata
+    assert not (final_params.flags & lt.torrent_flags.default_dont_download)
+    assert magnet not in manager._metadata_only_torrents
+
+
+def test_add_torrent_rejects_active_path_change(
+    tmp_path: Path, fake_parse_magnet: None
+):
+    session = FakeTorrentSession()
+    manager = make_download_manager(session)
+    magnet = "magnet:?xt=urn:btih:activepath"
+    first_path = tmp_path / "first"
+
+    manager.add_torrent(magnet, save_path=str(first_path))
+
+    with pytest.raises(DownloadError, match="active torrent"):
+        manager.add_torrent(magnet, save_path=str(tmp_path / "second"))
+
+    assert len(session.added) == 1
 
 
 def test_state_text_missing_files_and_error():

@@ -3,9 +3,9 @@ from unittest.mock import MagicMock
 
 import pytest
 from textual.app import App
-from textual.widgets import Static
+from textual.widgets import Input, Static
 
-from torrra._types import Torrent
+from torrra._types import DownloadSelection, Torrent
 from torrra.core.download import get_download_manager
 from torrra.core.torrent import get_torrent_manager
 from torrra.screens.file_selection import FileSelectionScreen, FileSelectionTree
@@ -31,12 +31,12 @@ class DummyHostApp(App[None]):
     def __init__(self, screen_to_push: FileSelectionScreen):
         super().__init__()
         self.screen_to_push = screen_to_push
-        self.result: list[int] | None = "UNSET"  # type: ignore
+        self.result: DownloadSelection | None | object = object()
 
     def on_mount(self) -> None:
         self.push_screen(self.screen_to_push, self._on_result)
 
-    def _on_result(self, res: list[int] | None) -> None:
+    def _on_result(self, res: DownloadSelection | None) -> None:
         self.result = res
 
 
@@ -429,7 +429,9 @@ async def test_file_selection_screen_confirm_with_enter():
         await pilot.pause()
 
         # Returned priorities: file 0 has 4, files 1 and 2 have 0
-        assert app.result == [4, 0, 0]
+        assert isinstance(app.result, DownloadSelection)
+        assert app.result.file_priorities == [4, 0, 0]
+        assert app.result.save_path is None
 
 
 async def test_file_selection_skip_metadata_keys():
@@ -450,7 +452,9 @@ async def test_file_selection_skip_metadata_keys():
         await pilot.pause()
         await pilot.press("d")
         await pilot.pause()
-        assert app.result == []
+        assert isinstance(app.result, DownloadSelection)
+        assert app.result.file_priorities is None
+        assert app.result.save_path is None
 
 
 async def test_file_selection_screen_cancel_with_escape():
@@ -473,6 +477,59 @@ async def test_file_selection_screen_cancel_with_escape():
         await pilot.pause()
 
         assert app.result is None
+
+
+async def test_file_selection_screen_returns_custom_save_path(tmp_path: Any):
+    custom_path = tmp_path / "custom-downloads"
+    screen = FileSelectionScreen(
+        torrent=Torrent(
+            magnet_uri="magnet:?xt=urn:btih:custompath",
+            title="Custom Path",
+            size=100,
+            seeders=1,
+            leechers=0,
+            source="Mock",
+        ),
+        torrent_info=create_mock_torrent_info(),
+        initial_save_path=str(custom_path),
+    )
+    app = DummyHostApp(screen)
+
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        assert app.screen.query_one("#save-path", Input).value == str(custom_path)
+
+        await pilot.press("enter")
+        await pilot.pause()
+
+        assert isinstance(app.result, DownloadSelection)
+        assert app.result.save_path == str(custom_path)
+        assert custom_path.is_dir()
+
+
+async def test_file_selection_screen_rejects_relative_save_path():
+    screen = FileSelectionScreen(
+        torrent=Torrent(
+            magnet_uri="magnet:?xt=urn:btih:relativepath",
+            title="Relative Path",
+            size=100,
+            seeders=1,
+            leechers=0,
+            source="Mock",
+        ),
+        torrent_info=create_mock_torrent_info(),
+    )
+    app = DummyHostApp(screen)
+    initial_result = app.result
+
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        app.screen.query_one("#save-path", Input).value = "relative/path"
+        await pilot.press("enter")
+        await pilot.pause()
+
+        assert isinstance(app.screen, FileSelectionScreen)
+        assert app.result is initial_result
 
 
 async def test_file_selection_screen_edit_mode():
@@ -506,7 +563,7 @@ async def test_file_selection_screen_edit_mode():
         assert selection_tree.selected == {0, 2}
 
 
-async def test_search_content_one_step_enter(mock_indexer: MagicMock):
+async def test_search_content_one_step_enter(mock_indexer: MagicMock, tmp_path: Any):
     from torrra._types import Indexer
     from torrra.app import TorrraApp
     from torrra.widgets.data_table import AutoResizingDataTable
@@ -537,6 +594,8 @@ async def test_search_content_one_step_enter(mock_indexer: MagicMock):
 
         # Should immediately open FileSelectionScreen in 1 step!
         assert isinstance(app.screen, FileSelectionScreen)
+        custom_path = tmp_path / "search-downloads"
+        app.screen.query_one("#save-path", Input).value = str(custom_path)
 
         # Confirm on FileSelectionScreen with enter
         await pilot.press("enter")
@@ -546,6 +605,8 @@ async def test_search_content_one_step_enter(mock_indexer: MagicMock):
         from torrra.screens.home import HomeScreen
 
         assert isinstance(app.screen, HomeScreen)
+        stored_torrent = get_torrent_manager().get_all_torrents()[0]
+        assert stored_torrent["save_path"] == str(custom_path)
 
 
 async def test_torrent_manager_file_priorities_persistence(
@@ -662,6 +723,7 @@ async def test_direct_download_modal_shown_on_downloads_section(
         use_cache=False,
         search_query="",
         direct_download=magnet,
+        direct_save_path=str(tmp_path / "direct-downloads"),
     )
 
     async with app.run_test() as pilot:
@@ -688,6 +750,9 @@ async def test_direct_download_modal_shown_on_downloads_section(
         tm = get_torrent_manager()
         assert len(tm.get_all_torrents()) == 1
         assert tm.get_all_torrents()[0]["magnet_uri"] == magnet
+        assert tm.get_all_torrents()[0]["save_path"] == str(
+            tmp_path / "direct-downloads"
+        )
 
         downloads_content = app.screen.query_one(DownloadsContent)
         assert downloads_content._table.row_count == 1
@@ -737,3 +802,68 @@ async def test_direct_download_modal_cancel(
         sidebar = home_screen.query_one("#sidebar", Sidebar)
         assert sidebar.cursor_node is not None
         assert sidebar.cursor_node.data.get("group_id") == "downloads_content"
+
+
+async def test_home_restores_persisted_custom_save_path(tmp_path: Any):
+    from torrra.app import TorrraApp
+
+    magnet = "magnet:?xt=urn:btih:89abcdef0123456789abcdef0123456789abcdef"
+    destination = tmp_path / "persisted-downloads"
+    destination.mkdir()
+    tm = get_torrent_manager()
+    tm.add_torrent(
+        Torrent(
+            magnet_uri=magnet,
+            title="Persisted Path",
+            size=1024,
+            seeders=0,
+            leechers=0,
+            source="Test",
+        ),
+        save_path=str(destination),
+    )
+
+    app = TorrraApp(
+        indexer=None,
+        use_cache=False,
+        search_query=None,
+        show_downloads=True,
+    )
+
+    async with app.run_test() as pilot:
+        await pilot.pause()
+
+        handle = get_download_manager().torrents[magnet]
+        assert handle.status().save_path == str(destination)
+
+
+async def test_home_does_not_recreate_missing_custom_save_path(tmp_path: Any):
+    from torrra.app import TorrraApp
+
+    magnet = "magnet:?xt=urn:btih:fedcba9876543210fedcba9876543210fedcba98"
+    destination = tmp_path / "unmounted-downloads"
+    tm = get_torrent_manager()
+    tm.add_torrent(
+        Torrent(
+            magnet_uri=magnet,
+            title="Unmounted Path",
+            size=1024,
+            seeders=0,
+            leechers=0,
+            source="Test",
+        ),
+        save_path=str(destination),
+    )
+
+    app = TorrraApp(
+        indexer=None,
+        use_cache=False,
+        search_query=None,
+        show_downloads=True,
+    )
+
+    async with app.run_test() as pilot:
+        await pilot.pause()
+
+        assert magnet not in get_download_manager().torrents
+        assert not destination.exists()

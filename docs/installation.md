@@ -100,16 +100,24 @@ docker run --rm -it stabldev/torrra:latest jackett --url <url> --api-key <api_ke
 
 ### With Config and Downloads Folder Mounted
 
-For persistent configuration and downloads, you should mount your local configuration directory into the Docker container. This example assumes your `config.toml` is located at `~/.config/torrra`.
+The production image runs as `appuser` (UID 1000). Persist both its
+platformdirs configuration and SQLite data directories, and mount every
+download destination you plan to select:
 
 ```bash
 docker run --rm -it \
-  -v ~/.config/torrra:/root/.config/torrra \
-  -v /path/to/your/downloads:/root/Downloads \
+  -v ~/.config/torrra:/home/appuser/.config/torrra \
+  -v ~/.local/share/torrra:/home/appuser/.local/share/torrra \
+  -v /path/to/your/downloads:/downloads \
   stabldev/torrra:latest jackett --url <url> --api-key <api_key>
 ```
 
-> Ensure your `config.toml` inside `~/.config/torrra` is set up correctly with a `download_path` pointing to `/downloads` inside the container if you want downloads to persist to `/path/to/your/downloads` on your host.
+Set `general.download_path` to `/downloads` inside the container. Per-torrent
+paths also use container paths, not host paths. For example, selecting
+`/media/movies` requires another mount such as
+`-v /host/movies:/media/movies`. All mounted destinations must be writable by
+UID 1000. Persisting `/home/appuser/.local/share/torrra` is required for custom
+paths and the torrent list to survive container recreation.
 
 ### Image Tags
 

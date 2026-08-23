@@ -18,10 +18,15 @@ def cli(ctx: click.Context, no_cache: bool) -> None:
 # --------------------------------------------------
 # DOWNLOAD
 # --------------------------------------------------
-@cli.command(help="Download a torrent directly from magnet URI or .torrent file.")
+@cli.command(help="Download a torrent from a magnet URI, URL, or local .torrent file.")
 @click.argument("magnet_uri_or_file")
 @click.option("--no-cache", is_flag=True, help="Disable caching mechanism.")
-def download(magnet_uri_or_file: str, no_cache: bool) -> None:
+@click.option(
+    "--save-path",
+    type=click.Path(file_okay=False),
+    help="Download this torrent to PATH instead of the configured default.",
+)
+def download(magnet_uri_or_file: str, no_cache: bool, save_path: str | None) -> None:
     import os
     import re
 
@@ -43,7 +48,11 @@ def download(magnet_uri_or_file: str, no_cache: bool) -> None:
         return
 
     # direct download needs no indexer - launch straight into downloads
-    run_without_indexer(no_cache=no_cache, direct_download=magnet_uri_or_file)
+    run_without_indexer(
+        no_cache=no_cache,
+        direct_download=magnet_uri_or_file,
+        direct_save_path=save_path,
+    )
 
 
 # --------------------------------------------------

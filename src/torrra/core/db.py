@@ -30,7 +30,8 @@ def init_db() -> None:
                 source TEXT,
                 is_paused BOOLEAN DEFAULT 0,
                 is_notified BOOLEAN DEFAULT 0,
-                file_priorities TEXT DEFAULT NULL
+                file_priorities TEXT DEFAULT NULL,
+                save_path TEXT DEFAULT NULL
             )
             """
         )
@@ -42,5 +43,12 @@ def init_db() -> None:
         with suppress(sqlite3.OperationalError):
             cursor.execute(
                 "ALTER TABLE torrents ADD COLUMN file_priorities TEXT DEFAULT NULL"
+            )
+        columns = {
+            row[1] for row in cursor.execute("PRAGMA table_info(torrents)").fetchall()
+        }
+        if "save_path" not in columns:
+            cursor.execute(
+                "ALTER TABLE torrents ADD COLUMN save_path TEXT DEFAULT NULL"
             )
         conn.commit()

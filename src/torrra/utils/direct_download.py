@@ -3,8 +3,9 @@ from typing import TYPE_CHECKING
 
 from textual.widgets import ContentSwitcher
 
-from torrra._types import Torrent
+from torrra._types import DownloadSelection, Torrent
 from torrra.core.download import get_download_manager
+from torrra.core.exceptions import DownloadError
 from torrra.core.torrent import get_torrent_manager
 from torrra.screens.file_selection import FileSelectionScreen
 from torrra.utils.magnet import resolve_torrent
@@ -14,7 +15,11 @@ if TYPE_CHECKING:
     from torrra.screens.home import HomeScreen
 
 
-async def handle_direct_download(home_screen: "HomeScreen", input_path: str) -> None:
+async def handle_direct_download(
+    home_screen: "HomeScreen",
+    input_path: str,
+    save_path: str | None = None,
+) -> None:
     dm, tm = get_download_manager(), get_torrent_manager()
 
     magnet_uri, torrent_info = await resolve_torrent(input_path)
@@ -45,19 +50,37 @@ async def handle_direct_download(home_screen: "HomeScreen", input_path: str) -> 
         leechers=0,
     )
 
-    def on_files_selected(priorities: list[int] | None) -> None:
-        if priorities is None:
+    def on_files_selected(selection: DownloadSelection | None) -> None:
+        if selection is None:
             return
 
-        actual_priorities = priorities if priorities else None
-        torrent_record.file_priorities = actual_priorities
-        dm.add_torrent(
-            magnet_uri,
-            is_paused=False,
-            file_priorities=actual_priorities,
-            torrent_info=torrent_info,
+        if tm.get_torrent(magnet_uri):
+            home_screen.app.notify(
+                "This torrent is already in your downloads.",
+                title="Torrent Already Added",
+                severity="warning",
+            )
+            return
+
+        torrent_record.file_priorities = selection.file_priorities
+        torrent_record.save_path = selection.save_path
+        try:
+            dm.add_torrent(
+                magnet_uri,
+                is_paused=False,
+                file_priorities=selection.file_priorities,
+                torrent_info=torrent_info,
+                save_path=selection.save_path,
+            )
+        except DownloadError as exc:
+            home_screen.app.notify(str(exc), title="Download Failed", severity="error")
+            return
+
+        tm.add_torrent(
+            torrent_record,
+            file_priorities=selection.file_priorities,
+            save_path=selection.save_path,
         )
-        tm.add_torrent(torrent_record, file_priorities=actual_priorities)
 
         # Refresh downloads content table and ensure downloads is selected
         from torrra.widgets.downloads import DownloadsContent
@@ -71,6 +94,10 @@ async def handle_direct_download(home_screen: "HomeScreen", input_path: str) -> 
         )
 
     home_screen.app.push_screen(
-        FileSelectionScreen(torrent=torrent_record, torrent_info=torrent_info),
+        FileSelectionScreen(
+            torrent=torrent_record,
+            torrent_info=torrent_info,
+            initial_save_path=save_path,
+        ),
         on_files_selected,
     )
