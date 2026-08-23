@@ -66,6 +66,7 @@ def make_download_manager(session: FakeTorrentSession) -> DownloadManager:
     manager.torrents = {}
     manager._metadata_only_torrents = set()
     manager._file_priorities = {}
+    manager._limits = {}
     manager._metadata_updated = set()
     return manager
 
