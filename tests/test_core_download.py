@@ -348,6 +348,17 @@ def test_get_torrent_status_save_path_expanded(
     handle_mock = MagicMock()
     handle_mock.is_valid.return_value = True
 
+    # Setup dummy directory and file in tmp_path
+    sub_dir = Path(tmp_path) / "dl_folder"
+    sub_dir.mkdir()
+    test_file = sub_dir / "test.txt"
+    test_file.write_text("hello")
+
+    # Set up environment variables so path expansion is required
+    monkeypatch.setenv("TEST_STATUS_DIR", "dl_folder")
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))
+
     status_mock = MagicMock()
     status_mock.state = lt.torrent_status.states.seeding
     status_mock.progress = 1.0
@@ -359,17 +370,14 @@ def test_get_torrent_status_save_path_expanded(
     status_mock.is_seeding = True
     status_mock.is_finished = True
     status_mock.has_metadata = True
-    status_mock.save_path = str(tmp_path)
+    # Unexpanded path with tilde and environment variable
+    status_mock.save_path = "~/$TEST_STATUS_DIR"
     status_mock.num_seeds = 1
     status_mock.num_peers = 1
     status_mock.list_seeds = 1
     status_mock.list_peers = 1
     status_mock.error_file = -1
     status_mock.errc = None
-
-    # Create dummy file
-    test_file = Path(tmp_path) / "test.txt"
-    test_file.write_text("hello")
 
     torrent_info_mock = MagicMock()
     fs_mock = MagicMock()
@@ -381,6 +389,61 @@ def test_get_torrent_status_save_path_expanded(
 
     handle_mock.status.return_value = status_mock
     magnet = "magnet:?xt=urn:btih:mock_save_path_test"
+    dm.torrents = {magnet: handle_mock}
+
+    status = dm.get_torrent_status(magnet)
+    assert status is not None
+    assert status["is_missing_files"] is False
+
+
+def test_get_torrent_status_save_path_config_fallback_expanded(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Any, mock_config: Any
+):
+    from pathlib import Path
+    from unittest.mock import MagicMock
+
+    sub_dir = Path(tmp_path) / "cfg_downloads"
+    sub_dir.mkdir()
+    test_file = sub_dir / "test.txt"
+    test_file.write_text("hello")
+
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))
+    mock_config.set("general.download_path", "~/cfg_downloads")
+
+    dm = DownloadManager()
+    handle_mock = MagicMock()
+    handle_mock.is_valid.return_value = True
+
+    status_mock = MagicMock()
+    status_mock.state = lt.torrent_status.states.seeding
+    status_mock.progress = 1.0
+    status_mock.download_rate = 0
+    status_mock.upload_rate = 0
+    status_mock.total_wanted = 1000
+    status_mock.total_wanted_done = 1000
+    status_mock.flags = 0
+    status_mock.is_seeding = True
+    status_mock.is_finished = True
+    status_mock.has_metadata = True
+    status_mock.save_path = ""  # empty so it triggers config fallback
+    status_mock.num_seeds = 1
+    status_mock.num_peers = 1
+    status_mock.list_seeds = 1
+    status_mock.list_peers = 1
+    status_mock.error_file = -1
+    status_mock.errc = None
+
+    torrent_info_mock = MagicMock()
+    fs_mock = MagicMock()
+    fs_mock.num_files.return_value = 1
+    fs_mock.file_path.return_value = "test.txt"
+    fs_mock.file_flags.return_value = 0
+    torrent_info_mock.files.return_value = fs_mock
+    handle_mock.torrent_file.return_value = torrent_info_mock
+
+    handle_mock.status.return_value = status_mock
+    magnet = "magnet:?xt=urn:btih:mock_save_path_cfg_test"
     dm.torrents = {magnet: handle_mock}
 
     status = dm.get_torrent_status(magnet)

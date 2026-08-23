@@ -26,6 +26,15 @@ CONFIG_FILE = CONFIG_DIR / "config.toml"
 # config.get(..., default=...) value check
 _sentinel = object()
 
+_PATH_KEYS = {"general.download_path"}
+
+
+def _resolve_path(value: str) -> str:
+    expanded = os.path.expandvars(value)
+    if "$" in expanded:
+        raise ConfigError(f"unresolved environment variable in path: {value}")
+    return os.path.abspath(os.path.expanduser(expanded))
+
 
 @lru_cache
 def get_config() -> "Config":
@@ -50,17 +59,15 @@ class Config:
                     f"key does not contain a value (it's a section): {key_path}"
                 )
 
-            if key_path == "general.download_path" and isinstance(current, str):
-                return os.path.abspath(os.path.expanduser(os.path.expandvars(current)))
+            if key_path in _PATH_KEYS and isinstance(current, str):
+                return _resolve_path(current)
 
             return current
 
         except (KeyError, TypeError):
             if default is not _sentinel:
-                if key_path == "general.download_path" and isinstance(default, str):
-                    return os.path.abspath(
-                        os.path.expanduser(os.path.expandvars(default))
-                    )
+                if key_path in _PATH_KEYS and isinstance(default, str):
+                    return _resolve_path(default)
                 return default
 
             if len(keys) > 1:

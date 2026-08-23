@@ -105,3 +105,17 @@ def test_config_get_download_path_default_expansion(mock_config: Config):
     result = mock_config.get("general.download_path", "~/fallback_downloads")
     expected = os.path.abspath(os.path.expanduser("~/fallback_downloads"))
     assert result == expected
+
+
+def test_config_get_download_path_undefined_env_var_raises_error(
+    mock_config: Config, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.delenv("UNDEFINED_VAR_TEST", raising=False)
+    mock_config.set("general.download_path", "$UNDEFINED_VAR_TEST/downloads")
+    with pytest.raises(ConfigError, match="unresolved environment variable"):
+        mock_config.get("general.download_path")
+
+
+def test_config_get_non_path_key_not_expanded(mock_config: Config):
+    mock_config.set("general.theme", "~/not-a-path")
+    assert mock_config.get("general.theme") == "~/not-a-path"
