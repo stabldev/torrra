@@ -507,6 +507,36 @@ async def test_file_selection_screen_returns_custom_save_path(tmp_path: Any):
         assert custom_path.is_dir()
 
 
+async def test_file_selection_screen_prefills_global_path_as_fallback(
+    mock_config: Any, tmp_path: Any
+):
+    default_path = tmp_path / "default-downloads"
+    mock_config.set("general.download_path", str(default_path))
+    screen = FileSelectionScreen(
+        torrent=Torrent(
+            magnet_uri="magnet:?xt=urn:btih:defaultpath",
+            title="Default Path",
+            size=100,
+            seeders=1,
+            leechers=0,
+            source="Mock",
+        ),
+        torrent_info=create_mock_torrent_info(),
+    )
+    app = DummyHostApp(screen)
+
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        assert app.screen.query_one("#save-path", Input).value == str(default_path)
+
+        await pilot.press("enter")
+        await pilot.pause()
+
+        assert isinstance(app.result, DownloadSelection)
+        assert app.result.save_path is None
+        assert default_path.is_dir()
+
+
 async def test_file_selection_screen_rejects_relative_save_path():
     screen = FileSelectionScreen(
         torrent=Torrent(

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any, ClassVar
 
 import libtorrent as lt
@@ -18,7 +19,7 @@ from torrra._types import DownloadSelection, Torrent
 from torrra.core.config import get_config
 from torrra.core.download import get_download_manager
 from torrra.core.exceptions import ConfigError, DownloadError, DownloadPathError
-from torrra.core.paths import prepare_download_path
+from torrra.core.paths import normalize_download_path, prepare_download_path
 from torrra.core.torrent import get_torrent_manager
 from torrra.utils.helpers import human_readable_size
 from torrra.widgets.spinner import Spinner
@@ -298,6 +299,7 @@ class FileSelectionScreen(ModalScreen[DownloadSelection | None]):
         self._body_container: Vertical
         self._footer_container: Vertical
         self._save_path_input: Input | None = None
+        self._default_save_path: Path | None = None
 
     @override
     def compose(self) -> ComposeResult:
@@ -307,10 +309,7 @@ class FileSelectionScreen(ModalScreen[DownloadSelection | None]):
                 yield Static(self.torrent.title, id="torrent-name")
                 yield Static("Loading file list...", id="selection-stats")
                 if not self.is_edit_mode:
-                    yield Static(
-                        "Save to (blank uses global default)",
-                        id="save-path-label",
-                    )
+                    yield Static("Save to", id="save-path-label")
                     yield Input(
                         value=self.initial_save_path or "",
                         placeholder="Absolute path",
@@ -347,6 +346,14 @@ class FileSelectionScreen(ModalScreen[DownloadSelection | None]):
         self._footer_container = self.query_one("#file-selection-footer", Vertical)
         if not self.is_edit_mode:
             self._save_path_input = self.query_one("#save-path", Input)
+            if self.initial_save_path is None:
+                try:
+                    self._default_save_path = normalize_download_path(
+                        get_config().get("general.download_path")
+                    )
+                    self._save_path_input.value = str(self._default_save_path)
+                except (ConfigError, DownloadPathError) as exc:
+                    self._show_path_error(exc)
 
         if self._torrent_info is not None:
             self._populate_files(self._torrent_info)
@@ -383,7 +390,13 @@ class FileSelectionScreen(ModalScreen[DownloadSelection | None]):
         assert self._save_path_input is not None
         raw_path = self._save_path_input.value.strip()
         if raw_path:
-            return str(prepare_download_path(raw_path))
+            selected_path = prepare_download_path(raw_path)
+            if (
+                self._default_save_path is not None
+                and selected_path == self._default_save_path
+            ):
+                return None
+            return str(selected_path)
 
         prepare_download_path(get_config().get("general.download_path"))
         return None

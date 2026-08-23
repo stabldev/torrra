@@ -47,10 +47,11 @@ You can create or edit this file manually with a text editor.
 
 ### Download Paths
 
-`general.download_path` is the fallback for torrents where **Save to** is left
-blank. When adding a torrent from search, a magnet URI, a URL, or a local
-`.torrent` file, you can enter a different directory in the file-selection
-screen. Direct downloads can also prefill it:
+`general.download_path` is shown as the initial **Save to** value. Leave it
+unchanged or clear the field to keep using that global fallback. When adding a
+torrent from search, a magnet URI, a URL, or a local `.torrent` file, you can
+enter a different directory in the file-selection screen. Direct downloads can
+also prefill it:
 
 ```bash
 torrra download "magnet:?xt=urn:btih:..." --save-path /downloads/linux

@@ -114,6 +114,7 @@ def test_file_selection_screen_snapshot(
     mock_config: Config,
     snap_compare: Any,
 ):
+    mock_config.set("general.download_path", "/downloads")
     torrent_info = MagicMock()
     torrent_info.name.return_value = "Linux Images"
     files = MagicMock()

@@ -254,8 +254,8 @@ FileSelectionScreen {
     #file-selection-header {
       height: auto;
       margin-bottom: 1;
-      padding: 0 1;
       #torrent-name {
+        padding: 0 1;
         width: 100%;
         text-align: center;
         color: $foreground;
@@ -271,7 +271,9 @@ FileSelectionScreen {
         color: $foreground-muted;
       }
       #save-path {
-        height: 3;
+        height: 1;
+        border: none;
+        background: $surface;
       }
     }
     #file-selection-loading {

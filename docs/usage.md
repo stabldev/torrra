@@ -60,9 +60,10 @@ torrra download "https://example.com/file.torrent" --save-path /downloads/linux
 ```
 
 The file-selection screen lets you choose files and an optional **Save to**
-directory before the download starts. Leave it blank to use
-`general.download_path`. The selected directory is saved with the torrent and
-reused after restarting Torrra.
+directory before the download starts. It initially shows
+`general.download_path`; leave it unchanged or clear it to keep using the global
+fallback. A different selected directory is saved with the torrent and reused
+after restarting Torrra.
 
 ## Command-Line Interface (CLI)
 
