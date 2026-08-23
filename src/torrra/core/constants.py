@@ -7,6 +7,7 @@ DEFAULT_SORT = "relevance"
 DEFAULT_SORT_ORDER = "auto"
 DEFAULT_MIN_SEEDERS = 0
 # global (session-wide) bandwidth caps in bytes/sec; 0 = unlimited.
-# toggled at runtime with the "t" keybind ("turtle mode").
-DEFAULT_SPEED_LIMIT_UPLOAD = 0
-DEFAULT_SPEED_LIMIT_DOWNLOAD = 0
+# toggled at runtime with the "t" keybind ("turtle mode"). defaults mirror
+# qBittorrent's alternative-speed limits (10 KB/s in both directions).
+DEFAULT_SPEED_LIMIT_UPLOAD = 10 * 1024
+DEFAULT_SPEED_LIMIT_DOWNLOAD = 10 * 1024

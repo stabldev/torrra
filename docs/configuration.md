@@ -32,8 +32,8 @@ default_sort_order = "auto"                   # Direction for the initial sort: 
 min_seeders = 0                               # Hide results with fewer seeders than this. 0 shows everything.
 
 [speed_limit]
-upload_limit = 0                              # Global upload cap in bytes/sec (turtle mode). 0 = unlimited.
-download_limit = 0                            # Global download cap in bytes/sec (turtle mode). 0 = unlimited.
+upload_limit = 10240                          # Global upload cap in bytes/sec (turtle mode). 0 = unlimited.
+download_limit = 10240                        # Global download cap in bytes/sec (turtle mode). 0 = unlimited.
 enabled = false                               # Whether turtle mode is currently active. Toggled at runtime with the `t` key.
 
 [indexers]
@@ -64,8 +64,16 @@ enabled = false           # whether turtle mode is currently active
 
 When `enabled` is `true`, all traffic in every `torrra` session is capped at
 these rates. Inside the TUI you can toggle this on/off instantly with the `t`
-key — the status bar shows a `TURTLE` badge while active. If you press `t`
-before configuring any limits, a dialog asks for them once.
+key — the status bar shows a `TURTLE` badge while active.
+
+New configs ship with qBittorrent-style defaults of 10 KB/s in both
+directions, so turtle mode works out of the box. Set custom limits from your
+shell (human-readable units are accepted):
+
+```bash
+torrra config set speed_limit.download_limit 2M
+torrra config set speed_limit.upload_limit 500K
+```
 
 These global caps coexist with per-torrent limits set via `s` in the Downloads
 view; each torrent is limited by whichever cap is lower.

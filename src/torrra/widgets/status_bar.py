@@ -4,7 +4,7 @@ from textual.widgets import Static
 from typing_extensions import override
 
 from torrra.core.config import get_config
-from torrra.utils.helpers import human_readable_size
+from torrra.utils.helpers import coerce_speed_limit, human_readable_size
 
 
 class StatusBar(Horizontal):
@@ -40,7 +40,7 @@ class StatusBar(Horizontal):
             ("↓", "speed_limit.download_limit"),
             ("↑", "speed_limit.upload_limit"),
         ):
-            limit = int(config.get(key, 0) or 0)
+            limit = coerce_speed_limit(config.get(key, 0))
             if limit > 0:
                 parts.append(f"{arrow} {human_readable_size(limit, short=True)}/s")
         label = "TURTLE" + (" " + " · ".join(parts) if parts else "")

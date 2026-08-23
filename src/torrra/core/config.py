@@ -18,7 +18,7 @@ from torrra.core.constants import (
     DEFAULT_TIMEOUT,
 )
 from torrra.core.exceptions import ConfigError
-from torrra.utils.helpers import get_tomllib
+from torrra.utils.helpers import get_tomllib, parse_speed_limit
 
 CONFIG_DIR = Path(user_config_dir("torrra"))
 CONFIG_FILE = CONFIG_DIR / "config.toml"
@@ -75,8 +75,22 @@ class Config:
                 current = current[key]
 
             new_value: Any = value
+            # speed limit keys accept human-readable units ("500K", "2M",
+            # "1.5 GB/s"); store normalized bytes/sec so readers can rely
+            # on ints ("unlimited"/"0" normalize to 0)
+            if key_path in (
+                "speed_limit.upload_limit",
+                "speed_limit.download_limit",
+            ):
+                try:
+                    new_value = max(0, parse_speed_limit(value))
+                except ValueError as e:
+                    raise ConfigError(
+                        f"invalid value for '{key_path}': {value!r} ({e}). "
+                        + "use e.g. 500K, 2M, or a bare bytes/sec number"
+                    ) from e
             # handle case-insensitive "true"/"false" for booleans
-            if value.lower() == "true":
+            elif value.lower() == "true":
                 new_value = True
             elif value.lower() == "false":
                 new_value = False

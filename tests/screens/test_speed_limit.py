@@ -1,8 +1,7 @@
 from typing import Any
 
 import pytest
-from textual.css.query import NoMatches
-from textual.widgets import Input, Label
+from textual.widgets import Input
 
 from torrra.app import TorrraApp
 from torrra.core.config import get_config
@@ -93,51 +92,22 @@ async def test_speed_limit_invalid_input_shows_error(app: TorrraApp):
         assert not app.screen.query_one("#speed-limit-error").has_class("hidden")
 
 
-async def test_speed_limit_global_mode_hides_torrent_name(app: TorrraApp):
-    async with app.run_test() as pilot:
-        app.push_screen(
-            SpeedLimitScreen(
-                title="Movie",
-                upload_limit=None,
-                download_limit=None,
-                global_mode=True,
-            ),
-            lambda _: None,
-        )
-        await pilot.pause()
+async def test_global_speed_limit_instant_toggle(app_factory: Any, mock_config: Any):
+    # limits come straight from config (no modal); "t" is a pure toggle
+    mock_config.set("speed_limit.upload_limit", "1M")
+    mock_config.set("speed_limit.download_limit", "2M")
 
-        assert isinstance(app.screen, SpeedLimitScreen)
-        title = str(app.screen.query_one("#speed-limit-title", Label).render())
-        assert "Global" in title
-        # the torrent name label is only shown in per-torrent mode
-        with pytest.raises(NoMatches):
-            app.screen.query_one("#speed-limit-name", Label)
-
-
-async def test_global_speed_limit_toggle_flow(app_factory: Any, mock_config: Any):
     app = app_factory(search_query="arch linux iso")
     async with app.run_test() as pilot:
         # move focus off the search box so plain keys reach the app bindings
         app.screen.set_focus(None)
         await pilot.pause()
 
-        # limits are unconfigured, so the first press opens the modal once
         await pilot.press("t")
-        await pilot.pause()
-        assert isinstance(app.screen, SpeedLimitScreen)
-
-        up = app.screen.query_one("#speed-up-input", Input)
-        down = app.screen.query_one("#speed-down-input", Input)
-        up.value = "1M"
-        down.value = "2M"
-
-        await pilot.press("enter")
         await pilot.pause()
 
         cfg = get_config()
         assert cfg.get("speed_limit.enabled") is True
-        assert cfg.get("speed_limit.upload_limit") == 1024 * 1024
-        assert cfg.get("speed_limit.download_limit") == 2 * 1024**2
 
         # session-wide caps applied to libtorrent and badge visible
         dm = get_download_manager()
@@ -146,7 +116,9 @@ async def test_global_speed_limit_toggle_flow(app_factory: Any, mock_config: Any
         assert settings["download_rate_limit"] == 2 * 1024**2
 
         status_bar = app.screen.query_one(StatusBar)
-        assert "TURTLE" in status_bar._limit_badge()
+        badge = status_bar._limit_badge()
+        assert "TURTLE" in badge
+        assert "2 MB/s" in badge and "1 MB/s" in badge
 
         # second press toggles back off
         await pilot.press("t")
@@ -156,3 +128,21 @@ async def test_global_speed_limit_toggle_flow(app_factory: Any, mock_config: Any
         assert settings["upload_rate_limit"] == 0
         assert settings["download_rate_limit"] == 0
         assert status_bar._limit_badge() == ""
+
+
+async def test_global_speed_toggle_uses_default_limits_when_unconfigured(
+    app_factory: Any, mock_config: Any
+):
+    # a fresh config already ships with 10 KB/s turtle limits, so pressing
+    # "t" applies them immediately without prompting
+    assert mock_config.get("speed_limit.upload_limit") == 10 * 1024
+
+    app = app_factory(search_query="arch linux iso")
+    async with app.run_test() as pilot:
+        app.screen.set_focus(None)
+        await pilot.press("t")
+        await pilot.pause()
+
+        settings = get_download_manager().session.get_settings()
+        assert settings["upload_rate_limit"] == 10 * 1024
+        assert settings["download_rate_limit"] == 10 * 1024

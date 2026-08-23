@@ -122,54 +122,25 @@ class TorrraApp(App[None]):
 
     def action_toggle_speed_limit(self) -> None:
         from torrra.core.download import get_download_manager
-        from torrra.screens.speed_limit import SpeedLimitScreen
+        from torrra.utils.helpers import coerce_speed_limit
 
         dm = get_download_manager()
         config = get_config()
+        enable = not dm.is_speed_limit_enabled()
 
-        if dm.is_speed_limit_enabled():
-            dm.set_speed_limit_enabled(False)
-            self.notify("Turtle mode off — unlimited speed", title="Speed Limit")
-            self._refresh_status_bar()
-            return
+        dm.set_speed_limit_enabled(enable)
 
-        up = int(config.get("speed_limit.upload_limit", 0) or 0)
-        down = int(config.get("speed_limit.download_limit", 0) or 0)
-
-        def _enable_and_notify() -> None:
-            up = int(config.get("speed_limit.upload_limit", 0) or 0)
-            down = int(config.get("speed_limit.download_limit", 0) or 0)
+        up = coerce_speed_limit(config.get("speed_limit.upload_limit", 0))
+        down = coerce_speed_limit(config.get("speed_limit.download_limit", 0))
+        if enable:
             self.notify(
                 f"Turtle mode on — [b]↓[/b] {self._format_limit_text(down)}"
                 f" · [b]↑[/b] {self._format_limit_text(up)}",
                 title="Speed Limit",
             )
-            self._refresh_status_bar()
-
-        if up <= 0 and down <= 0:
-            # no global limits configured yet; collect them once via the modal
-            def _on_limits_set(limits: tuple[int, int] | None) -> None:
-                if limits is None:
-                    return
-                modal_up, modal_down = limits
-                config.set("speed_limit.upload_limit", str(modal_up))
-                config.set("speed_limit.download_limit", str(modal_down))
-                dm.set_speed_limit_enabled(True)
-                _enable_and_notify()
-
-            self.push_screen(
-                SpeedLimitScreen(
-                    title="",
-                    upload_limit=None,
-                    download_limit=None,
-                    global_mode=True,
-                ),
-                _on_limits_set,
-            )
-            return
-
-        dm.set_speed_limit_enabled(True)
-        _enable_and_notify()
+        else:
+            self.notify("Turtle mode off — unlimited speed", title="Speed Limit")
+        self._refresh_status_bar()
 
     @work(exclusive=True)
     async def _show_welcome_and_search(self) -> None:

@@ -84,6 +84,23 @@ def parse_speed_limit(text: str) -> int:
     return int(value)
 
 
+def coerce_speed_limit(value: object) -> int:
+    """Coerce a stored speed-limit config value to bytes/second.
+
+    Ints pass through unchanged; strings (e.g. a hand-edited ``"2M"`` in
+    config.toml) are parsed, and anything unparsable falls back to ``0``
+    (unlimited) instead of crashing readers.
+    """
+    if isinstance(value, bool):
+        return 0
+    if isinstance(value, int):
+        return value
+    try:
+        return parse_speed_limit(str(value))
+    except ValueError:
+        return 0
+
+
 def lazy_import(dotted_path: str):
     import importlib
 

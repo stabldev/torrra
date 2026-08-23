@@ -23,11 +23,9 @@ def _format_prefill(value: int | None) -> str:
 
 
 class SpeedLimitScreen(ModalScreen[tuple[int, int] | None]):
-    """Set upload and download speed limits (bytes/sec).
+    """Set upload and download speed limits (bytes/sec) for one torrent.
 
-    In per-torrent mode (default) limits apply to a single torrent; in
-    ``global_mode`` they apply to the whole session. Returns
-    ``(upload_limit, download_limit)`` or ``None`` if cancelled.
+    Returns ``(upload_limit, download_limit)`` or ``None`` if cancelled.
     ``-1`` in either value means unlimited.
     """
 
@@ -41,13 +39,11 @@ class SpeedLimitScreen(ModalScreen[tuple[int, int] | None]):
         title: str,
         upload_limit: int | None,
         download_limit: int | None,
-        global_mode: bool = False,
     ) -> None:
         super().__init__()
         self._torrent_title = title
         self._upload_limit = upload_limit
         self._download_limit = download_limit
-        self._global_mode = global_mode
 
         self._up_input: Input
         self._down_input: Input
@@ -55,20 +51,10 @@ class SpeedLimitScreen(ModalScreen[tuple[int, int] | None]):
     @override
     def compose(self) -> ComposeResult:
         with Vertical(id="speed-limit-container"):
-            yield Label(
-                "[b]Global Speed Limit[/b]"
-                if self._global_mode
-                else "[b]Speed Limit[/b]",
-                id="speed-limit-title",
-            )
-            if not self._global_mode:
-                yield Label(self._torrent_title, id="speed-limit-name")
+            yield Label("[b]Speed Limit[/b]", id="speed-limit-title")
+            yield Label(self._torrent_title, id="speed-limit-name")
             yield Label("Enter a value with its unit — e.g. 500 KB, 2 MB, 1.5 GB.")
-            yield Label(
-                "Applies to all torrents this session."
-                if self._global_mode
-                else "Use 0 for unlimited."
-            )
+            yield Label("Use 0 for unlimited.")
             with Vertical(id="speed-limit-fields"):
                 yield Label("Upload limit (per sec):")
                 yield Input(

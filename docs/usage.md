@@ -105,7 +105,7 @@ The TUI has two views, **Search** and **Downloads**, which you switch between us
 | :------- | :----------------------------------------------------------- |
 | `Tab`    | Move focus between the search box, the sidebar and the list  |
 | `ctrl+t` | Open the theme switcher to change the application's appearance |
-| `t`      | Toggle turtle mode — cap all traffic at your configured global speed limits (limits can be set in `config.toml` under `[speed_limit]`, or by pressing `t` the first time) |
+| `t`      | Toggle turtle mode — cap all traffic at your configured global speed limits (set them in `config.toml` under `[speed_limit]`, e.g. `torrra config set speed_limit.download_limit 2M`) |
 | `?`      | Show all keyboard shortcuts                                  |
 | `ctrl+q` | Quit `torrra`                                                |
 
