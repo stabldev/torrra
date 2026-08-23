@@ -733,13 +733,17 @@ def test_status_bar_turtle_badge(mock_config):
 
     badge = sb._limit_badge()
     assert "TURTLE" in badge
-    assert "↓ 1 MB/s" in badge
-    assert "↑ 2 MB/s" in badge
+    stats_text = str(sb._stats_widget.content)
+    assert "[1 MB/s]" in stats_text
+    assert "[2 MB/s]" in stats_text
 
-    # unlimited entries are omitted from the badge
+    # unlimited entries are omitted from the bracketed limits
     mock_config.set("speed_limit.upload_limit", "0")
+    sb.update_stats(0.0, 0.0, 0)
     assert "TURTLE" in sb._limit_badge()
-    assert "↑" not in sb._limit_badge()
+    stats_text = str(sb._stats_widget.content)
+    assert "[1 MB/s]" in stats_text
+    assert "[0 B/s]" not in stats_text
 
     # stats render unchanged again once limits are disabled
     mock_config.set("speed_limit.enabled", "false")

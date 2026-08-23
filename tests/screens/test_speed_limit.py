@@ -118,7 +118,8 @@ async def test_global_speed_limit_instant_toggle(app_factory: Any, mock_config: 
         status_bar = app.screen.query_one(StatusBar)
         badge = status_bar._limit_badge()
         assert "TURTLE" in badge
-        assert "2 MB/s" in badge and "1 MB/s" in badge
+        stats_text = str(status_bar._stats_widget.content)
+        assert "[2 MB/s]" in stats_text and "[1 MB/s]" in stats_text
 
         # second press toggles back off
         await pilot.press("t")
