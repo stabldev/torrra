@@ -44,10 +44,24 @@ DetailsPanel {
   &:focus {
     border: solid $secondary;
   }
+  #details_progress_row {
+    height: auto;
+    width: 100%;
+    align-vertical: middle;
+  }
   ProgressBar {
+    width: 1fr;
     #bar {
       width: 1fr;
     }
+  }
+  #details_eta {
+    width: auto;
+    margin-left: 1;
+  }
+  #details_shortcuts {
+    height: auto;
+    color: $foreground-muted;
   }
 }
 

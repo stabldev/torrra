@@ -416,12 +416,12 @@ class DownloadsContent(Vertical):
         eta_text = human_readable_eta(status["eta"], is_seeding=status["is_seeding"])
         limits = self._dm.get_torrent_limits(self._selected_torrent["magnet_uri"])
         up_limit_suffix = (
-            f" [{human_readable_size(limits[0], short=True)}/s]"
+            f" [dim][{human_readable_size(limits[0], short=True)}/s][/dim]"
             if limits and limits[0] is not None and limits[0] > 0
             else ""
         )
         down_limit_suffix = (
-            f" [{human_readable_size(limits[1], short=True)}/s]"
+            f" [dim][{human_readable_size(limits[1], short=True)}/s][/dim]"
             if limits and limits[1] is not None and limits[1] > 0
             else ""
         )
@@ -431,16 +431,20 @@ class DownloadsContent(Vertical):
         seeders_text = f"{status.get('seeders', 0)}/{status.get('total_seeders', 0)}"
         peers_text = f"{status.get('peers', 0)}/{status.get('total_peers', 0)}"
         save_path = escape(status["save_path"])
-        details = f"""
-[b]Size:[/b] {size} · [b]Status:[/b] {state_text} · [b]Source:[/b] {current_torrent["source"]}
-[b]Seeders:[/b] {seeders_text} · [b]Peers:[/b] {peers_text} · [b]Up:[/b] {up_speed} · [b]Down:[/b] {down_speed} · [b]ETA:[/b] {eta_text}
-[b]Save to:[/b] {save_path}
-
-[dim]\\[p] pause/resume · \\[f] select files · \\[s] speed limit · \\[d] delete · \\[D] delete w/ data · \\[esc] close[/dim]
-"""
+        details = (
+            f"Status: [b]{state_text}[/b] [dim]·[/dim] Size: {size} [dim]·[/dim] [dim]Source:[/dim] [dim]{current_torrent['source']}[/dim]\n"
+            f"Down: [b]{down_speed}[/b] [dim]·[/dim] Up: {up_speed} [dim]·[/dim] [dim]Seeds:[/dim] [dim]{seeders_text}[/dim] [dim]·[/dim] [dim]Peers:[/dim] [dim]{peers_text}[/dim]\n"
+            f"[dim]Save to:[/dim] [dim]{save_path}[/dim]"
+        )
+        shortcuts = (
+            r"[dim]\[p] pause/resume · \[f] select files · \[s] speed limit · "
+            r"\[d] delete · \[D] delete w/ data · \[esc] close[/dim]"
+        )
         # update details panel internal widgets
         self._details_panel.border_title = current_torrent["title"]
         self._details_panel.update_content(
-            details.strip(),
+            details,
             progress=status["progress"],
+            eta=eta_text,
+            shortcuts=shortcuts,
         )
