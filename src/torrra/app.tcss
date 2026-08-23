@@ -230,16 +230,27 @@ SpeedLimitScreen {
       color: $text-muted;
       margin-bottom: 1;
     }
-    #speed-limit-desc {
-      color: $text-muted;
-    }
     #speed-limit-fields {
-      margin: 1 0;
       height: auto;
-      Input {
+      .speed-field-row {
         height: 1;
-        border: none;
-        background: $surface;
+        align-vertical: middle;
+        .speed-field-label {
+          width: 10;
+          color: $text;
+        }
+        Input {
+          width: 1fr;
+          height: 1;
+          border: none;
+          background: $surface;
+          padding: 0 1;
+        }
+        .speed-unit-label {
+          width: 6;
+          color: $text-muted;
+          text-align: right;
+        }
       }
     }
     .error-text {

@@ -61,12 +61,16 @@ def parse_speed_limit(text: str) -> int:
         return -1
 
     units = {
+        "b": 1,
         "k": 1024,
         "kb": 1024,
+        "kib": 1024,
         "m": 1024**2,
         "mb": 1024**2,
+        "mib": 1024**2,
         "g": 1024**3,
         "gb": 1024**3,
+        "gib": 1024**3,
     }
 
     for suffix, multiplier in sorted(units.items(), key=lambda kv: -len(kv[0])):
