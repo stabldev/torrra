@@ -413,32 +413,27 @@ class DownloadsContent(Vertical):
 
         state_text = self._dm.get_torrent_state_text(status)
         size = human_readable_size(float(current_torrent["size"]))
-        up_speed = f"{human_readable_size(status['up_speed'])}/s"
-        down_speed = f"{human_readable_size(status['down_speed'])}/s"
         eta_text = human_readable_eta(status["eta"], is_seeding=status["is_seeding"])
-
         limits = self._dm.get_torrent_limits(self._selected_torrent["magnet_uri"])
-        if limits is not None:
-            up_limit_text = (
-                "∞"
-                if limits[0] is None or limits[0] < 0
-                else f"{human_readable_size(limits[0], short=True)}/s"
-            )
-            down_limit_text = (
-                "∞"
-                if limits[1] is None or limits[1] < 0
-                else f"{human_readable_size(limits[1], short=True)}/s"
-            )
-            limit_line = f" · [b]Up lim:[/b] {up_limit_text} · [b]Down lim:[/b] {down_limit_text}"
-        else:
-            limit_line = ""
+        up_limit_suffix = (
+            f" [{human_readable_size(limits[0], short=True)}/s]"
+            if limits and limits[0] is not None and limits[0] > 0
+            else ""
+        )
+        down_limit_suffix = (
+            f" [{human_readable_size(limits[1], short=True)}/s]"
+            if limits and limits[1] is not None and limits[1] > 0
+            else ""
+        )
+        up_speed = f"{human_readable_size(status['up_speed'])}/s{up_limit_suffix}"
+        down_speed = f"{human_readable_size(status['down_speed'])}/s{down_limit_suffix}"
 
         seeders_text = f"{status.get('seeders', 0)}/{status.get('total_seeders', 0)}"
         peers_text = f"{status.get('peers', 0)}/{status.get('total_peers', 0)}"
         save_path = escape(status["save_path"])
         details = f"""
 [b]Size:[/b] {size} · [b]Status:[/b] {state_text} · [b]Source:[/b] {current_torrent["source"]}
-[b]Seeders:[/b] {seeders_text} · [b]Peers:[/b] {peers_text} · [b]Up:[/b] {up_speed} · [b]Down:[/b] {down_speed} · [b]ETA:[/b] {eta_text}{limit_line}
+[b]Seeders:[/b] {seeders_text} · [b]Peers:[/b] {peers_text} · [b]Up:[/b] {up_speed} · [b]Down:[/b] {down_speed} · [b]ETA:[/b] {eta_text}
 [b]Save to:[/b] {save_path}
 
 [dim]\\[p] pause/resume · \\[f] select files · \\[s] speed limit · \\[d] delete · \\[D] delete w/ data · \\[esc] close[/dim]

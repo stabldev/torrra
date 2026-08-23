@@ -8,7 +8,7 @@ from textual.screen import ModalScreen
 from textual.widgets import Input, Label, Static
 from typing_extensions import override
 
-from torrra.utils.helpers import human_readable_size, parse_speed_limit
+from torrra.utils.helpers import parse_speed_limit
 
 
 def _detect_unit(text: str) -> str:
@@ -158,12 +158,4 @@ class SpeedLimitScreen(ModalScreen[tuple[int, int] | None]):
             error_widget.remove_class("hidden")
             return
 
-        up_text = "unlimited" if up < 0 else f"{human_readable_size(up, short=True)}/s"
-        down_text = (
-            "unlimited" if down < 0 else f"{human_readable_size(down, short=True)}/s"
-        )
         self.dismiss((up, down))
-        self.notify(
-            f"Limits set — Up: [b]{up_text}[/b] · Down: [b]{down_text}[/b]",
-            title="Speed Limit",
-        )

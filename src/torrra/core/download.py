@@ -8,6 +8,10 @@ import libtorrent as lt
 
 from torrra._types import SessionStats, TorrentFileInfo, TorrentStatus
 from torrra.core.config import get_config
+from torrra.core.constants import (
+    DEFAULT_SPEED_LIMIT_DOWNLOAD,
+    DEFAULT_SPEED_LIMIT_UPLOAD,
+)
 from torrra.core.exceptions import DownloadError
 from torrra.core.paths import normalize_download_path, prepare_download_path
 from torrra.utils.helpers import coerce_speed_limit
@@ -269,8 +273,12 @@ class DownloadManager:
         # so values pass through unchanged. caps coexist with per-torrent
         # limits (the effective rate is the lower of the two).
         config = get_config()
-        up = coerce_speed_limit(config.get("speed_limit.upload_limit", 0))
-        down = coerce_speed_limit(config.get("speed_limit.download_limit", 0))
+        up = coerce_speed_limit(
+            config.get("speed_limit.upload_limit", DEFAULT_SPEED_LIMIT_UPLOAD)
+        )
+        down = coerce_speed_limit(
+            config.get("speed_limit.download_limit", DEFAULT_SPEED_LIMIT_DOWNLOAD)
+        )
         try:
             self.session.apply_settings(
                 {

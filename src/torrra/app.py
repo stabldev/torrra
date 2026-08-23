@@ -110,13 +110,6 @@ class TorrraApp(App[None]):
         else:
             self.push_screen(HelpScreen())
 
-    def _format_limit_text(self, limit: int) -> str:
-        from torrra.utils.helpers import human_readable_size
-
-        return (
-            "unlimited" if limit <= 0 else f"{human_readable_size(limit, short=True)}/s"
-        )
-
     def _refresh_status_bar(self) -> None:
         status_bar = self._find_status_bar()
         if status_bar is not None:
@@ -134,24 +127,11 @@ class TorrraApp(App[None]):
 
     def action_toggle_speed_limit(self) -> None:
         from torrra.core.download import get_download_manager
-        from torrra.utils.helpers import coerce_speed_limit
 
         dm = get_download_manager()
-        config = get_config()
         enable = not dm.is_speed_limit_enabled()
 
         dm.set_speed_limit_enabled(enable)
-
-        up = coerce_speed_limit(config.get("speed_limit.upload_limit", 0))
-        down = coerce_speed_limit(config.get("speed_limit.download_limit", 0))
-        if enable:
-            self.notify(
-                f"Turtle mode on — [b]↓[/b] {self._format_limit_text(down)}"
-                f" · [b]↑[/b] {self._format_limit_text(up)}",
-                title="Speed Limit",
-            )
-        else:
-            self.notify("Turtle mode off — unlimited speed", title="Speed Limit")
         self._refresh_status_bar()
 
     @work(exclusive=True)

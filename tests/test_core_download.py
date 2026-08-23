@@ -350,13 +350,17 @@ def test_set_and_get_torrent_limits():
     assert magnet in dm.torrents
 
     dm.set_torrent_limits(magnet, 1024 * 1024, 2 * 1024**2)
-    up, down = dm.get_torrent_limits(magnet)
+    limits = dm.get_torrent_limits(magnet)
+    assert limits is not None
+    up, down = limits
     assert up == 1024 * 1024
     assert down == 2 * 1024**2
 
     # unlimited
     dm.set_torrent_limits(magnet, -1, -1)
-    up, down = dm.get_torrent_limits(magnet)
+    limits = dm.get_torrent_limits(magnet)
+    assert limits is not None
+    up, down = limits
     assert up == -1
     assert down == -1
 
@@ -370,7 +374,9 @@ def test_limits_seeded_on_add_are_applied():
         download_limit=1024 * 1024,
     )
     assert magnet in dm.torrents
-    up, down = dm.get_torrent_limits(magnet)
+    limits = dm.get_torrent_limits(magnet)
+    assert limits is not None
+    up, down = limits
     assert up == 512 * 1024
     assert down == 1024 * 1024
 
