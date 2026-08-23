@@ -4,6 +4,7 @@ from functools import lru_cache
 
 from torrra._types import Torrent, TorrentRecord
 from torrra.core.db import get_db_connection, init_db
+from torrra.core.paths import normalize_download_path
 
 
 @lru_cache
@@ -17,18 +18,26 @@ class TorrentManager:
         init_db()
 
     def add_torrent(
-        self, torrent: Torrent, file_priorities: list[int] | None = None
+        self,
+        torrent: Torrent,
+        file_priorities: list[int] | None = None,
+        save_path: str | None = None,
     ) -> None:
         prios = (
             file_priorities if file_priorities is not None else torrent.file_priorities
         )
+        selected_save_path = save_path if save_path is not None else torrent.save_path
+        if selected_save_path is not None:
+            selected_save_path = str(normalize_download_path(selected_save_path))
         priorities_json = json.dumps(prios) if prios is not None else None
         with get_db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
                 """
-                INSERT OR IGNORE INTO torrents (magnet_uri, title, size, source, file_priorities)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT OR IGNORE INTO torrents (
+                    magnet_uri, title, size, source, file_priorities, save_path
+                )
+                VALUES (?, ?, ?, ?, ?, ?)
                 """,
                 (
                     torrent.magnet_uri,
@@ -36,6 +45,7 @@ class TorrentManager:
                     torrent.size,
                     torrent.source,
                     priorities_json,
+                    selected_save_path,
                 ),
             )
             if priorities_json is not None:
@@ -124,6 +134,7 @@ class TorrentManager:
                 file_priorities=file_priorities,
                 upload_limit=row["upload_limit"],
                 download_limit=row["download_limit"],
+                save_path=row["save_path"],
             )
 
     def get_all_torrents(self) -> list[TorrentRecord]:
@@ -148,6 +159,7 @@ class TorrentManager:
                         file_priorities=file_priorities,
                         upload_limit=row["upload_limit"],
                         download_limit=row["download_limit"],
+                        save_path=row["save_path"],
                     )
                 )
             return result

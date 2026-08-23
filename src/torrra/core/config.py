@@ -1,4 +1,5 @@
 import ast
+import os
 from contextlib import suppress
 from functools import lru_cache
 from pathlib import Path
@@ -27,6 +28,22 @@ CONFIG_FILE = CONFIG_DIR / "config.toml"
 # config.get(..., default=...) value check
 _sentinel = object()
 
+_PATH_KEYS = {"general.download_path"}
+
+
+def _resolve_path(value: str) -> str:
+    expanded = os.path.expandvars(value)
+    resolved = os.path.expanduser(expanded)
+    # an unresolved variable is only harmful because it leaves the path
+    # relative, which anchors it to the cwd; a literal '$' in an absolute
+    # path is a valid filename character and must be left alone
+    if (
+        not (os.path.isabs(resolved) or resolved.startswith(("/", "\\")))
+        and "$" in expanded
+    ):
+        raise ConfigError(f"unresolved environment variable in path: {value}")
+    return os.path.abspath(resolved)
+
 
 @lru_cache
 def get_config() -> "Config":
@@ -50,10 +67,16 @@ class Config:
                 raise ConfigError(
                     f"key does not contain a value (it's a section): {key_path}"
                 )
+
+            if key_path in _PATH_KEYS and isinstance(current, str):
+                return _resolve_path(current)
+
             return current
 
         except (KeyError, TypeError):
             if default is not _sentinel:
+                if key_path in _PATH_KEYS and isinstance(default, str):
+                    return _resolve_path(default)
                 return default
 
             if len(keys) > 1:

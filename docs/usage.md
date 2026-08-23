@@ -49,14 +49,21 @@ Running `torrra` with no arguments opens the welcome screen, where you type a se
 
 ## Direct Download
 
-You can download torrents directly from magnet URIs or .torrent files without searching using the `download` command:
+You can download torrents directly from magnet URIs, URLs, or local `.torrent`
+files without searching using the `download` command:
 
 ```bash
 torrra download "magnet:?xt=urn:btih:..."
 # or torrra download "/path/to/file.torrent"
+# optionally prefill a per-torrent destination
+torrra download "https://example.com/file.torrent" --save-path /downloads/linux
 ```
 
-This command will immediately start the download and open the downloads interface showing the new torrent.
+The file-selection screen lets you choose files and an optional **Save to**
+directory before the download starts. It initially shows
+`general.download_path`; leave it unchanged or clear it to keep using the global
+fallback. A different selected directory is saved with the torrent and reused
+after restarting Torrra.
 
 ## Command-Line Interface (CLI)
 
@@ -68,7 +75,7 @@ This command will immediately start the download and open the downloads interfac
 | `torrra --help`                        | Shows the general help message                                                                       |
 | `torrra --version`                     | Displays the current installed version of `torrra`                                                   |
 | `torrra search <query>`                | Searches for a torrent directly from the command line, bypassing the welcome screen.                 |
-| `torrra download <magnet_uri_or_file>` | Downloads a torrent directly from a magnet URI or .torrent file.                                     |
+| `torrra download <magnet_uri_or_file> [--save-path PATH]` | Downloads a magnet, URL, or local .torrent file with an optional per-torrent destination. |
 | `torrra config`                        | Accesses the configuration subcommands (see below)                                                   |
 | `torrra jackett`                       | Initializes `torrra` using [`Jackett`](https://github.com/Jackett/Jackett) as the torrent indexer    |
 | `torrra prowlarr`                      | Initializes `torrra` using [`Prowlarr`](https://github.com/Prowlarr/Prowlarr) as the torrent indexer |
@@ -151,7 +158,7 @@ shown as `Up lim:` / `Down lim:` entries, and the status bar displays a
 
 ### File selection
 
-Files are shown in a collapsible folder tree. Folders are expanded by default; use the arrow keys to navigate, `←`/`→` to collapse/expand a folder, and `Space` to toggle the highlighted file — or a whole folder subtree.
+Files are shown in a collapsible folder tree. Folders are expanded by default; use the arrow keys to navigate, `←`/`→` to collapse/expand a folder, and `Space` to toggle the highlighted file — or a whole folder subtree. The **Save to** field accepts an absolute path; leave it blank to use the configured global default.
 
 | Key            | Action                                                      |
 | :------------- | :---------------------------------------------------------- |

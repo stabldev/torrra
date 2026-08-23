@@ -1,11 +1,13 @@
 from typing import ClassVar, cast
 
+from rich.markup import escape
 from textual.app import ComposeResult
 from textual.containers import Vertical
 from typing_extensions import override
 
-from torrra._types import Torrent, TorrentRecord, TorrentStatus
+from torrra._types import DownloadSelection, Torrent, TorrentRecord, TorrentStatus
 from torrra.core.download import DownloadManager, get_download_manager
+from torrra.core.exceptions import ConfigError, DownloadError
 from torrra.core.torrent import TorrentManager, get_torrent_manager
 from torrra.screens.file_selection import FileSelectionScreen
 from torrra.screens.speed_limit import SpeedLimitScreen
@@ -140,13 +142,22 @@ class DownloadsContent(Vertical):
         self._torrents = self._tm.get_all_torrents()
 
         for torrent in self._torrents:
-            self._dm.add_torrent(
-                torrent["magnet_uri"],
-                is_paused=torrent["is_paused"],
-                file_priorities=torrent.get("file_priorities"),
-                upload_limit=torrent.get("upload_limit"),
-                download_limit=torrent.get("download_limit"),
-            )
+            try:
+                self._dm.add_torrent(
+                    torrent["magnet_uri"],
+                    is_paused=torrent["is_paused"],
+                    file_priorities=torrent.get("file_priorities"),
+                    upload_limit=torrent.get("upload_limit"),
+                    download_limit=torrent.get("download_limit"),
+                    save_path=torrent.get("save_path"),
+                    create_path=torrent.get("save_path") is None,
+                )
+            except (ConfigError, DownloadError) as exc:
+                self.notify(
+                    f"Could not restore '{torrent['title']}': {exc}",
+                    title="Torrent Restore Failed",
+                    severity="error",
+                )
 
         self._filter_table()
 
@@ -193,6 +204,7 @@ class DownloadsContent(Vertical):
                     seeders=0,
                     leechers=0,
                     file_priorities=current_priorities,
+                    save_path=self._selected_torrent.get("save_path"),
                 ),
                 existing_priorities=current_priorities,
                 is_edit_mode=True,
@@ -232,11 +244,14 @@ class DownloadsContent(Vertical):
         if status := self._dm.get_torrent_status(magnet_uri):
             self._update_details_panel(status)
 
-    def _on_edit_files_done(self, priorities: list[int] | None) -> None:
-        if priorities is None or not self._selected_torrent:
+    def _on_edit_files_done(self, selection: DownloadSelection | None) -> None:
+        if selection is None or not self._selected_torrent:
             return
 
         magnet_uri = self._selected_torrent["magnet_uri"]
+        priorities = selection.file_priorities
+        if priorities is None:
+            return
         self._selected_torrent["file_priorities"] = priorities
 
         self._dm.set_file_priorities(magnet_uri, priorities)
@@ -420,9 +435,11 @@ class DownloadsContent(Vertical):
 
         seeders_text = f"{status.get('seeders', 0)}/{status.get('total_seeders', 0)}"
         peers_text = f"{status.get('peers', 0)}/{status.get('total_peers', 0)}"
+        save_path = escape(status["save_path"])
         details = f"""
 [b]Size:[/b] {size} · [b]Status:[/b] {state_text} · [b]Source:[/b] {current_torrent["source"]}
 [b]Seeders:[/b] {seeders_text} · [b]Peers:[/b] {peers_text} · [b]Up:[/b] {up_speed} · [b]Down:[/b] {down_speed} · [b]ETA:[/b] {eta_text}{limit_line}
+[b]Save to:[/b] {save_path}
 
 [dim]\\[p] pause/resume · \\[f] select files · \\[s] speed limit · \\[d] delete · \\[D] delete w/ data · \\[esc] close[/dim]
 """

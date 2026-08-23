@@ -12,7 +12,7 @@ from textual.message import Message
 from textual.widgets import Input, Static
 from typing_extensions import override
 
-from torrra._types import Indexer, Torrent
+from torrra._types import DownloadSelection, Indexer, Torrent
 from torrra.core.config import get_config
 from torrra.core.constants import (
     DEFAULT_MAX_RETRIES,
@@ -22,7 +22,7 @@ from torrra.core.constants import (
     DEFAULT_TIMEOUT,
 )
 from torrra.core.download import get_download_manager
-from torrra.core.exceptions import ConfigError, IndexerError
+from torrra.core.exceptions import ConfigError, DownloadError, IndexerError
 from torrra.core.results import (
     ResultView,
     SortKey,
@@ -208,23 +208,40 @@ class SearchContent(Vertical):
                 self._on_file_selection_done,
             )
 
-    def _on_file_selection_done(self, priorities: list[int] | None) -> None:
+    def _on_file_selection_done(self, selection: DownloadSelection | None) -> None:
         self._is_selecting_files = False
-        if priorities is None or not self._selected_torrent:
+        if selection is None or not self._selected_torrent:
             return
 
         tm = get_torrent_manager()
         dm = get_download_manager()
 
-        actual_priorities = priorities if priorities else None
+        if tm.get_torrent(self._selected_torrent.magnet_uri):
+            self.notify(
+                "This torrent is already in your downloads.",
+                title="Torrent Already Added",
+                severity="warning",
+            )
+            return
 
-        self._selected_torrent.file_priorities = actual_priorities
-        tm.add_torrent(self._selected_torrent, file_priorities=actual_priorities)
-        dm.add_torrent(
-            self._selected_torrent.magnet_uri,
-            is_paused=False,
-            file_priorities=actual_priorities,
-            torrent_info=getattr(self, "_current_torrent_info", None),
+        self._selected_torrent.file_priorities = selection.file_priorities
+        self._selected_torrent.save_path = selection.save_path
+        try:
+            dm.add_torrent(
+                self._selected_torrent.magnet_uri,
+                is_paused=False,
+                file_priorities=selection.file_priorities,
+                torrent_info=getattr(self, "_current_torrent_info", None),
+                save_path=selection.save_path,
+            )
+        except DownloadError as exc:
+            self.notify(str(exc), title="Download Failed", severity="error")
+            return
+
+        tm.add_torrent(
+            self._selected_torrent,
+            file_priorities=selection.file_priorities,
+            save_path=selection.save_path,
         )
 
         self.post_message(self.DownloadRequested(self._selected_torrent))

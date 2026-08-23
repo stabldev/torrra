@@ -8,6 +8,8 @@ import libtorrent as lt
 
 from torrra._types import SessionStats, TorrentFileInfo, TorrentStatus
 from torrra.core.config import get_config
+from torrra.core.exceptions import DownloadError
+from torrra.core.paths import normalize_download_path, prepare_download_path
 from torrra.utils.helpers import coerce_speed_limit
 from torrra.utils.magnet import enhance_magnet_uri, fix_magnet_uri
 
@@ -25,8 +27,6 @@ class DownloadManager:
         lt.torrent_status.states.downloading_metadata: ("Fetching", "META"),
         lt.torrent_status.states.checking_files: ("Checking", "CHCK"),
         lt.torrent_status.states.checking_resume_data: ("Checking", "CHCK"),
-        lt.torrent_status.states.queued_for_checking: ("Checking", "CHCK"),
-        lt.torrent_status.states.allocating: ("Allocating", "ALOC"),
     }
 
     def __init__(self) -> None:
@@ -43,6 +43,7 @@ class DownloadManager:
         }
         self.session: lt.session = lt.session(settings)
         self.torrents: dict[str, lt.torrent_handle] = {}
+        self._metadata_only_torrents: set[str] = set()
         self._file_priorities: dict[str, list[int]] = {}
         self._limits: dict[str, tuple[int, int]] = {}
         self._metadata_updated: set[str] = (
@@ -60,9 +61,51 @@ class DownloadManager:
         torrent_info: lt.torrent_info | None = None,
         upload_limit: int | None = None,
         download_limit: int | None = None,
-    ) -> None:
-        if file_priorities is not None:
-            self._file_priorities[magnet_uri] = file_priorities
+        save_path: str | None = None,
+        create_path: bool = True,
+    ) -> lt.torrent_handle:
+        """Add a torrent using a per-torrent path or the configured fallback."""
+        return self._add_torrent(
+            magnet_uri=magnet_uri,
+            is_paused=is_paused,
+            file_priorities=file_priorities,
+            torrent_info=torrent_info,
+            upload_limit=upload_limit,
+            download_limit=download_limit,
+            save_path=save_path,
+            create_path=create_path,
+            metadata_only=False,
+        )
+
+    def fetch_metadata(
+        self, magnet_uri: str, save_path: str | None = None
+    ) -> lt.torrent_handle:
+        """Fetch torrent metadata without downloading its payload."""
+        return self._add_torrent(
+            magnet_uri=magnet_uri,
+            save_path=save_path,
+            create_path=True,
+            metadata_only=True,
+        )
+
+    def _add_torrent(
+        self,
+        magnet_uri: str,
+        is_paused: bool = False,
+        file_priorities: list[int] | None = None,
+        torrent_info: lt.torrent_info | None = None,
+        upload_limit: int | None = None,
+        download_limit: int | None = None,
+        save_path: str | None = None,
+        create_path: bool = True,
+        metadata_only: bool = False,
+    ) -> lt.torrent_handle:
+        configured_path = (
+            save_path
+            if save_path is not None
+            else get_config().get("general.download_path")
+        )
+        selected_path = prepare_download_path(configured_path, create=create_path)
 
         # Seed per-torrent speed limits (e.g. loaded from the database).
         # -1 means unlimited, which is libtorrent's sentinel value.
@@ -72,12 +115,27 @@ class DownloadManager:
             self._limits[magnet_uri] = (up, down)
 
         if magnet_uri in self.torrents:
-            # Torrent already exists, update paused state and priorities if needed
             handle = self.torrents[magnet_uri]
             if not handle.is_valid():
-                # If handle is invalid, remove it and add the torrent fresh
-                del self.torrents[magnet_uri]
+                self.remove_torrent(magnet_uri)
+            elif magnet_uri in self._metadata_only_torrents:
+                if metadata_only:
+                    return handle
+                if torrent_info is None and handle.status().has_metadata:
+                    torrent_info = handle.torrent_file()
+                self.remove_torrent(magnet_uri)
             else:
+                current_save_path = getattr(handle.status(), "save_path", "")
+                if current_save_path and (
+                    normalize_download_path(current_save_path) != selected_path
+                ):
+                    raise DownloadError(
+                        "Changing the save path of an active torrent is not supported. "
+                        f"It is currently using '{current_save_path}'."
+                    )
+                if metadata_only:
+                    return handle
+
                 if file_priorities is not None and handle.status().has_metadata:
                     try:
                         handle.prioritize_files(file_priorities)
@@ -99,59 +157,64 @@ class DownloadManager:
                     else:
                         handle.set_flags(lt.torrent_flags.auto_managed)
                         handle.resume()
-                return
+                return handle
 
-        # Parse the magnet URI into torrent parameters (modern libtorrent 2.x API)
-        # Handle malformed URIs (missing 'xt=urn:') and add default public trackers
+        if file_priorities is not None:
+            self._file_priorities[magnet_uri] = file_priorities
+
         proper_magnet_uri = enhance_magnet_uri(fix_magnet_uri(magnet_uri))
 
         try:
             atp = lt.parse_magnet_uri(proper_magnet_uri)
-            atp.save_path = get_config().get("general.download_path")
+            atp.save_path = str(selected_path)
             if torrent_info is not None:
                 atp.ti = torrent_info
 
-            if is_paused:
-                if torrent_info is not None or (
-                    hasattr(atp, "ti") and atp.ti is not None
-                ):
-                    atp.flags |= lt.torrent_flags.paused
-                    atp.flags &= ~lt.torrent_flags.auto_managed
-                else:
-                    # When fetching metadata from swarm before download, enable auto_managed
-                    # and default_dont_download so metadata is fetched without downloading payload
-                    atp.flags |= lt.torrent_flags.auto_managed
-                    atp.flags |= lt.torrent_flags.default_dont_download
+            if metadata_only:
+                atp.flags |= lt.torrent_flags.auto_managed
+                atp.flags |= lt.torrent_flags.default_dont_download
+            elif is_paused:
+                atp.flags |= lt.torrent_flags.paused
+                atp.flags &= ~lt.torrent_flags.auto_managed
             else:
                 atp.flags |= lt.torrent_flags.auto_managed
 
-            # Add the torrent to the session and start tracking
             handle = self.session.add_torrent(atp)
-            self.torrents[magnet_uri] = handle
+        except (RuntimeError, ValueError) as exc:
+            self._file_priorities.pop(magnet_uri, None)
+            raise DownloadError(f"Failed to add torrent: {exc}") from exc
 
-            if (
-                file_priorities is not None
-                and handle.is_valid()
-                and handle.status().has_metadata
-            ):
-                try:
-                    handle.prioritize_files(file_priorities)
-                except (AttributeError, RuntimeError):
-                    pass
+        if not handle.is_valid():
+            self._file_priorities.pop(magnet_uri, None)
+            raise DownloadError(
+                "Failed to add torrent: libtorrent returned an invalid handle"
+            )
 
-            # Apply any stored per-torrent speed limits
-            self._apply_stored_limits(handle, magnet_uri)
-        except (RuntimeError, ValueError):
-            return
+        self.torrents[magnet_uri] = handle
+        if metadata_only:
+            self._metadata_only_torrents.add(magnet_uri)
+
+        # apply any stored per-torrent speed limits
+        self._apply_stored_limits(handle, magnet_uri)
+
+        if file_priorities is not None and handle.status().has_metadata:
+            try:
+                handle.prioritize_files(file_priorities)
+            except (AttributeError, RuntimeError):
+                pass
+
+        return handle
 
     def remove_torrent(self, magnet_uri: str, delete_files: bool = False) -> None:
         handle = self.torrents.get(magnet_uri)
-        if handle and handle.is_valid():
-            if delete_files:
-                self.session.remove_torrent(handle, lt.session.delete_files)
-            else:
-                self.session.remove_torrent(handle)
+        if handle:
+            if handle.is_valid():
+                if delete_files:
+                    self.session.remove_torrent(handle, lt.session.delete_files)
+                else:
+                    self.session.remove_torrent(handle)
             del self.torrents[magnet_uri]
+        self._metadata_only_torrents.discard(magnet_uri)
         self._file_priorities.pop(magnet_uri, None)
         self._metadata_updated.discard(magnet_uri)
 
@@ -324,8 +387,6 @@ class DownloadManager:
         error_msg: str | None = None
         if s.errc and s.errc.value() != 0:
             error_msg = s.errc.message()
-        elif s.error:
-            error_msg = s.error
 
         error_file = getattr(s, "error_file", -1)
 
@@ -352,6 +413,9 @@ class DownloadManager:
                 if info:
                     save_path = s.save_path or get_config().get("general.download_path")
                     if save_path:
+                        save_path = os.path.abspath(
+                            os.path.expanduser(os.path.expandvars(save_path))
+                        )
                         fs = info.files()
                         priorities = self.get_file_priorities(magnet_uri)
                         for i in range(fs.num_files()):
@@ -394,6 +458,7 @@ class DownloadManager:
             error_file=error_file,
             is_missing_files=is_missing_files,
             is_queued=is_queued,
+            save_path=str(s.save_path or get_config().get("general.download_path")),
         )
 
     def get_torrent_state_text(self, status: TorrentStatus, short: bool = False) -> str:

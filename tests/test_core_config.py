@@ -1,3 +1,6 @@
+import os
+from pathlib import Path
+
 import pytest
 
 from torrra.core import config as config_module
@@ -99,3 +102,77 @@ def test_config_list_flattens_correctly(mock_config: Config):
     assert "new.section.bool=true" in config_list
     # check a default value is also present
     assert "general.download_in_external_client=false" in config_list
+
+
+def test_config_get_download_path_expands_tilde(mock_config: Config):
+    import os
+
+    mock_config.set("general.download_path", "~/my_downloads")
+    expected = os.path.abspath(os.path.expanduser("~/my_downloads"))
+    assert mock_config.get("general.download_path") == expected
+
+
+def test_config_get_download_path_expands_env_vars(
+    mock_config: Config, monkeypatch: pytest.MonkeyPatch
+):
+    import os
+
+    monkeypatch.setenv("TEST_DOWNLOAD_DIR", "custom_downloads")
+    mock_config.set("general.download_path", "~/$TEST_DOWNLOAD_DIR")
+    expected = os.path.abspath(
+        os.path.expanduser(os.path.expandvars("~/$TEST_DOWNLOAD_DIR"))
+    )
+    assert mock_config.get("general.download_path") == expected
+
+
+def test_config_get_download_path_relative_to_absolute(mock_config: Config):
+    import os
+
+    mock_config.set("general.download_path", "some_relative_path")
+    expected = os.path.abspath("some_relative_path")
+    assert mock_config.get("general.download_path") == expected
+
+
+def test_config_get_download_path_default_expansion(mock_config: Config):
+    import os
+
+    del mock_config.config["general"]["download_path"]
+    result = mock_config.get("general.download_path", "~/fallback_downloads")
+    expected = os.path.abspath(os.path.expanduser("~/fallback_downloads"))
+    assert result == expected
+
+
+def test_config_get_download_path_allows_literal_dollar_in_absolute_path(
+    mock_config: Config,
+):
+    # '$' is a legal filename character; an absolute path containing one is
+    # valid and must not be mistaken for an unresolved environment variable
+    test_path = "/Volumes/My$Drive/Downloads"
+    mock_config.set("general.download_path", test_path)
+    assert mock_config.get("general.download_path") == os.path.abspath(test_path)
+
+
+def test_config_get_download_path_allows_literal_dollar_after_tilde(
+    mock_config: Config, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))
+    mock_config.set("general.download_path", "~/Music/AC$DC")
+    expected = os.path.join(str(tmp_path), "Music", "AC$DC")
+    assert mock_config.get("general.download_path") == expected
+
+
+def test_config_get_download_path_relative_with_dollar_raises_error(
+    mock_config: Config, monkeypatch: pytest.MonkeyPatch
+):
+    # a '$' that leaves the path relative is what anchors it to the cwd,
+    # which is the failure mode this validation exists to catch
+    monkeypatch.delenv("UNDEFINED_VAR_TEST", raising=False)
+    mock_config.set("general.download_path", "$UNDEFINED_VAR_TEST/downloads")
+    with pytest.raises(ConfigError, match="unresolved environment variable"):
+        mock_config.get("general.download_path")
+
+
+def test_config_get_non_path_key_not_expanded(mock_config: Config):
+    mock_config.set("general.theme", "~/not-a-path")
+    assert mock_config.get("general.theme") == "~/not-a-path"

@@ -6,6 +6,7 @@ from typing_extensions import override
 
 from torrra._types import Indexer, TorrentStatus
 from torrra.core.download import get_download_manager
+from torrra.core.exceptions import ConfigError, DownloadError
 from torrra.core.torrent import get_torrent_manager
 from torrra.widgets.downloads import DownloadsContent
 from torrra.widgets.search import SearchContent
@@ -20,6 +21,7 @@ class HomeScreen(Screen[None]):
         search_query: str,
         use_cache: bool,
         direct_download: str | None = None,
+        direct_save_path: str | None = None,
         show_downloads: bool = False,
     ):
         super().__init__()
@@ -27,6 +29,7 @@ class HomeScreen(Screen[None]):
         self.search_query: str = search_query
         self.use_cache: bool = use_cache
         self.direct_download: str | None = direct_download
+        self.direct_save_path: str | None = direct_save_path
         self.show_downloads: bool = show_downloads
 
         self._sidebar: Sidebar
@@ -68,11 +71,22 @@ class HomeScreen(Screen[None]):
         tm, dm = get_torrent_manager(), get_download_manager()
         torrents = tm.get_all_torrents()
         for torrent in torrents:
-            dm.add_torrent(
-                torrent["magnet_uri"],
-                is_paused=torrent["is_paused"],
-                file_priorities=torrent.get("file_priorities"),
-            )
+            try:
+                dm.add_torrent(
+                    torrent["magnet_uri"],
+                    is_paused=torrent["is_paused"],
+                    file_priorities=torrent.get("file_priorities"),
+                    upload_limit=torrent.get("upload_limit"),
+                    download_limit=torrent.get("download_limit"),
+                    save_path=torrent.get("save_path"),
+                    create_path=torrent.get("save_path") is None,
+                )
+            except (ConfigError, DownloadError) as exc:
+                self.notify(
+                    f"Could not restore '{torrent['title']}': {exc}",
+                    title="Torrent Restore Failed",
+                    severity="error",
+                )
 
         if self.show_downloads or self.direct_download or self.indexer is None:
             # When showing downloads or handling direct download, set sidebar active node to downloads
@@ -85,7 +99,13 @@ class HomeScreen(Screen[None]):
 
             from torrra.utils.direct_download import handle_direct_download
 
-            asyncio.create_task(handle_direct_download(self, str(self.direct_download)))
+            asyncio.create_task(
+                handle_direct_download(
+                    self,
+                    str(self.direct_download),
+                    save_path=self.direct_save_path,
+                )
+            )
 
         # start timer to update data on both sidebar
         # and downloads content table

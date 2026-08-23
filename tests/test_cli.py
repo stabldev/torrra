@@ -204,7 +204,30 @@ def test_download_command_valid_magnet(monkeypatch: pytest.MonkeyPatch):
 
     assert result.exit_code == 0
     # direct download must not require an indexer
-    mock_run_func.assert_called_once_with(no_cache=True, direct_download=magnet)
+    mock_run_func.assert_called_once_with(
+        no_cache=True,
+        direct_download=magnet,
+        direct_save_path=None,
+    )
+
+
+def test_download_command_passes_save_path(monkeypatch: pytest.MonkeyPatch):
+    mock_run_func = MagicMock()
+    monkeypatch.setattr("torrra.utils.indexer.run_without_indexer", mock_run_func)
+
+    runner = CliRunner()
+    magnet = "magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567"
+    result = runner.invoke(
+        cli,
+        ["download", magnet, "--save-path", "/mnt/media/torrents"],
+    )
+
+    assert result.exit_code == 0
+    mock_run_func.assert_called_once_with(
+        no_cache=False,
+        direct_download=magnet,
+        direct_save_path="/mnt/media/torrents",
+    )
 
 
 def test_download_command_invalid_input():

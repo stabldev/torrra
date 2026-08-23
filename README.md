@@ -54,12 +54,14 @@ torrra search "arch linux iso"
 
 ### 3. Direct Download
 
-You can download torrents directly from `magnet URIs` or `.torrent` files\
-without searching using the `download` command:
+You can download torrents directly from `magnet URIs`, URLs, or local
+`.torrent` files without searching using the `download` command:
 
 ```bash
 torrra download "magnet:?xt=urn:btih:..."
 # or torrra download "/path/to/file.torrent"
+# choose a destination for this torrent
+torrra download "magnet:?xt=urn:btih:..." --save-path /downloads/linux
 ```
 
 [Full Usage guide →](https://torrra.readthedocs.io/en/latest/usage.html)\
@@ -92,6 +94,7 @@ torrra # default indexer will be used
 
 - Search with [`Jackett`](https://github.com/Jackett/Jackett) or [`Prowlarr`](https://github.com/Prowlarr/Prowlarr)
 - Download torrents directly with pause/resume support
+- Choose and persist a separate download directory for each torrent
 - Beautiful and responsive TUI built with [`Textual`](https://textual.textualize.io/)
 - Customizable themes (dark, light, and more)
 - Smart config + opt-in caching for fast searches

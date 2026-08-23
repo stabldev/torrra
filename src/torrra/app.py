@@ -11,6 +11,7 @@ from typing_extensions import override
 
 from torrra._types import Indexer
 from torrra.core.config import get_config
+from torrra.core.exceptions import ConfigError
 from torrra.screens.help import HelpScreen
 from torrra.screens.home import HomeScreen
 from torrra.screens.theme_selector import ThemeSelectorScreen
@@ -37,6 +38,7 @@ class TorrraApp(App[None]):
         use_cache: bool,
         search_query: str | None,
         direct_download: str | None = None,
+        direct_save_path: str | None = None,
         show_downloads: bool = False,
     ) -> None:
         super().__init__()
@@ -44,6 +46,7 @@ class TorrraApp(App[None]):
         self.use_cache: bool = use_cache
         self.search_query: str | None = search_query
         self.direct_download: str | None = direct_download
+        self.direct_save_path: str | None = direct_save_path
         self.show_downloads: bool = show_downloads
 
         # load theme from config file
@@ -54,6 +57,14 @@ class TorrraApp(App[None]):
                 + f"available themes: {', '.join(sorted(self.available_themes))}"
             )
         self.theme = theme
+
+        # validate the download path up front so a bad value is reported once,
+        # here, instead of surfacing as an uncaught error (or a silently
+        # skipped torrent) every time a download is added
+        try:
+            get_config().get("general.download_path")
+        except ConfigError as e:
+            raise RuntimeError(f"invalid download_path configured.\n{e}") from e
 
     async def on_mount(self) -> None:
         # the welcome screen only exists to collect a search query, so it is
@@ -71,6 +82,7 @@ class TorrraApp(App[None]):
                     search_query=self.search_query or "",
                     use_cache=self.use_cache,
                     direct_download=self.direct_download,
+                    direct_save_path=self.direct_save_path,
                     show_downloads=self.show_downloads,
                 )
             )
@@ -155,6 +167,7 @@ class TorrraApp(App[None]):
                 search_query=result if is_search else "",
                 use_cache=self.use_cache,
                 direct_download=None,
+                direct_save_path=None,
                 show_downloads=not is_search,
             )
         )
