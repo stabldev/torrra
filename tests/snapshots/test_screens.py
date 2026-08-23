@@ -5,6 +5,7 @@ from textual.pilot import Pilot
 
 from torrra._types import Torrent
 from torrra.core.config import Config
+from torrra.screens.file_selection import FileSelectionScreen
 
 
 def test_home_screen_snapshot(
@@ -106,3 +107,42 @@ def test_help_screen_snapshot(app_factory: Any, snap_compare: Any):
     app = app_factory()
     app.theme = "textual-dark"  # default theme
     assert snap_compare(app, run_before=run_before, terminal_size=(90, 50))
+
+
+def test_file_selection_screen_snapshot(
+    app_factory: Any,
+    mock_config: Config,
+    snap_compare: Any,
+):
+    mock_config.set("general.download_path", "/downloads")
+    torrent_info = MagicMock()
+    torrent_info.name.return_value = "Linux Images"
+    files = MagicMock()
+    files.num_files.return_value = 2
+    files.file_flags.return_value = 0
+    files.file_path.side_effect = [
+        "Linux Images/linux.iso",
+        "Linux Images/checksums.txt",
+    ]
+    files.file_size.side_effect = [2_000_000_000, 1024]
+    torrent_info.files.return_value = files
+
+    async def run_before(pilot: Pilot[Any]):
+        pilot.app.push_screen(
+            FileSelectionScreen(
+                torrent=Torrent(
+                    magnet_uri="magnet:?xt=urn:btih:snapshot",
+                    title="Linux Images",
+                    size=2_000_001_024,
+                    seeders=10,
+                    leechers=1,
+                    source="Snapshot",
+                ),
+                torrent_info=torrent_info,
+            )
+        )
+        await pilot.pause()
+
+    app = app_factory()
+    app.theme = "textual-dark"
+    assert snap_compare(app, run_before=run_before, terminal_size=(90, 30))

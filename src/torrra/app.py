@@ -35,6 +35,7 @@ class TorrraApp(App[None]):
         use_cache: bool,
         search_query: str | None,
         direct_download: str | None = None,
+        direct_save_path: str | None = None,
         show_downloads: bool = False,
     ) -> None:
         super().__init__()
@@ -42,6 +43,7 @@ class TorrraApp(App[None]):
         self.use_cache: bool = use_cache
         self.search_query: str | None = search_query
         self.direct_download: str | None = direct_download
+        self.direct_save_path: str | None = direct_save_path
         self.show_downloads: bool = show_downloads
 
         # load theme from config file
@@ -77,6 +79,7 @@ class TorrraApp(App[None]):
                     search_query=self.search_query or "",
                     use_cache=self.use_cache,
                     direct_download=self.direct_download,
+                    direct_save_path=self.direct_save_path,
                     show_downloads=self.show_downloads,
                 )
             )
@@ -117,6 +120,7 @@ class TorrraApp(App[None]):
                 search_query=result if is_search else "",
                 use_cache=self.use_cache,
                 direct_download=None,
+                direct_save_path=None,
                 show_downloads=not is_search,
             )
         )

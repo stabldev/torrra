@@ -244,7 +244,7 @@ SortSelectorScreen {
 FileSelectionScreen {
   align: center middle;
   #file-selection-container {
-    height: 18;
+    height: 21;
     max-height: 80%;
     width: 60;
     max-width: 85%;
@@ -254,8 +254,8 @@ FileSelectionScreen {
     #file-selection-header {
       height: auto;
       margin-bottom: 1;
-      padding: 0 1;
       #torrent-name {
+        padding: 0 1;
         width: 100%;
         text-align: center;
         color: $foreground;
@@ -265,6 +265,15 @@ FileSelectionScreen {
         width: 100%;
         text-align: center;
         color: $foreground-muted;
+      }
+      #save-path-label {
+        margin-top: 1;
+        color: $foreground-muted;
+      }
+      #save-path {
+        height: 1;
+        border: none;
+        background: $surface;
       }
     }
     #file-selection-loading {
@@ -309,4 +318,3 @@ FileSelectionScreen {
     }
   }
 }
-

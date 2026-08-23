@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any, ClassVar
 
 import libtorrent as lt
@@ -10,12 +11,15 @@ from textual.containers import Vertical
 from textual.message import Message
 from textual.screen import ModalScreen
 from textual.timer import Timer
-from textual.widgets import Static, Tree
+from textual.widgets import Input, Static, Tree
 from textual.widgets.tree import TreeNode
 from typing_extensions import override
 
-from torrra._types import Torrent
+from torrra._types import DownloadSelection, Torrent
+from torrra.core.config import get_config
 from torrra.core.download import get_download_manager
+from torrra.core.exceptions import ConfigError, DownloadError, DownloadPathError
+from torrra.core.paths import normalize_download_path, prepare_download_path
 from torrra.core.torrent import get_torrent_manager
 from torrra.utils.helpers import human_readable_size
 from torrra.widgets.spinner import Spinner
@@ -252,7 +256,7 @@ class FileSelectionTree(Tree[int]):
             node.expand()
 
 
-class FileSelectionScreen(ModalScreen[list[int] | None]):
+class FileSelectionScreen(ModalScreen[DownloadSelection | None]):
     """Compact modal screen to select specific files from a torrent before downloading or editing."""
 
     BINDINGS: ClassVar[list[BindingType]] = [
@@ -270,6 +274,7 @@ class FileSelectionScreen(ModalScreen[list[int] | None]):
         existing_priorities: list[int] | None = None,
         torrent_info: lt.torrent_info | None = None,
         is_edit_mode: bool = False,
+        initial_save_path: str | None = None,
         *args: Any,
         **kwargs: Any,
     ) -> None:
@@ -278,6 +283,9 @@ class FileSelectionScreen(ModalScreen[list[int] | None]):
         self.existing_priorities: list[int] | None = existing_priorities
         self._torrent_info: lt.torrent_info | None = torrent_info
         self.is_edit_mode: bool = is_edit_mode
+        self.initial_save_path = (
+            initial_save_path if initial_save_path is not None else torrent.save_path
+        )
 
         self._file_sizes: dict[int, int] = {}
         self._pad_file_indices: set[int] = set()
@@ -290,6 +298,8 @@ class FileSelectionScreen(ModalScreen[list[int] | None]):
         self._loading_container: Vertical
         self._body_container: Vertical
         self._footer_container: Vertical
+        self._save_path_input: Input | None = None
+        self._default_save_path: Path | None = None
 
     @override
     def compose(self) -> ComposeResult:
@@ -298,6 +308,13 @@ class FileSelectionScreen(ModalScreen[list[int] | None]):
             with Vertical(id="file-selection-header"):
                 yield Static(self.torrent.title, id="torrent-name")
                 yield Static("Loading file list...", id="selection-stats")
+                if not self.is_edit_mode:
+                    yield Static("Save to", id="save-path-label")
+                    yield Input(
+                        value=self.initial_save_path or "",
+                        placeholder="Absolute path",
+                        id="save-path",
+                    )
 
             with Vertical(id="file-selection-loading"):
                 with Vertical(id="loading-spinner-area"):
@@ -327,6 +344,16 @@ class FileSelectionScreen(ModalScreen[list[int] | None]):
         self._loading_container = self.query_one("#file-selection-loading", Vertical)
         self._body_container = self.query_one("#file-selection-body", Vertical)
         self._footer_container = self.query_one("#file-selection-footer", Vertical)
+        if not self.is_edit_mode:
+            self._save_path_input = self.query_one("#save-path", Input)
+            if self.initial_save_path is None:
+                try:
+                    self._default_save_path = normalize_download_path(
+                        get_config().get("general.download_path")
+                    )
+                    self._save_path_input.value = str(self._default_save_path)
+                except (ConfigError, DownloadPathError) as exc:
+                    self._show_path_error(exc)
 
         if self._torrent_info is not None:
             self._populate_files(self._torrent_info)
@@ -343,9 +370,44 @@ class FileSelectionScreen(ModalScreen[list[int] | None]):
             except (AttributeError, RuntimeError):
                 pass
 
-        # Metadata not available yet, start fetching in background
-        dm.add_torrent(self.torrent.magnet_uri, is_paused=True)
+        try:
+            save_path = self._validated_save_path()
+            dm.fetch_metadata(self.torrent.magnet_uri, save_path=save_path)
+        except (ConfigError, DownloadPathError) as exc:
+            self._show_path_error(exc)
+            return
+        except DownloadError as exc:
+            self.notify(str(exc), title="Metadata Fetch Failed", severity="error")
+            self._loading_status_label.update("Unable to fetch torrent metadata.")
+            return
         self._poll_timer = self.set_interval(0.3, self._poll_metadata)
+        self.call_after_refresh(self.set_focus, None)
+
+    def _validated_save_path(self) -> str | None:
+        if self.is_edit_mode:
+            return self.torrent.save_path
+
+        assert self._save_path_input is not None
+        raw_path = self._save_path_input.value.strip()
+        if raw_path:
+            selected_path = prepare_download_path(raw_path)
+            if (
+                self._default_save_path is not None
+                and selected_path == self._default_save_path
+            ):
+                return None
+            return str(selected_path)
+
+        prepare_download_path(get_config().get("general.download_path"))
+        return None
+
+    def _show_path_error(self, error: Exception) -> None:
+        self.notify(str(error), title="Invalid Download Path", severity="error")
+        self._loading_status_label.update(
+            "Choose a valid download directory, then press [b]enter[/b]."
+        )
+        if self._save_path_input is not None:
+            self._save_path_input.focus()
 
     def _poll_metadata(self) -> None:
         dm = get_download_manager()
@@ -470,7 +532,13 @@ class FileSelectionScreen(ModalScreen[list[int] | None]):
             else:
                 priorities.append(0)  # Skip unselected file
 
-        self.dismiss(priorities)
+        try:
+            save_path = self._validated_save_path()
+        except (ConfigError, DownloadPathError) as exc:
+            self._show_path_error(exc)
+            return
+
+        self.dismiss(DownloadSelection(priorities, save_path))
 
     def action_cancel(self) -> None:
         if self._poll_timer:
@@ -501,6 +569,12 @@ class FileSelectionScreen(ModalScreen[list[int] | None]):
         self._selection_list.toggle_all()
 
     def action_skip_metadata(self) -> None:
+        try:
+            save_path = self._validated_save_path()
+        except (ConfigError, DownloadPathError) as exc:
+            self._show_path_error(exc)
+            return
+
         if self._poll_timer:
             self._poll_timer.stop()
-        self.dismiss([])
+        self.dismiss(DownloadSelection(None, save_path))
