@@ -51,25 +51,27 @@ class SpeedLimitScreen(ModalScreen[tuple[int, int] | None]):
     @override
     def compose(self) -> ComposeResult:
         with Vertical(id="speed-limit-container"):
-            yield Label("[b]Speed Limit[/b]", id="speed-limit-title")
+            yield Label("[b]Speed Limits[/b]", id="speed-limit-title")
             yield Label(self._torrent_title, id="speed-limit-name")
-            yield Label("Enter a value with its unit — e.g. 500 KB, 2 MB, 1.5 GB.")
-            yield Label("Use 0 for unlimited.")
+            yield Label(
+                "Enter a value with its unit - e.g. 500 KB, 2 MB, 1.5 GB. Use 0 for unlimited.",
+                id="speed-limit-desc",
+            )
             with Vertical(id="speed-limit-fields"):
-                yield Label("Upload limit (per sec):")
+                yield Label("Upload [dim](per sec):[/dim]")
                 yield Input(
                     placeholder="0 = unlimited",
                     value=_format_prefill(self._upload_limit),
                     id="speed-up-input",
                 )
-                yield Label("Download limit (per sec):")
+                yield Label("Download [dim](per sec):[/dim]")
                 yield Input(
                     placeholder="0 = unlimited",
                     value=_format_prefill(self._download_limit),
                     id="speed-down-input",
                 )
             yield Static("", id="speed-limit-error", classes="error-text hidden")
-            yield Static("enter apply · esc cancel", id="speed-limit-footer")
+            yield Static("\\[enter] apply · \\[esc] cancel", id="speed-limit-footer")
 
     def on_mount(self) -> None:
         self._up_input = self.query_one("#speed-up-input", Input)
