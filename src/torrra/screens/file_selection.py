@@ -291,6 +291,7 @@ class FileSelectionScreen(ModalScreen[DownloadSelection | None]):
         self._pad_file_indices: set[int] = set()
         self._poll_timer: Timer | None = None
 
+        self._container: Vertical
         self._selection_list: FileSelectionTree
         self._stats_label: Static
         self._torrent_name_label: Static
@@ -298,28 +299,35 @@ class FileSelectionScreen(ModalScreen[DownloadSelection | None]):
         self._loading_container: Vertical
         self._body_container: Vertical
         self._footer_container: Vertical
+        self._save_path_label: Static | None = None
         self._save_path_input: Input | None = None
         self._default_save_path: Path | None = None
 
     @override
     def compose(self) -> ComposeResult:
         action_verb = "save" if self.is_edit_mode else "download"
-        with Vertical(id="file-selection-container"):
+        container_classes = "loaded" if self._torrent_info is not None else ""
+        save_path_classes = "" if self._torrent_info is not None else "hidden"
+        with Vertical(id="file-selection-container", classes=container_classes):
             with Vertical(id="file-selection-header"):
                 yield Static(self.torrent.title, id="torrent-name")
                 yield Static("Loading file list...", id="selection-stats")
                 if not self.is_edit_mode:
-                    yield Static("Save to", id="save-path-label")
+                    yield Static(
+                        "Save to", id="save-path-label", classes=save_path_classes
+                    )
                     yield Input(
                         value=self.initial_save_path or "",
                         placeholder="Absolute path",
                         id="save-path",
+                        classes=save_path_classes,
                     )
 
             with Vertical(id="file-selection-loading"):
                 with Vertical(id="loading-spinner-area"):
                     yield Static(
-                        "Fetching torrent metadata...", id="loading-status-text"
+                        "Fetching torrent metadata...\n[dim](peers: 0)[/dim]",
+                        id="loading-status-text",
                     )
                     yield Spinner(name="material")
                 yield Static(
@@ -337,6 +345,7 @@ class FileSelectionScreen(ModalScreen[DownloadSelection | None]):
                 )
 
     def on_mount(self) -> None:
+        self._container = self.query_one("#file-selection-container", Vertical)
         self._selection_list = self.query_one(FileSelectionTree)
         self._stats_label = self.query_one("#selection-stats", Static)
         self._torrent_name_label = self.query_one("#torrent-name", Static)
@@ -345,6 +354,7 @@ class FileSelectionScreen(ModalScreen[DownloadSelection | None]):
         self._body_container = self.query_one("#file-selection-body", Vertical)
         self._footer_container = self.query_one("#file-selection-footer", Vertical)
         if not self.is_edit_mode:
+            self._save_path_label = self.query_one("#save-path-label", Static)
             self._save_path_input = self.query_one("#save-path", Input)
             if self.initial_save_path is None:
                 try:
@@ -406,7 +416,9 @@ class FileSelectionScreen(ModalScreen[DownloadSelection | None]):
         self._loading_status_label.update(
             "Choose a valid download directory, then press [b]enter[/b]."
         )
-        if self._save_path_input is not None:
+        if self._save_path_input is not None and not self._save_path_input.has_class(
+            "hidden"
+        ):
             self._save_path_input.focus()
 
     def _poll_metadata(self) -> None:
@@ -471,9 +483,17 @@ class FileSelectionScreen(ModalScreen[DownloadSelection | None]):
         )
 
         # Switch UI from loading to loaded
+        self._container.add_class("loaded")
         self._loading_container.add_class("hidden")
         self._body_container.remove_class("hidden")
         self._footer_container.remove_class("hidden")
+        if (
+            not self.is_edit_mode
+            and self._save_path_label is not None
+            and self._save_path_input is not None
+        ):
+            self._save_path_label.remove_class("hidden")
+            self._save_path_input.remove_class("hidden")
 
         self._update_stats()
         self._selection_list.focus()

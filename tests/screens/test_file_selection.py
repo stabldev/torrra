@@ -897,3 +897,59 @@ async def test_home_does_not_recreate_missing_custom_save_path(tmp_path: Any):
 
         assert magnet not in get_download_manager().torrents
         assert not destination.exists()
+
+
+async def test_file_selection_container_height_transitions_from_auto_to_fixed():
+    torrent = Torrent(
+        magnet_uri="magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567",
+        title="Loading Test Torrent",
+        size=1024,
+        seeders=10,
+        leechers=2,
+        source="Mock",
+    )
+
+    screen = FileSelectionScreen(torrent=torrent)
+    app = DummyHostApp(screen)
+
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        container = screen.query_one("#file-selection-container")
+        assert not container.has_class("loaded")
+        assert not screen.query_one("#file-selection-loading").has_class("hidden")
+        assert screen.query_one("#file-selection-body").has_class("hidden")
+        assert screen.query_one("#save-path", Input).has_class("hidden")
+        assert screen.query_one("#save-path-label", Static).has_class("hidden")
+
+        # Simulate metadata loaded
+        mock_ti = create_mock_torrent_info()
+        screen._populate_files(mock_ti)
+        await pilot.pause()
+
+        assert container.has_class("loaded")
+        assert screen.query_one("#file-selection-loading").has_class("hidden")
+        assert not screen.query_one("#file-selection-body").has_class("hidden")
+        assert not screen.query_one("#save-path", Input).has_class("hidden")
+        assert not screen.query_one("#save-path-label", Static).has_class("hidden")
+
+
+async def test_file_selection_container_loaded_class_when_torrent_info_provided():
+    mock_ti = create_mock_torrent_info()
+    torrent = Torrent(
+        magnet_uri="magnet:?xt=urn:btih:mocktest",
+        title="Ubuntu 24.04 Pack",
+        size=2_500_003_072,
+        seeders=10,
+        leechers=2,
+        source="Mock",
+    )
+
+    screen = FileSelectionScreen(torrent=torrent, torrent_info=mock_ti)
+    app = DummyHostApp(screen)
+
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        container = screen.query_one("#file-selection-container")
+        assert container.has_class("loaded")
+        assert not screen.query_one("#save-path", Input).has_class("hidden")
+        assert not screen.query_one("#save-path-label", Static).has_class("hidden")
