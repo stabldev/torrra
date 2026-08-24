@@ -448,5 +448,3 @@ def test_apply_migrations_handles_invalid_version_type():
     assert was_migrated is True
     assert migrated["schema_version"] == 1
     assert migrated["general"]["theme"] == "gruvbox"
-
-

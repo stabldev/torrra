@@ -290,4 +290,3 @@ class Config:
         CONFIG_DIR.mkdir(parents=True, exist_ok=True)
         with open(CONFIG_FILE, "wb") as f:
             tomli_w.dump(self.config, f)
-
