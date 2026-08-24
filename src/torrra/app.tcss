@@ -309,13 +309,16 @@ SortSelectorScreen {
 FileSelectionScreen {
   align: center middle;
   #file-selection-container {
-    height: 21;
+    height: auto;
     max-height: 80%;
     width: 60;
     max-width: 85%;
     background: $surface;
     border: tall $secondary;
     padding: 0 1;
+    &.loaded {
+      height: 21;
+    }
     #file-selection-header {
       height: auto;
       margin-bottom: 1;
@@ -342,10 +345,11 @@ FileSelectionScreen {
       }
     }
     #file-selection-loading {
-      height: 1fr;
+      height: auto;
       #loading-spinner-area {
-        height: 1fr;
+        height: auto;
         align: center middle;
+        margin-bottom: 1;
         Static {
           text-align: center;
           content-align-horizontal: center;
