@@ -448,12 +448,18 @@ class DownloadManager:
         total_seeds = max(connected_seeds, getattr(s, "list_seeds", 0))
         connected_peers = getattr(s, "num_peers", 0)
         total_peers = max(connected_peers, getattr(s, "list_peers", 0))
+        total_done = (
+            int(s.total_done)
+            if hasattr(s, "total_done") and isinstance(s.total_done, (int, float))
+            else 0
+        )
 
         return TorrentStatus(
             state=s.state,
             progress=s.progress * 100,
             down_speed=s.download_rate,
             up_speed=s.upload_rate,
+            total_done=total_done,
             seeders=connected_seeds,
             total_seeders=total_seeds,
             leechers=connected_peers,

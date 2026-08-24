@@ -412,7 +412,17 @@ class DownloadsContent(Vertical):
         )
 
         state_text = self._dm.get_torrent_state_text(status)
-        size = human_readable_size(float(current_torrent["size"]))
+        total_size = float(current_torrent["size"])
+        downloaded = status.get("total_done")
+        if downloaded is None or downloaded == 0:
+            downloaded = (status.get("progress", 0.0) / 100.0) * total_size
+        else:
+            downloaded = float(downloaded)
+
+        if total_size > 0:
+            downloaded = min(downloaded, total_size)
+
+        size = f"{human_readable_size(downloaded)} / {human_readable_size(total_size)}"
         eta_text = human_readable_eta(status["eta"], is_seeding=status["is_seeding"])
         limits = self._dm.get_torrent_limits(self._selected_torrent["magnet_uri"])
         up_limit_suffix = (

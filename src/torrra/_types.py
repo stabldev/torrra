@@ -25,6 +25,7 @@ class TorrentStatus(TypedDict, total=False):
     progress: float
     down_speed: float
     up_speed: float
+    total_done: int
     seeders: int
     total_seeders: int
     leechers: int
