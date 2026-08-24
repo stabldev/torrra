@@ -136,7 +136,7 @@ async def test_global_speed_toggle_uses_default_limits_when_unconfigured(
 ):
     # a fresh config already ships with 10 KB/s turtle limits, so pressing
     # "t" applies them immediately without prompting
-    assert mock_config.get("speed_limit.upload_limit") == 10 * 1024
+    assert mock_config.get("speed_limit.upload_limit") == "10 KB/s"
 
     app = app_factory(search_query="arch linux iso")
     async with app.run_test() as pilot:

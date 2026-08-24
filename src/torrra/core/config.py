@@ -198,18 +198,19 @@ class Config:
 
             new_value: Any = value
             # speed limit keys accept human-readable units ("500K", "2M",
-            # "1.5 GB/s"); store normalized bytes/sec so readers can rely
-            # on ints ("unlimited"/"0" normalize to 0)
+            # "1.5 GB/s", "10 KB/s", "unlimited"); validate with parse_speed_limit
+            # and store the string representation
             if key_path in (
                 "speed_limit.upload_limit",
                 "speed_limit.download_limit",
             ):
                 try:
-                    new_value = max(0, parse_speed_limit(value))
+                    parse_speed_limit(value)
+                    new_value = str(value).strip()
                 except ValueError as e:
                     raise ConfigError(
                         f"invalid value for '{key_path}': {value!r} ({e}). "
-                        + "use e.g. 500K, 2M, or a bare bytes/sec number"
+                        + "use e.g. 500K, 2M, 10 KB/s, or unlimited"
                     ) from e
             # handle case-insensitive "true"/"false" for booleans
             elif value.lower() == "true":

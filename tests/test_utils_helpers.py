@@ -1,6 +1,7 @@
 import pytest
 
 from torrra.utils.helpers import (
+    coerce_speed_limit,
     get_tomllib,
     human_readable_eta,
     human_readable_size,
@@ -89,11 +90,24 @@ def test_parse_speed_limit_per_sec_suffix():
 
 
 def test_parse_speed_limit_invalid():
-    import pytest
-
     with pytest.raises(ValueError):
         parse_speed_limit("abc")
     with pytest.raises(ValueError):
         parse_speed_limit("-5")
     with pytest.raises(ValueError):
         parse_speed_limit("10X")
+
+
+def test_coerce_speed_limit():
+    assert coerce_speed_limit(10240) == 10240
+    assert coerce_speed_limit("10 KB/s") == 10 * 1024
+    assert coerce_speed_limit("2M") == 2 * 1024**2
+    assert coerce_speed_limit("500K") == 500 * 1024
+    assert coerce_speed_limit("0") == 0
+    assert coerce_speed_limit("unlimited") == 0
+    assert coerce_speed_limit("off") == 0
+    assert coerce_speed_limit(0) == 0
+    assert coerce_speed_limit(-100) == 0
+    assert coerce_speed_limit(False) == 0
+    assert coerce_speed_limit(True) == 0
+    assert coerce_speed_limit("invalid-unit") == 0

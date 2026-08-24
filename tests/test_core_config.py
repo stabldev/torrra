@@ -10,6 +10,7 @@ from torrra.core.constants import (
     DEFAULT_SPEED_LIMIT_UPLOAD,
 )
 from torrra.core.exceptions import ConfigError
+from torrra.utils.helpers import coerce_speed_limit
 
 
 def test_config_initialization_creates_default_file(mock_config: Config):
@@ -63,27 +64,41 @@ def test_config_set_type_conversion(mock_config: Config):
 
 def test_default_speed_limits_are_turtle_values(mock_config: Config):
     # fresh config ships with qBittorrent-style 10 KB/s turtle limits
-    assert DEFAULT_SPEED_LIMIT_UPLOAD == 10 * 1024
-    assert DEFAULT_SPEED_LIMIT_DOWNLOAD == 10 * 1024
+    assert DEFAULT_SPEED_LIMIT_UPLOAD == "10 KB/s"
+    assert DEFAULT_SPEED_LIMIT_DOWNLOAD == "10 KB/s"
     assert mock_config.get("speed_limit.upload_limit") == DEFAULT_SPEED_LIMIT_UPLOAD
     assert mock_config.get("speed_limit.download_limit") == DEFAULT_SPEED_LIMIT_DOWNLOAD
+    # readers like download manager and status bar coerce to bytes/sec
+    assert coerce_speed_limit(mock_config.get("speed_limit.upload_limit")) == 10 * 1024
+    assert (
+        coerce_speed_limit(mock_config.get("speed_limit.download_limit")) == 10 * 1024
+    )
 
 
 def test_config_set_speed_limit_parses_human_units(mock_config: Config):
-    # speed limit keys accept human-readable units and store bytes/sec
+    # speed limit keys validate human-readable units and store string values
     mock_config.set("speed_limit.download_limit", "2M")
     mock_config.set("speed_limit.upload_limit", "500K")
     mock_config.set("speed_limit.download_limit", "1.5 GB/s")
 
-    # last write wins
-    assert mock_config.get("speed_limit.download_limit") == int(1.5 * 1024**3)
-    assert mock_config.get("speed_limit.upload_limit") == 500 * 1024
+    # last write wins, string preserved in config
+    assert mock_config.get("speed_limit.download_limit") == "1.5 GB/s"
+    assert mock_config.get("speed_limit.upload_limit") == "500K"
+    assert coerce_speed_limit(mock_config.get("speed_limit.download_limit")) == int(
+        1.5 * 1024**3
+    )
+    assert coerce_speed_limit(mock_config.get("speed_limit.upload_limit")) == 500 * 1024
 
 
 def test_config_set_speed_limit_unlimited_and_invalid(mock_config: Config):
-    # "unlimited"/"0" normalize to 0 bytes/sec
+    # "unlimited"/"0" store the string, and coerce to 0 bytes/sec
     mock_config.set("speed_limit.upload_limit", "unlimited")
-    assert mock_config.get("speed_limit.upload_limit") == 0
+    assert mock_config.get("speed_limit.upload_limit") == "unlimited"
+    assert coerce_speed_limit(mock_config.get("speed_limit.upload_limit")) == 0
+
+    mock_config.set("speed_limit.upload_limit", "0")
+    assert mock_config.get("speed_limit.upload_limit") == "0"
+    assert coerce_speed_limit(mock_config.get("speed_limit.upload_limit")) == 0
 
     with pytest.raises(ConfigError, match="invalid value"):
         mock_config.set("speed_limit.download_limit", "abc")

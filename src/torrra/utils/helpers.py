@@ -91,16 +91,16 @@ def parse_speed_limit(text: str) -> int:
 def coerce_speed_limit(value: object) -> int:
     """Coerce a stored speed-limit config value to bytes/second.
 
-    Ints pass through unchanged; strings (e.g. a hand-edited ``"2M"`` in
-    config.toml) are parsed, and anything unparsable falls back to ``0``
-    (unlimited) instead of crashing readers.
+    Ints pass through (normalized to >= 0); strings (e.g. ``"10 KB/s"``, ``"2M"``
+    in config.toml) are parsed, and anything unparsable or unlimited (``"0"``,
+    ``"unlimited"``) falls back to ``0`` instead of crashing readers.
     """
     if isinstance(value, bool):
         return 0
     if isinstance(value, int):
-        return value
+        return max(0, value)
     try:
-        return parse_speed_limit(str(value))
+        return max(0, parse_speed_limit(str(value)))
     except ValueError:
         return 0
 
