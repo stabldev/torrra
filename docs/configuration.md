@@ -18,6 +18,8 @@ The precise location varies by OS:
 Here's an example of what your `config.toml` might look like:
 
 ```toml
+schema_version = 1
+
 [general]
 download_path = "/home/username/Downloads"    # Fallback folder when a torrent has no custom save path
 download_in_external_client = false           # If true, opens magnet links in an external torrent client instead of downloading the .torrent file.

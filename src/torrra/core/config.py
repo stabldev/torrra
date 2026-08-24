@@ -1,5 +1,7 @@
 import ast
+import copy
 import os
+from collections.abc import Callable
 from contextlib import suppress
 from functools import lru_cache
 from pathlib import Path
@@ -24,6 +26,13 @@ from torrra.utils.helpers import get_tomllib, parse_speed_limit
 CONFIG_DIR = Path(user_config_dir("torrra"))
 CONFIG_FILE = CONFIG_DIR / "config.toml"
 
+CURRENT_SCHEMA_VERSION = 1
+
+# Registry of migration functions for sequential schema upgrades.
+# Key is target schema version (e.g. 1, 2, 3...)
+# Migration function signature: (config_data: dict[str, Any]) -> dict[str, Any]
+MIGRATIONS: dict[int, Callable[[dict[str, Any]], dict[str, Any]]] = {}
+
 # sentinel value used for robust
 # config.get(..., default=...) value check
 _sentinel = object()
@@ -43,6 +52,96 @@ def _resolve_path(value: str) -> str:
     ):
         raise ConfigError(f"unresolved environment variable in path: {value}")
     return os.path.abspath(resolved)
+
+
+def get_default_config() -> dict[str, Any]:
+    """Returns the baseline default configuration dictionary."""
+    return {
+        "schema_version": CURRENT_SCHEMA_VERSION,
+        "general": {
+            "download_path": user_downloads_dir(),
+            "download_in_external_client": False,
+            "theme": "textual-dark",
+            "timeout": DEFAULT_TIMEOUT,
+            "max_retries": DEFAULT_MAX_RETRIES,
+            "use_cache": True,
+            "cache_ttl": DEFAULT_CACHE_TTL,
+            "default_sort": DEFAULT_SORT,
+            "default_sort_order": DEFAULT_SORT_ORDER,
+            "min_seeders": DEFAULT_MIN_SEEDERS,
+        },
+        "speed_limit": {
+            "upload_limit": DEFAULT_SPEED_LIMIT_UPLOAD,
+            "download_limit": DEFAULT_SPEED_LIMIT_DOWNLOAD,
+            "enabled": False,
+        },
+    }
+
+
+def apply_migrations(
+    raw_config: dict[str, Any], target_version: int = CURRENT_SCHEMA_VERSION
+) -> tuple[dict[str, Any], bool]:
+    """
+    Applies sequential migrations to raw_config up to target_version.
+    Returns (migrated_config, was_migrated).
+    """
+    current_version = raw_config.get("schema_version", 0)
+    if not isinstance(current_version, int) or current_version < 0:
+        current_version = 0
+
+    if current_version >= target_version:
+        return raw_config, False
+
+    migrated = copy.deepcopy(raw_config)
+    for ver in range(current_version + 1, target_version + 1):
+        migration_fn = MIGRATIONS.get(ver)
+        if migration_fn is not None:
+            migrated = migration_fn(migrated)
+        migrated["schema_version"] = ver
+
+    return migrated, True
+
+
+def deep_merge(
+    default: dict[str, Any], user: dict[str, Any]
+) -> tuple[dict[str, Any], bool]:
+    """
+    Recursively merges user dict into default dict.
+    - Default keys missing in user are added with default values (had_missing=True).
+    - User values override default values.
+    - Additional user-defined keys/sections (e.g. custom indexers) are preserved.
+    Returns (merged_dict, had_missing_keys).
+    """
+    merged: dict[str, Any] = {}
+    had_missing = False
+
+    # 1. Fill from default, overriding with user when present
+    for key, def_val in default.items():
+        if key not in user:
+            merged[key] = copy.deepcopy(def_val)
+            had_missing = True
+        else:
+            user_val = user[key]
+            if isinstance(def_val, dict):
+                if isinstance(user_val, dict):
+                    merged_sub, sub_missing = deep_merge(def_val, user_val)
+                    merged[key] = merged_sub
+                    if sub_missing:
+                        had_missing = True
+                else:
+                    # User provided a non-dict where a section dict is required.
+                    # Fallback to default dict to repair structure.
+                    merged[key] = copy.deepcopy(def_val)
+                    had_missing = True
+            else:
+                merged[key] = user_val
+
+    # 2. Preserve any user keys that are not part of default (e.g. custom sections / indexers)
+    for key, user_val in user.items():
+        if key not in default:
+            merged[key] = copy.deepcopy(user_val)
+
+    return merged, had_missing
 
 
 @lru_cache
@@ -150,37 +249,42 @@ class Config:
         return results
 
     def _load_config(self) -> None:
+        defaults = get_default_config()
+
         if not CONFIG_FILE.exists():
-            self._create_default_config()
+            self.config = defaults
             self._save_config()
+            return
 
         tomllib = get_tomllib()
         try:
             with open(CONFIG_FILE, "rb") as f:
-                self.config = tomllib.load(f)
+                user_data = tomllib.load(f)
         except (OSError, tomllib.TOMLDecodeError) as e:
             print(f"loading config failed: {e}")
+            self.config = defaults
+            return
+
+        if not isinstance(user_data, dict):
+            self.config = defaults
+            self._save_config()
+            return
+
+        # 1. Apply sequential migrations
+        migrated_data, was_migrated = apply_migrations(
+            user_data, CURRENT_SCHEMA_VERSION
+        )
+
+        # 2. Deep merge with defaults to populate missing keys and sections
+        merged_config, had_missing = deep_merge(defaults, migrated_data)
+        self.config = merged_config
+
+        # 3. Auto-sync: Save to disk if new keys were added or migrations were run
+        if was_migrated or had_missing:
+            self._save_config()
 
     def _create_default_config(self) -> None:
-        self.config = {
-            "general": {
-                "download_path": user_downloads_dir(),
-                "download_in_external_client": False,
-                "theme": "textual-dark",
-                "timeout": DEFAULT_TIMEOUT,
-                "max_retries": DEFAULT_MAX_RETRIES,
-                "use_cache": True,
-                "cache_ttl": DEFAULT_CACHE_TTL,
-                "default_sort": DEFAULT_SORT,
-                "default_sort_order": DEFAULT_SORT_ORDER,
-                "min_seeders": DEFAULT_MIN_SEEDERS,
-            },
-            "speed_limit": {
-                "upload_limit": DEFAULT_SPEED_LIMIT_UPLOAD,
-                "download_limit": DEFAULT_SPEED_LIMIT_DOWNLOAD,
-                "enabled": False,
-            },
-        }
+        self.config = get_default_config()
 
     def _save_config(self) -> None:
         CONFIG_DIR.mkdir(parents=True, exist_ok=True)
