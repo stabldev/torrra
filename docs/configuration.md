@@ -34,8 +34,8 @@ default_sort_order = "auto"                   # Direction for the initial sort: 
 min_seeders = 0                               # Hide results with fewer seeders than this. 0 shows everything.
 
 [speed_limit]
-upload_limit = 10240                          # Global upload cap in bytes/sec (turtle mode). 0 = unlimited.
-download_limit = 10240                        # Global download cap in bytes/sec (turtle mode). 0 = unlimited.
+upload_limit = "10 KB/s"                        # Global upload cap (turtle mode). e.g. "10 KB/s", "500K", "2M", "unlimited" or 0.
+download_limit = "10 KB/s"                      # Global download cap (turtle mode). e.g. "10 KB/s", "2M", "unlimited" or 0.
 enabled = false                               # Whether turtle mode is currently active. Toggled at runtime with the `t` key.
 
 [indexers]
@@ -59,9 +59,9 @@ The `[speed_limit]` section defines session-wide bandwidth caps, similar to
 
 ```toml
 [speed_limit]
-upload_limit = 1048576    # bytes/sec (1 MB/s); 0 = unlimited
-download_limit = 2097152  # bytes/sec (2 MB/s); 0 = unlimited
-enabled = false           # whether turtle mode is currently active
+upload_limit = "1 MB/s"       # global upload cap; "unlimited" or 0 = no cap
+download_limit = "2 MB/s"     # global download cap; "unlimited" or 0 = no cap
+enabled = false               # whether turtle mode is currently active
 ```
 
 When `enabled` is `true`, all traffic in every `torrra` session is capped at

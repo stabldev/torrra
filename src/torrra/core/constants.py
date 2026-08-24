@@ -6,8 +6,8 @@ DEFAULT_SORT = "relevance"
 # while seeders reads high-to-low. an explicit "asc"/"desc" overrides that.
 DEFAULT_SORT_ORDER = "auto"
 DEFAULT_MIN_SEEDERS = 0
-# global (session-wide) bandwidth caps in bytes/sec; 0 = unlimited.
-# toggled at runtime with the "t" keybind ("turtle mode"). defaults mirror
-# qBittorrent's alternative-speed limits (10 KB/s in both directions).
-DEFAULT_SPEED_LIMIT_UPLOAD = 10 * 1024
-DEFAULT_SPEED_LIMIT_DOWNLOAD = 10 * 1024
+# global (session-wide) bandwidth caps; defaults mirror qBittorrent's
+# alternative-speed limits (10 KB/s in both directions). accepts human-readable
+# units ("10 KB/s", "2M", "500K") or bare bytes/sec numbers; 0/unlimited = no cap.
+DEFAULT_SPEED_LIMIT_UPLOAD = "10 KB/s"
+DEFAULT_SPEED_LIMIT_DOWNLOAD = "10 KB/s"
