@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import atexit
 import os
+from contextlib import suppress
 from functools import lru_cache
 from typing import ClassVar
 
@@ -12,6 +14,7 @@ from torrra.core.constants import (
     DEFAULT_SPEED_LIMIT_DOWNLOAD,
     DEFAULT_SPEED_LIMIT_UPLOAD,
 )
+from torrra.core.db import DB_DIR
 from torrra.core.exceptions import DownloadError
 from torrra.core.paths import normalize_download_path, prepare_download_path
 from torrra.utils.helpers import coerce_speed_limit
@@ -35,17 +38,31 @@ class DownloadManager:
 
     def __init__(self) -> None:
         settings: lt.settings_pack = {
-            "listen_interfaces": "0.0.0.0:6881,[::]:6881,0.0.0.0:0",
+            "listen_interfaces": "0.0.0.0:6881,[::]:6881,0.0.0.0:0,[::]:0",
             "enable_dht": True,
-            "dht_bootstrap_nodes": "router.bittorrent.com:6881,dht.transmissionbt.com:6881,router.utorrent.com:6881,dht.libtorrent.org:25401",
+            "dht_bootstrap_nodes": (
+                "dht.libtorrent.org:25401,"
+                "dht.transmissionbt.com:6881,"
+                "router.bittorrent.com:6881,"
+                "dht.aelitis.com:6881,"
+                "router.utorrent.com:6881"
+            ),
             "enable_lsd": True,
             "enable_upnp": True,
             "enable_natpmp": True,
             "announce_to_all_trackers": True,
             "announce_to_all_tiers": True,
             "prefer_udp_trackers": True,
+            "active_downloads": 50,
+            "active_limit": 500,
+            "connection_speed": 100,
+            "torrent_connect_boost": 100,
+            "peer_connect_timeout": 7,
+            "tracker_completion_timeout": 10,
+            "tracker_receive_timeout": 5,
+            "dht_search_branching": 10,
         }
-        self.session: lt.session = lt.session(settings)
+        self.session: lt.session = self._create_session(settings)
         self.torrents: dict[str, lt.torrent_handle] = {}
         self._metadata_only_torrents: set[str] = set()
         self._file_priorities: dict[str, list[int]] = {}
@@ -56,6 +73,29 @@ class DownloadManager:
         # apply session-wide speed limits from config ("turtle mode"),
         # a no-op when disabled or unset
         self.apply_global_limits()
+        atexit.register(self.save_session_state)
+
+    def _create_session(self, settings: lt.settings_pack) -> lt.session:
+        session_file = DB_DIR / "session.dat"
+        if session_file.is_file():
+            with suppress(AttributeError, RuntimeError, OSError, TypeError, ValueError):
+                data = session_file.read_bytes()
+                if data and hasattr(lt, "read_session_params"):
+                    params = lt.read_session_params(data)
+                    session = lt.session(params)
+                    session.apply_settings(settings)
+                    return session
+        return lt.session(settings)
+
+    def save_session_state(self) -> None:
+        with suppress(AttributeError, RuntimeError, OSError, TypeError, ValueError):
+            DB_DIR.mkdir(parents=True, exist_ok=True)
+            if hasattr(self.session, "session_state") and hasattr(
+                lt, "write_session_params_buf"
+            ):
+                state = self.session.session_state()
+                buf = lt.write_session_params_buf(state)
+                (DB_DIR / "session.dat").write_bytes(buf)
 
     def add_torrent(
         self,
@@ -197,6 +237,12 @@ class DownloadManager:
         self.torrents[magnet_uri] = handle
         if metadata_only:
             self._metadata_only_torrents.add(magnet_uri)
+            try:
+                handle.queue_position_top()
+                handle.force_reannounce()
+                handle.force_dht_announce()
+            except (AttributeError, RuntimeError):
+                pass
 
         # apply any stored per-torrent speed limits
         self._apply_stored_limits(handle, magnet_uri)
@@ -272,6 +318,16 @@ class DownloadManager:
         # 0 means unlimited, which is also libtorrent's sentinel value,
         # so values pass through unchanged. caps coexist with per-torrent
         # limits (the effective rate is the lower of the two).
+        # when turtle mode is disabled (the default), rate limits are 0 (unlimited).
+        if not self.is_speed_limit_enabled():
+            try:
+                self.session.apply_settings(
+                    {"upload_rate_limit": 0, "download_rate_limit": 0}
+                )
+            except (AttributeError, RuntimeError):
+                pass
+            return
+
         config = get_config()
         up = coerce_speed_limit(
             config.get("speed_limit.upload_limit", DEFAULT_SPEED_LIMIT_UPLOAD)
@@ -294,15 +350,7 @@ class DownloadManager:
 
     def set_speed_limit_enabled(self, enabled: bool) -> None:
         get_config().set("speed_limit.enabled", str(enabled).lower())
-        if enabled:
-            self.apply_global_limits()
-        else:
-            try:
-                self.session.apply_settings(
-                    {"upload_rate_limit": 0, "download_rate_limit": 0}
-                )
-            except (AttributeError, RuntimeError):
-                pass
+        self.apply_global_limits()
 
     def _apply_stored_limits(self, handle: lt.torrent_handle, magnet_uri: str) -> None:
         limits = self._limits.get(magnet_uri)
