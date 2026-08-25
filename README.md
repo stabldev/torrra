@@ -15,8 +15,6 @@
 _Torrra_ provides a streamlined command-line interface for torrent search and downloads, powered by Jackett/Prowlarr and Libtorrent. Built with Textual, it offers a beautiful
 TUI with pause/resume support - all without leaving your terminal.
 
-**Full documentation**: https://torrra.readthedocs.io/en/latest/
-
 ## Installation
 
 ```bash
