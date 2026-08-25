@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import atexit
 import os
+from contextlib import suppress
 from functools import lru_cache
-from typing import Any, ClassVar
+from typing import ClassVar
 
 import libtorrent as lt
 
@@ -74,32 +75,31 @@ class DownloadManager:
         self.apply_global_limits()
         atexit.register(self.save_session_state)
 
-    def _create_session(self, settings: dict[str, Any]) -> lt.session:
+    def _create_session(self, settings: lt.settings_pack) -> lt.session:
         session_file = DB_DIR / "session.dat"
         if session_file.is_file():
-            try:
+            with suppress(
+                AttributeError, RuntimeError, OSError, TypeError, ValueError
+            ):
                 data = session_file.read_bytes()
                 if data and hasattr(lt, "read_session_params"):
                     params = lt.read_session_params(data)
                     session = lt.session(params)
                     session.apply_settings(settings)
                     return session
-            except Exception:
-                pass
         return lt.session(settings)
 
     def save_session_state(self) -> None:
-        try:
+        with suppress(
+            AttributeError, RuntimeError, OSError, TypeError, ValueError
+        ):
             DB_DIR.mkdir(parents=True, exist_ok=True)
             if hasattr(self.session, "session_state") and hasattr(
                 lt, "write_session_params_buf"
             ):
                 state = self.session.session_state()
-                if isinstance(state, lt.session_params):
-                    buf = lt.write_session_params_buf(state)
-                    (DB_DIR / "session.dat").write_bytes(buf)
-        except Exception:
-            pass
+                buf = lt.write_session_params_buf(state)
+                (DB_DIR / "session.dat").write_bytes(buf)
 
     def add_torrent(
         self,
