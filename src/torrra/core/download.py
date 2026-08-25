@@ -78,9 +78,7 @@ class DownloadManager:
     def _create_session(self, settings: lt.settings_pack) -> lt.session:
         session_file = DB_DIR / "session.dat"
         if session_file.is_file():
-            with suppress(
-                AttributeError, RuntimeError, OSError, TypeError, ValueError
-            ):
+            with suppress(AttributeError, RuntimeError, OSError, TypeError, ValueError):
                 data = session_file.read_bytes()
                 if data and hasattr(lt, "read_session_params"):
                     params = lt.read_session_params(data)
@@ -90,9 +88,7 @@ class DownloadManager:
         return lt.session(settings)
 
     def save_session_state(self) -> None:
-        with suppress(
-            AttributeError, RuntimeError, OSError, TypeError, ValueError
-        ):
+        with suppress(AttributeError, RuntimeError, OSError, TypeError, ValueError):
             DB_DIR.mkdir(parents=True, exist_ok=True)
             if hasattr(self.session, "session_state") and hasattr(
                 lt, "write_session_params_buf"
