@@ -409,6 +409,41 @@ def test_torrent_limits_persisted_to_db():
     assert record.get("download_limit") == 2048
 
 
+def test_global_speed_limits_disabled_by_default():
+    dm = DownloadManager()
+    assert dm.is_speed_limit_enabled() is False
+    settings = dm.session.get_settings()
+    assert settings["download_rate_limit"] == 0
+    assert settings["upload_rate_limit"] == 0
+
+
+def test_global_speed_limits_toggle():
+    dm = DownloadManager()
+    dm.set_speed_limit_enabled(True)
+    assert dm.is_speed_limit_enabled() is True
+    settings = dm.session.get_settings()
+    assert settings["download_rate_limit"] == 10240
+    assert settings["upload_rate_limit"] == 10240
+
+    dm.set_speed_limit_enabled(False)
+    assert dm.is_speed_limit_enabled() is False
+    settings = dm.session.get_settings()
+    assert settings["download_rate_limit"] == 0
+    assert settings["upload_rate_limit"] == 0
+
+
+def test_global_speed_limits_enabled_on_startup(mock_config):
+    mock_config.set("speed_limit.enabled", "true")
+    mock_config.set("speed_limit.download_limit", "2M")
+    mock_config.set("speed_limit.upload_limit", "500K")
+
+    dm = DownloadManager()
+    assert dm.is_speed_limit_enabled() is True
+    settings = dm.session.get_settings()
+    assert settings["download_rate_limit"] == 2 * 1024 * 1024
+    assert settings["upload_rate_limit"] == 500 * 1024
+
+
 def test_get_session_stats():
     dm = DownloadManager()
     stats = dm.get_session_stats()
@@ -651,3 +686,23 @@ def test_get_torrent_status_save_path_config_fallback_expanded(
     status = dm.get_torrent_status(magnet)
     assert status is not None
     assert status["is_missing_files"] is False
+
+
+def test_save_and_load_session_state(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    from torrra.core import db as db_module
+
+    session_dir = tmp_path / "test_db_dir"
+    session_dir.mkdir(parents=True, exist_ok=True)
+    monkeypatch.setattr(db_module, "DB_DIR", session_dir)
+    monkeypatch.setattr("torrra.core.download.DB_DIR", session_dir)
+
+    dm = DownloadManager()
+    dm.save_session_state()
+
+    session_file = session_dir / "session.dat"
+    assert session_file.exists()
+    assert session_file.stat().st_size > 0
+
+    # Test loading existing session file
+    dm2 = DownloadManager()
+    assert dm2.session is not None
