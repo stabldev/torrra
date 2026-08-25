@@ -10,7 +10,7 @@
 [![Docs](https://readthedocs.org/projects/torrra/badge/?version=latest&style=flat-square)](https://torrra.readthedocs.io/)
 [![License](https://img.shields.io/github/license/stabldev/torrra?style=flat-square)](https://github.com/stabldev/torrra/blob/main/LICENSE)
 
-![demo](./docs/assets/demo.gif)
+<img width="900" height="526" alt="torrra-demo" src="https://github.com/user-attachments/assets/5a91a307-7c31-4cab-83b5-45c035df8842" />
 
 _Torrra_ provides a streamlined command-line interface for torrent search and downloads, powered by Jackett/Prowlarr and Libtorrent. Built with Textual, it offers a beautiful
 TUI with pause/resume support - all without leaving your terminal.
