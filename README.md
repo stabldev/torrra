@@ -110,6 +110,15 @@ Whether it's reporting a bug, submitting a feature request, or writing code, we 
 - **Want to contribute code?** Check out the [Contributing Guide](https://torrra.readthedocs.io/en/latest/contributing.html),\
   to learn how to set up your development environment and submit a pull request.
 
+## Contributors
+
+Big thanks to all the amazing contributors who have helped shape Torrra! 💙\
+Every contribution, big or small, is genuinely appreciated.
+
+<a href="https://github.com/stabldev/torrra/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=stabldev/torrra&columns=10" />
+</a>
+
 ## License
 
 [MIT](LICENSE) © 2026 ^\_^ [`@stabldev`](https://github.com/stabldev)
