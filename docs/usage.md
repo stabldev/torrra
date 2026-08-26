@@ -55,8 +55,8 @@ files without searching using the `download` command:
 ```bash
 torrra download "magnet:?xt=urn:btih:..."
 # or torrra download "/path/to/file.torrent"
-# optionally prefill a per-torrent destination
-torrra download "https://example.com/file.torrent" --save-path /downloads/linux
+# optionally prefill a per-torrent destination, sequential download, and seed limits
+torrra download "https://example.com/file.torrent" --save-path /downloads/linux --sequential --seed-ratio 1.5 --seed-time 2h
 ```
 
 The file-selection screen lets you choose files and an optional **Save to**
@@ -73,10 +73,10 @@ after restarting Torrra.
 | :------------------------------------- | :--------------------------------------------------------------------------------------------------- |
 | `torrra`                               | Displays the help message if no subcommand is provided                                               |
 | `torrra --help`                        | Shows the general help message                                                                       |
-| `torrra --version`                     | Displays the current installed version of `torrra`                                                   |
-| `torrra search <query>`                | Searches for a torrent directly from the command line, bypassing the welcome screen.                 |
-| `torrra download <magnet_uri_or_file> [--save-path PATH]` | Downloads a magnet, URL, or local .torrent file with an optional per-torrent destination. |
-| `torrra config`                        | Accesses the configuration subcommands (see below)                                                   |
+| `torrra download <uri/file>`           | Directly downloads a torrent with optional `--save-path`, `--sequential`, `--seed-ratio`, and `--seed-time` |
+| `torrra search <query>`                | Searches for torrents directly from the CLI                                                          |
+| `torrra downloads`                     | Directly opens the downloads view                                                                    |
+| `torrra config`                        | Manages `torrra` configuration                                                                       |
 | `torrra jackett`                       | Initializes `torrra` using [`Jackett`](https://github.com/Jackett/Jackett) as the torrent indexer    |
 | `torrra prowlarr`                      | Initializes `torrra` using [`Prowlarr`](https://github.com/Prowlarr/Prowlarr) as the torrent indexer |
 
@@ -148,13 +148,12 @@ These work in both the search results and the downloads list.
 | `Enter` / `l` | Show details and progress for the highlighted download       |
 | `p`           | Pause or resume the selected download (the same key toggles) |
 | `f`           | Open the file selection modal to choose files to download    |
-| `s`           | Set upload / download speed limits for the selected torrent  |
+| `o` / `s`     | Open torrent options (speed limits, max ratio, seed time, sequential download) |
 | `d`           | Remove the selected torrent, keeping any downloaded files    |
 | `D`           | Remove the selected torrent **and** delete its files         |
 
-While a download's details panel is open, per-torrent limits set with `s` are
-shown as `Up lim:` / `Down lim:` entries, and the status bar displays a
-`TURTLE` badge whenever turtle mode is on.
+While a download's details panel is open, per-torrent limits, current seed ratio,
+and sequential status (`[Seq]`) are displayed.
 
 ### File selection
 

@@ -5,12 +5,18 @@ from textual.app import ComposeResult
 from textual.containers import Vertical
 from typing_extensions import override
 
-from torrra._types import DownloadSelection, Torrent, TorrentRecord, TorrentStatus
+from torrra._types import (
+    DownloadSelection,
+    Torrent,
+    TorrentOptions,
+    TorrentRecord,
+    TorrentStatus,
+)
 from torrra.core.download import DownloadManager, get_download_manager
 from torrra.core.exceptions import ConfigError, DownloadError
 from torrra.core.torrent import TorrentManager, get_torrent_manager
 from torrra.screens.file_selection import FileSelectionScreen
-from torrra.screens.speed_limit import SpeedLimitScreen
+from torrra.screens.torrent_options import TorrentOptionsScreen
 from torrra.utils.helpers import human_readable_eta, human_readable_size
 from torrra.widgets.data_table import AutoResizingDataTable
 from torrra.widgets.details_panel import DetailsPanel
@@ -30,7 +36,8 @@ class DownloadsContent(Vertical):
         ("d", "delete_torrent"),
         ("D", "delete_torrent_with_data"),
         ("f", "select_files"),
-        ("s", "set_speed_limit"),
+        ("o", "show_torrent_options"),
+        ("s", "show_torrent_options"),
     ]
 
     def __init__(self) -> None:
@@ -151,6 +158,9 @@ class DownloadsContent(Vertical):
                     download_limit=torrent.get("download_limit"),
                     save_path=torrent.get("save_path"),
                     create_path=torrent.get("save_path") is None,
+                    max_ratio=torrent.get("max_ratio"),
+                    max_seeding_time=torrent.get("max_seeding_time"),
+                    sequential_download=torrent.get("sequential_download", False),
                 )
             except (ConfigError, DownloadError) as exc:
                 self.notify(
@@ -212,7 +222,7 @@ class DownloadsContent(Vertical):
             self._on_edit_files_done,
         )
 
-    def action_set_speed_limit(self) -> None:
+    def action_show_torrent_options(self) -> None:
         if not self._selected_torrent:
             return
 
@@ -220,17 +230,35 @@ class DownloadsContent(Vertical):
         title = self._selected_torrent["title"]
         short_title = (title[:50] + "...") if len(title) > 40 else title
 
-        limits = self._dm.get_torrent_limits(magnet_uri)
-        up, down = limits if limits is not None else (None, None)
+        opts = self._dm.get_torrent_options(magnet_uri)
 
         self.app.push_screen(
-            SpeedLimitScreen(
+            TorrentOptionsScreen(
                 title=short_title,
-                upload_limit=up,
-                download_limit=down,
+                options=opts,
             ),
-            self._on_speed_limit_set,
+            self._on_torrent_options_set,
         )
+
+    def action_set_speed_limit(self) -> None:
+        self.action_show_torrent_options()
+
+    def _on_torrent_options_set(self, options: TorrentOptions | None) -> None:
+        if options is None or not self._selected_torrent:
+            return
+
+        magnet_uri = self._selected_torrent["magnet_uri"]
+        self._dm.set_torrent_options(magnet_uri, options)
+
+        self._selected_torrent["upload_limit"] = options.upload_limit
+        self._selected_torrent["download_limit"] = options.download_limit
+        self._selected_torrent["max_ratio"] = options.max_ratio
+        self._selected_torrent["max_seeding_time"] = options.max_seeding_time
+        self._selected_torrent["sequential_download"] = options.sequential_download
+
+        # refresh the details panel so the new options are visible
+        if status := self._dm.get_torrent_status(magnet_uri):
+            self._update_details_panel(status)
 
     def _on_speed_limit_set(self, limits: tuple[int, int] | None) -> None:
         if limits is None or not self._selected_torrent:
@@ -441,13 +469,23 @@ class DownloadsContent(Vertical):
         seeders_text = f"{status.get('seeders', 0)}/{status.get('total_seeders', 0)}"
         peers_text = f"{status.get('peers', 0)}/{status.get('total_peers', 0)}"
         save_path = escape(status["save_path"])
+
+        ratio = status.get("ratio", 0.0)
+        max_ratio = status.get("max_ratio")
+        ratio_part = (
+            f" [dim]·[/dim] Ratio: [b]{ratio:.2f}[/b]/{max_ratio:.2f}"
+            if max_ratio is not None and max_ratio > 0
+            else ""
+        )
+        seq_badge = " [dim]\\[Seq][/dim]" if status.get("sequential_download") else ""
+
         details = (
-            f"Status: [b]{state_text}[/b] [dim]·[/dim] Size: {size} [dim]·[/dim] [dim]Source:[/dim] [dim]{current_torrent['source']}[/dim]\n"
+            f"Status: [b]{state_text}[/b]{seq_badge} [dim]·[/dim] Size: {size}{ratio_part} [dim]·[/dim] [dim]Source:[/dim] [dim]{current_torrent['source']}[/dim]\n"
             f"Down: [b]{down_speed}[/b] [dim]·[/dim] Up: {up_speed} [dim]·[/dim] [dim]Seeds:[/dim] [dim]{seeders_text}[/dim] [dim]·[/dim] [dim]Peers:[/dim] [dim]{peers_text}[/dim]\n"
             f"[dim]Save to:[/dim] [dim]{save_path}[/dim]"
         )
         shortcuts = (
-            r"[dim]\[p] pause/resume · \[f] select files · \[s] speed limit · "
+            r"[dim]\[p] pause/resume · \[f] files · \[o] options · "
             r"\[d] delete · \[D] delete w/ data · \[esc] close[/dim]"
         )
         # update details panel internal widgets

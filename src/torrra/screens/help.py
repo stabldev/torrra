@@ -54,7 +54,7 @@ SHORTCUTS: list[tuple[str, list[tuple[str, str]]]] = [
             ("enter / l", "show download details"),
             ("p", "pause or resume"),
             ("f", "select files to download"),
-            ("s", "set upload / download speed limit"),
+            ("o / s", "torrent options (limits, ratio, sequential)"),
             ("d", "remove torrent"),
             ("D", "remove and delete files"),
         ],

@@ -39,6 +39,11 @@ class TorrentStatus(TypedDict, total=False):
     is_missing_files: bool
     is_queued: bool
     save_path: str
+    ratio: float
+    seeding_duration: int
+    max_ratio: float | None
+    max_seeding_time: int | None
+    sequential_download: bool
 
 
 class TorrentRecord(TypedDict, total=False):
@@ -54,6 +59,9 @@ class TorrentRecord(TypedDict, total=False):
     upload_limit: int | None
     download_limit: int | None
     save_path: str | None
+    max_ratio: float | None
+    max_seeding_time: int | None
+    sequential_download: bool
 
 
 class SessionStats(TypedDict, total=False):
@@ -62,6 +70,17 @@ class SessionStats(TypedDict, total=False):
     download_rate: float
     upload_rate: float
     dht_nodes: int
+
+
+@dataclass
+class TorrentOptions:
+    """Per-torrent configuration options."""
+
+    upload_limit: int | None = None
+    download_limit: int | None = None
+    max_ratio: float | None = None
+    max_seeding_time: int | None = None
+    sequential_download: bool = False
 
 
 @dataclass

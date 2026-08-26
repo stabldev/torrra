@@ -105,6 +105,9 @@ def run_without_indexer(
     direct_download: str | None = None,
     direct_save_path: str | None = None,
     show_downloads: bool = False,
+    direct_sequential: bool = False,
+    direct_max_ratio: float | None = None,
+    direct_max_seeding_time: int | None = None,
 ) -> None:
     """Launch the app without an indexer.
 
@@ -130,6 +133,9 @@ def run_without_indexer(
             direct_download=direct_download,
             direct_save_path=direct_save_path,
             show_downloads=show_downloads,
+            direct_sequential=direct_sequential,
+            direct_max_ratio=direct_max_ratio,
+            direct_max_seeding_time=direct_max_seeding_time,
         )
         app.run()
     except RuntimeError as e:

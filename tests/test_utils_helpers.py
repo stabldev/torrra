@@ -1,11 +1,17 @@
 import pytest
 
 from torrra.utils.helpers import (
+    coerce_ratio_limit,
+    coerce_seeding_time,
     coerce_speed_limit,
+    format_ratio_limit,
+    format_seeding_time,
     get_tomllib,
     human_readable_eta,
     human_readable_size,
     lazy_import,
+    parse_ratio_limit,
+    parse_seeding_time,
     parse_speed_limit,
 )
 
@@ -111,3 +117,82 @@ def test_coerce_speed_limit():
     assert coerce_speed_limit(False) == 0
     assert coerce_speed_limit(True) == 0
     assert coerce_speed_limit("invalid-unit") == 0
+
+
+def test_parse_ratio_limit():
+    assert parse_ratio_limit("") == -1.0
+    assert parse_ratio_limit("0") == -1.0
+    assert parse_ratio_limit("0.0") == -1.0
+    assert parse_ratio_limit("unlimited") == -1.0
+    assert parse_ratio_limit("off") == -1.0
+    assert parse_ratio_limit("none") == -1.0
+    assert parse_ratio_limit("1.5") == 1.5
+    assert parse_ratio_limit("2") == 2.0
+    assert parse_ratio_limit("0.75") == 0.75
+
+    with pytest.raises(ValueError):
+        parse_ratio_limit("-1")
+    with pytest.raises(ValueError):
+        parse_ratio_limit("abc")
+
+
+def test_format_ratio_limit():
+    assert format_ratio_limit(None) == ""
+    assert format_ratio_limit(0) == ""
+    assert format_ratio_limit(-1) == ""
+    assert format_ratio_limit(1.5) == "1.5"
+    assert format_ratio_limit(2.0) == "2"
+    assert format_ratio_limit(2.25) == "2.25"
+
+
+def test_coerce_ratio_limit():
+    assert coerce_ratio_limit(1.5) == 1.5
+    assert coerce_ratio_limit(2) == 2.0
+    assert coerce_ratio_limit("1.5") == 1.5
+    assert coerce_ratio_limit("0") == 0.0
+    assert coerce_ratio_limit("unlimited") == 0.0
+    assert coerce_ratio_limit(False) == 0.0
+    assert coerce_ratio_limit("invalid") == 0.0
+
+
+def test_parse_seeding_time():
+    assert parse_seeding_time("") == -1
+    assert parse_seeding_time("0") == -1
+    assert parse_seeding_time("unlimited") == -1
+    assert parse_seeding_time("off") == -1
+    assert parse_seeding_time("none") == -1
+    assert parse_seeding_time("30") == 30
+    assert parse_seeding_time("30m") == 30
+    assert parse_seeding_time("30 min") == 30
+    assert parse_seeding_time("30 minutes") == 30
+    assert parse_seeding_time("2h") == 120
+    assert parse_seeding_time("1.5h") == 90
+    assert parse_seeding_time("2 hours") == 120
+    assert parse_seeding_time("1d") == 1440
+    assert parse_seeding_time("2 days") == 2880
+
+    with pytest.raises(ValueError):
+        parse_seeding_time("-5")
+    with pytest.raises(ValueError):
+        parse_seeding_time("invalid")
+
+
+def test_format_seeding_time():
+    assert format_seeding_time(None) == ""
+    assert format_seeding_time(0) == ""
+    assert format_seeding_time(-1) == ""
+    assert format_seeding_time(45) == "45m"
+    assert format_seeding_time(60) == "1h"
+    assert format_seeding_time(120) == "2h"
+    assert format_seeding_time(1440) == "1d"
+    assert format_seeding_time(2880) == "2d"
+
+
+def test_coerce_seeding_time():
+    assert coerce_seeding_time(60) == 60
+    assert coerce_seeding_time("2h") == 120
+    assert coerce_seeding_time("30m") == 30
+    assert coerce_seeding_time("0") == 0
+    assert coerce_seeding_time("unlimited") == 0
+    assert coerce_seeding_time(False) == 0
+    assert coerce_seeding_time("invalid") == 0
