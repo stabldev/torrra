@@ -148,7 +148,7 @@ These work in both the search results and the downloads list.
 | `Enter` / `l` | Show details and progress for the highlighted download       |
 | `p`           | Pause or resume the selected download (the same key toggles) |
 | `f`           | Open the file selection modal to choose files to download    |
-| `o` / `s`     | Open torrent options (speed limits, max ratio, seed time, sequential download) |
+| `o`           | Open torrent options (speed limits, max ratio, seed time, sequential download) |
 | `d`           | Remove the selected torrent, keeping any downloaded files    |
 | `D`           | Remove the selected torrent **and** delete its files         |
 
