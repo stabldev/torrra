@@ -26,7 +26,11 @@ def cli(ctx: click.Context, no_cache: bool) -> None:
     type=click.Path(file_okay=False),
     help="Download this torrent to PATH instead of the configured default.",
 )
-def download(magnet_uri_or_file: str, no_cache: bool, save_path: str | None) -> None:
+def download(
+    magnet_uri_or_file: str,
+    no_cache: bool,
+    save_path: str | None,
+) -> None:
     import os
     import re
 

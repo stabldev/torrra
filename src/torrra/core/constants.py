@@ -11,3 +11,5 @@ DEFAULT_MIN_SEEDERS = 0
 # units ("10 KB/s", "2M", "500K") or bare bytes/sec numbers; 0/unlimited = no cap.
 DEFAULT_SPEED_LIMIT_UPLOAD = "10 KB/s"
 DEFAULT_SPEED_LIMIT_DOWNLOAD = "10 KB/s"
+DEFAULT_MAX_RATIO = 0.0
+DEFAULT_MAX_SEED_TIME = 0

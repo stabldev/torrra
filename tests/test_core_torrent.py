@@ -77,5 +77,34 @@ def test_init_db_migrates_existing_rows(
     record = TorrentManager().get_torrent("magnet:?xt=urn:btih:legacy")
 
     assert "save_path" in columns
+    assert "max_ratio" in columns
+    assert "max_seeding_time" in columns
+    assert "sequential_download" in columns
     assert record is not None
     assert record["save_path"] is None
+    assert record["max_ratio"] is None
+    assert record["max_seeding_time"] is None
+    assert record["sequential_download"] is False
+
+
+def test_torrent_manager_update_options():
+    manager = TorrentManager()
+    t = _torrent()
+    manager.add_torrent(t)
+
+    manager.update_torrent_options(
+        t.magnet_uri,
+        upload_limit=512000,
+        download_limit=1048576,
+        max_ratio=1.5,
+        max_seeding_time=120,
+        sequential_download=True,
+    )
+
+    record = manager.get_torrent(t.magnet_uri)
+    assert record is not None
+    assert record["upload_limit"] == 512000
+    assert record["download_limit"] == 1048576
+    assert record["max_ratio"] == 1.5
+    assert record["max_seeding_time"] == 120
+    assert record["sequential_download"] is True

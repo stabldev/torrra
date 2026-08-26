@@ -80,6 +80,9 @@ class HomeScreen(Screen[None]):
                     download_limit=torrent.get("download_limit"),
                     save_path=torrent.get("save_path"),
                     create_path=torrent.get("save_path") is None,
+                    max_ratio=torrent.get("max_ratio"),
+                    max_seeding_time=torrent.get("max_seeding_time"),
+                    sequential_download=torrent.get("sequential_download", False),
                 )
             except (ConfigError, DownloadError) as exc:
                 self.notify(

@@ -45,7 +45,7 @@ async def handle_direct_download(
         magnet_uri=magnet_uri,
         title=title,
         size=size,
-        source="Direct Download",
+        source="Direct",
         seeders=0,
         leechers=0,
     )

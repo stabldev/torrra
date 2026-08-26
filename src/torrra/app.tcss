@@ -278,6 +278,75 @@ SpeedLimitScreen {
   }
 }
 
+TorrentOptionsScreen {
+  align: center middle;
+  #torrent-options-container {
+    height: auto;
+    max-width: 52;
+    width: 52;
+    padding: 0 2;
+    background: $surface;
+    border: tall $secondary;
+    Label {
+      width: 100%;
+      text-align: left;
+    }
+    #torrent-options-name {
+      color: $text-muted;
+      margin-bottom: 1;
+    }
+    #torrent-options-fields {
+      height: auto;
+      .torrent-option-row {
+        height: 1;
+        align-vertical: middle;
+        margin-bottom: 0;
+        .torrent-option-label {
+          width: 12;
+          color: $text;
+        }
+        Input {
+          width: 1fr;
+          height: 1;
+          border: none;
+          background: $surface;
+          padding: 0 1;
+        }
+        .torrent-option-unit-label {
+          width: 10;
+          color: $text-muted;
+          text-align: right;
+          margin-left: 1;
+        }
+      }
+      .torrent-option-hint {
+        width: 100%;
+        color: $text-muted;
+        margin-bottom: 1;
+      }
+      .checkbox-row {
+        height: 1;
+        margin-top: 1;
+        align-vertical: middle;
+        Checkbox {
+          background: $surface;
+          border: none;
+          height: 1;
+          padding: 0;
+        }
+      }
+    }
+    .error-text {
+      color: $error;
+    }
+    #torrent-options-footer {
+      color: $text-muted;
+      text-align: center;
+      margin-top: 1;
+    }
+  }
+}
+
 /* ------------------------- */
 /* SORT SELECT SCREEN        */
 /* ------------------------- */

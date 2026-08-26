@@ -5,7 +5,7 @@ from typing import Any, cast
 import libtorrent as lt
 import pytest
 
-from torrra._types import TorrentStatus
+from torrra._types import TorrentOptions, TorrentStatus
 from torrra.core.download import DownloadManager
 from torrra.core.exceptions import DownloadError
 
@@ -67,6 +67,7 @@ def make_download_manager(session: FakeTorrentSession) -> DownloadManager:
     manager._metadata_only_torrents = set()
     manager._file_priorities = {}
     manager._limits = {}
+    manager._options = {}
     manager._metadata_updated = set()
     return manager
 
@@ -706,3 +707,163 @@ def test_save_and_load_session_state(tmp_path: Path, monkeypatch: pytest.MonkeyP
     # Test loading existing session file
     dm2 = DownloadManager()
     assert dm2.session is not None
+
+
+def test_set_and_get_torrent_options():
+    from unittest.mock import MagicMock
+
+    dm = DownloadManager()
+    handle_mock = MagicMock()
+    handle_mock.is_valid.return_value = True
+
+    magnet = "magnet:?xt=urn:btih:mock_options_test"
+    dm.torrents = {magnet: handle_mock}
+
+    opts = TorrentOptions(
+        upload_limit=10240,
+        download_limit=20480,
+        max_ratio=1.5,
+        max_seeding_time=120,
+        sequential_download=True,
+    )
+    dm.set_torrent_options(magnet, opts)
+
+    retrieved = dm.get_torrent_options(magnet)
+    assert retrieved.upload_limit == 10240
+    assert retrieved.download_limit == 20480
+    assert retrieved.max_ratio == 1.5
+    assert retrieved.max_seeding_time == 120
+    assert retrieved.sequential_download is True
+
+    handle_mock.set_upload_limit.assert_called_with(10240)
+    handle_mock.set_download_limit.assert_called_with(20480)
+
+
+def test_auto_pause_on_ratio_limit_reached():
+    from unittest.mock import MagicMock
+
+    dm = DownloadManager()
+    handle_mock = MagicMock()
+    handle_mock.is_valid.return_value = True
+
+    status_mock = MagicMock()
+    status_mock.state = lt.torrent_status.states.seeding
+    status_mock.progress = 1.0
+    status_mock.download_rate = 0
+    status_mock.upload_rate = 100
+    status_mock.total_done = 1000
+    status_mock.total_wanted = 1000
+    status_mock.total_wanted_done = 1000
+    status_mock.all_time_upload = 2000
+    status_mock.all_time_download = 1000
+    status_mock.seeding_duration = 60
+    status_mock.flags = 0
+    status_mock.is_seeding = True
+    status_mock.is_finished = True
+    status_mock.has_metadata = False
+    status_mock.save_path = "test"
+    status_mock.num_seeds = 1
+    status_mock.num_peers = 1
+    status_mock.list_seeds = 1
+    status_mock.list_peers = 1
+    status_mock.error_file = -1
+    status_mock.errc = None
+
+    handle_mock.status.return_value = status_mock
+    magnet = "magnet:?xt=urn:btih:mock_ratio_test"
+    dm.torrents = {magnet: handle_mock}
+
+    # Ratio limit is 1.5, actual ratio is 2.0 (2000 / 1000)
+    opts = TorrentOptions(max_ratio=1.5)
+    dm.set_torrent_options(magnet, opts)
+
+    status = dm.get_torrent_status(magnet)
+    assert status is not None
+    assert status["ratio"] == 2.0
+    assert status["is_paused"] is True
+    handle_mock.pause.assert_called_once()
+
+
+def test_auto_pause_on_seeding_time_limit_reached():
+    from unittest.mock import MagicMock
+
+    dm = DownloadManager()
+    handle_mock = MagicMock()
+    handle_mock.is_valid.return_value = True
+
+    status_mock = MagicMock()
+    status_mock.state = lt.torrent_status.states.seeding
+    status_mock.progress = 1.0
+    status_mock.download_rate = 0
+    status_mock.upload_rate = 100
+    status_mock.total_done = 1000
+    status_mock.total_wanted = 1000
+    status_mock.total_wanted_done = 1000
+    status_mock.all_time_upload = 500
+    status_mock.all_time_download = 1000
+    status_mock.seeding_duration = 3600  # 60 minutes
+    status_mock.flags = 0
+    status_mock.is_seeding = True
+    status_mock.is_finished = True
+    status_mock.has_metadata = False
+    status_mock.save_path = "test"
+    status_mock.num_seeds = 1
+    status_mock.num_peers = 1
+    status_mock.list_seeds = 1
+    status_mock.list_peers = 1
+    status_mock.error_file = -1
+    status_mock.errc = None
+
+    handle_mock.status.return_value = status_mock
+    magnet = "magnet:?xt=urn:btih:mock_time_test"
+    dm.torrents = {magnet: handle_mock}
+
+    # Seeding time limit is 30 minutes, actual is 60 minutes
+    opts = TorrentOptions(max_seeding_time=30)
+    dm.set_torrent_options(magnet, opts)
+
+    status = dm.get_torrent_status(magnet)
+    assert status is not None
+    assert status["seeding_duration"] == 3600
+    assert status["is_paused"] is True
+    handle_mock.pause.assert_called_once()
+
+
+def test_seeding_duration_timedelta():
+    import datetime
+    from unittest.mock import MagicMock
+
+    dm = DownloadManager()
+    handle_mock = MagicMock()
+    handle_mock.is_valid.return_value = True
+
+    status_mock = MagicMock()
+    status_mock.state = lt.torrent_status.states.seeding
+    status_mock.progress = 1.0
+    status_mock.download_rate = 0
+    status_mock.upload_rate = 100
+    status_mock.total_done = 1000
+    status_mock.total_wanted = 1000
+    status_mock.total_wanted_done = 1000
+    status_mock.all_time_upload = 500
+    status_mock.all_time_download = 1000
+    status_mock.seeding_duration = datetime.timedelta(seconds=125)
+    status_mock.flags = 0
+    status_mock.is_seeding = True
+    status_mock.is_finished = True
+    status_mock.has_metadata = False
+    status_mock.save_path = "test"
+    status_mock.num_seeds = 1
+    status_mock.num_peers = 1
+    status_mock.list_seeds = 1
+    status_mock.list_peers = 1
+    status_mock.error_file = -1
+    status_mock.errc = None
+
+    handle_mock.status.return_value = status_mock
+    magnet = "magnet:?xt=urn:btih:mock_timedelta_test"
+    dm.torrents = {magnet: handle_mock}
+
+    status = dm.get_torrent_status(magnet)
+    assert status is not None
+    assert status["seeding_duration"] == 125

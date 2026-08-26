@@ -105,6 +105,109 @@ def coerce_speed_limit(value: object) -> int:
         return 0
 
 
+def parse_ratio_limit(text: str) -> float:
+    """Parse a seed ratio limit into a float.
+
+    Returns ``-1.0`` for unlimited (empty, ``0``, ``0.0``, ``unlimited``, ``off``, or ``none``).
+    Raises ``ValueError`` on invalid or negative input.
+    """
+    cleaned = (text or "").strip().lower()
+    if cleaned in ("", "0", "0.0", "unlimited", "off", "none"):
+        return -1.0
+    try:
+        val = float(cleaned)
+    except ValueError as exc:
+        raise ValueError(f"invalid ratio limit: '{text}'") from exc
+    if val < 0:
+        raise ValueError("ratio limit must not be negative")
+    if val == 0:
+        return -1.0
+    return val
+
+
+def format_ratio_limit(value: float | None) -> str:
+    """Format a ratio limit for prefilling input forms."""
+    if value is None or value <= 0:
+        return ""
+    return f"{value:.2f}".rstrip("0").rstrip(".")
+
+
+def coerce_ratio_limit(value: object) -> float:
+    """Coerce a ratio limit config or db value to float >= 0.0."""
+    if isinstance(value, bool):
+        return 0.0
+    if isinstance(value, (int, float)):
+        return max(0.0, float(value))
+    try:
+        parsed = parse_ratio_limit(str(value))
+        return max(0.0, parsed)
+    except ValueError:
+        return 0.0
+
+
+def parse_seeding_time(text: str) -> int:
+    """Parse a seeding duration limit into minutes.
+
+    Returns ``-1`` for unlimited (empty, ``0``, ``unlimited``, ``off``, or ``none``).
+    Accepts suffixes ``d``/``day``/``days``, ``h``/``hr``/``hrs``/``hours``,
+    ``m``/``min``/``mins``/``minutes``, or bare minutes.
+    Raises ``ValueError`` on invalid or negative input.
+    """
+    cleaned = (text or "").strip().lower()
+    if cleaned in ("", "0", "unlimited", "off", "none"):
+        return -1
+
+    units = [
+        (("days", "day", "d"), 1440),
+        (("hours", "hour", "hrs", "hr", "h"), 60),
+        (("minutes", "minute", "mins", "min", "m"), 1),
+    ]
+
+    for suffixes, multiplier in units:
+        for suffix in suffixes:
+            if cleaned.endswith(suffix):
+                number_part = cleaned[: -len(suffix)].strip()
+                try:
+                    val = float(number_part) * multiplier
+                except ValueError as exc:
+                    raise ValueError(f"invalid seeding time: '{text}'") from exc
+                if val < 0:
+                    raise ValueError("seeding time must not be negative")
+                return int(val)
+
+    try:
+        val = float(cleaned)
+    except ValueError as exc:
+        raise ValueError(f"invalid seeding time: '{text}'") from exc
+    if val < 0:
+        raise ValueError("seeding time must not be negative")
+    return int(val)
+
+
+def format_seeding_time(minutes: int | None) -> str:
+    """Format seeding duration in minutes for prefilling input forms."""
+    if minutes is None or minutes <= 0:
+        return ""
+    if minutes % 1440 == 0:
+        return f"{minutes // 1440}d"
+    if minutes % 60 == 0:
+        return f"{minutes // 60}h"
+    return f"{minutes}m"
+
+
+def coerce_seeding_time(value: object) -> int:
+    """Coerce a seeding time config or db value to integer minutes >= 0."""
+    if isinstance(value, bool):
+        return 0
+    if isinstance(value, int):
+        return max(0, value)
+    try:
+        parsed = parse_seeding_time(str(value))
+        return max(0, parsed)
+    except ValueError:
+        return 0
+
+
 def lazy_import(dotted_path: str):
     import importlib
 

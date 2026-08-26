@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import atexit
+import datetime
 import os
 from contextlib import suppress
 from functools import lru_cache
@@ -8,7 +9,7 @@ from typing import ClassVar
 
 import libtorrent as lt
 
-from torrra._types import SessionStats, TorrentFileInfo, TorrentStatus
+from torrra._types import SessionStats, TorrentFileInfo, TorrentOptions, TorrentStatus
 from torrra.core.config import get_config
 from torrra.core.constants import (
     DEFAULT_SPEED_LIMIT_DOWNLOAD,
@@ -17,7 +18,11 @@ from torrra.core.constants import (
 from torrra.core.db import DB_DIR
 from torrra.core.exceptions import DownloadError
 from torrra.core.paths import normalize_download_path, prepare_download_path
-from torrra.utils.helpers import coerce_speed_limit
+from torrra.utils.helpers import (
+    coerce_ratio_limit,
+    coerce_seeding_time,
+    coerce_speed_limit,
+)
 from torrra.utils.magnet import enhance_magnet_uri, fix_magnet_uri
 
 
@@ -67,6 +72,7 @@ class DownloadManager:
         self._metadata_only_torrents: set[str] = set()
         self._file_priorities: dict[str, list[int]] = {}
         self._limits: dict[str, tuple[int, int]] = {}
+        self._options: dict[str, TorrentOptions] = {}
         self._metadata_updated: set[str] = (
             set()
         )  # Track torrents whose metadata has been updated
@@ -107,6 +113,9 @@ class DownloadManager:
         download_limit: int | None = None,
         save_path: str | None = None,
         create_path: bool = True,
+        max_ratio: float | None = None,
+        max_seeding_time: int | None = None,
+        sequential_download: bool = False,
     ) -> lt.torrent_handle:
         """Add a torrent using a per-torrent path or the configured fallback."""
         return self._add_torrent(
@@ -119,6 +128,9 @@ class DownloadManager:
             save_path=save_path,
             create_path=create_path,
             metadata_only=False,
+            max_ratio=max_ratio,
+            max_seeding_time=max_seeding_time,
+            sequential_download=sequential_download,
         )
 
     def fetch_metadata(
@@ -143,6 +155,9 @@ class DownloadManager:
         save_path: str | None = None,
         create_path: bool = True,
         metadata_only: bool = False,
+        max_ratio: float | None = None,
+        max_seeding_time: int | None = None,
+        sequential_download: bool = False,
     ) -> lt.torrent_handle:
         configured_path = (
             save_path
@@ -151,12 +166,32 @@ class DownloadManager:
         )
         selected_path = prepare_download_path(configured_path, create=create_path)
 
-        # Seed per-torrent speed limits (e.g. loaded from the database).
-        # -1 means unlimited, which is libtorrent's sentinel value.
-        if upload_limit is not None or download_limit is not None:
-            up = upload_limit if upload_limit is not None else -1
-            down = download_limit if download_limit is not None else -1
-            self._limits[magnet_uri] = (up, down)
+        # Seed per-torrent options & limits
+        cfg_ratio = coerce_ratio_limit(
+            get_config().get("seeding.default_max_ratio", 0.0)
+        )
+        cfg_time = coerce_seeding_time(get_config().get("seeding.default_max_time", 0))
+        eff_ratio = (
+            max_ratio
+            if max_ratio is not None
+            else (cfg_ratio if cfg_ratio > 0 else None)
+        )
+        eff_time = (
+            max_seeding_time
+            if max_seeding_time is not None
+            else (cfg_time if cfg_time > 0 else None)
+        )
+
+        up = upload_limit if upload_limit is not None else -1
+        down = download_limit if download_limit is not None else -1
+        self._limits[magnet_uri] = (up, down)
+        self._options[magnet_uri] = TorrentOptions(
+            upload_limit=upload_limit,
+            download_limit=download_limit,
+            max_ratio=eff_ratio,
+            max_seeding_time=eff_time,
+            sequential_download=sequential_download,
+        )
 
         if magnet_uri in self.torrents:
             handle = self.torrents[magnet_uri]
@@ -186,8 +221,8 @@ class DownloadManager:
                     except (AttributeError, RuntimeError):
                         pass
 
-                # Re-apply any stored per-torrent speed limits
-                self._apply_stored_limits(handle, magnet_uri)
+                # Re-apply any stored per-torrent speed limits & options
+                self._apply_stored_options(handle, magnet_uri)
 
                 # Check current paused state and update if different
                 current_status = handle.status()
@@ -223,6 +258,13 @@ class DownloadManager:
             else:
                 atp.flags |= lt.torrent_flags.auto_managed
 
+            if (
+                sequential_download
+                and hasattr(lt, "torrent_flags")
+                and hasattr(lt.torrent_flags, "sequential_download")
+            ):
+                atp.flags |= lt.torrent_flags.sequential_download
+
             handle = self.session.add_torrent(atp)
         except (RuntimeError, ValueError) as exc:
             self._file_priorities.pop(magnet_uri, None)
@@ -244,8 +286,8 @@ class DownloadManager:
             except (AttributeError, RuntimeError):
                 pass
 
-        # apply any stored per-torrent speed limits
-        self._apply_stored_limits(handle, magnet_uri)
+        # apply any stored per-torrent options
+        self._apply_stored_options(handle, magnet_uri)
 
         if file_priorities is not None and handle.status().has_metadata:
             try:
@@ -266,6 +308,8 @@ class DownloadManager:
             del self.torrents[magnet_uri]
         self._metadata_only_torrents.discard(magnet_uri)
         self._file_priorities.pop(magnet_uri, None)
+        self._limits.pop(magnet_uri, None)
+        self._options.pop(magnet_uri, None)
         self._metadata_updated.discard(magnet_uri)
 
     def set_file_priorities(self, magnet_uri: str, priorities: list[int]) -> None:
@@ -291,11 +335,96 @@ class DownloadManager:
     ) -> None:
         # store limits keyed by magnet_uri; -1 means unlimited
         self._limits[magnet_uri] = (upload_limit, download_limit)
+        opts = self.get_torrent_options(magnet_uri)
+        opts.upload_limit = upload_limit
+        opts.download_limit = download_limit
+        self._options[magnet_uri] = opts
+
         handle = self.torrents.get(magnet_uri)
         if handle and handle.is_valid():
             self._apply_stored_limits(handle, magnet_uri)
         # also persist to the database so limits survive restarts
         self._tm_update_limits(magnet_uri, upload_limit, download_limit)
+
+    def set_torrent_options(self, magnet_uri: str, options: TorrentOptions) -> None:
+        self._options[magnet_uri] = options
+        up = options.upload_limit if options.upload_limit is not None else -1
+        down = options.download_limit if options.download_limit is not None else -1
+        self._limits[magnet_uri] = (up, down)
+        handle = self.torrents.get(magnet_uri)
+        if handle and handle.is_valid():
+            self._apply_stored_options(handle, magnet_uri)
+        from torrra.core.torrent import get_torrent_manager
+
+        try:
+            get_torrent_manager().update_torrent_options(
+                magnet_uri,
+                upload_limit=options.upload_limit,
+                download_limit=options.download_limit,
+                max_ratio=options.max_ratio,
+                max_seeding_time=options.max_seeding_time,
+                sequential_download=options.sequential_download,
+            )
+        except (AttributeError, RuntimeError):
+            pass
+
+    def _apply_stored_options(self, handle: lt.torrent_handle, magnet_uri: str) -> None:
+        opts = self.get_torrent_options(magnet_uri)
+        try:
+            up = opts.upload_limit if opts.upload_limit is not None else -1
+            down = opts.download_limit if opts.download_limit is not None else -1
+            if hasattr(handle, "set_upload_limit"):
+                handle.set_upload_limit(up)
+            if hasattr(handle, "set_download_limit"):
+                handle.set_download_limit(down)
+        except (AttributeError, RuntimeError):
+            pass
+
+        try:
+            if hasattr(lt, "torrent_flags") and hasattr(
+                lt.torrent_flags, "sequential_download"
+            ):
+                if opts.sequential_download:
+                    if hasattr(handle, "set_flags"):
+                        handle.set_flags(lt.torrent_flags.sequential_download)
+                else:
+                    if hasattr(handle, "unset_flags"):
+                        handle.unset_flags(lt.torrent_flags.sequential_download)
+        except (AttributeError, RuntimeError):
+            pass
+
+    def _apply_stored_limits(self, handle: lt.torrent_handle, magnet_uri: str) -> None:
+        self._apply_stored_options(handle, magnet_uri)
+
+    def _tm_update_limits(
+        self, magnet_uri: str, upload_limit: int, download_limit: int
+    ) -> None:
+        from torrra.core.torrent import get_torrent_manager
+
+        try:
+            get_torrent_manager().update_torrent_limits(
+                magnet_uri, upload_limit, download_limit
+            )
+        except (AttributeError, RuntimeError):
+            pass
+
+    def get_torrent_options(self, magnet_uri: str) -> TorrentOptions:
+        if magnet_uri in self._options:
+            return self._options[magnet_uri]
+        from torrra.core.torrent import get_torrent_manager
+
+        db_rec = get_torrent_manager().get_torrent(magnet_uri)
+        if db_rec:
+            opts = TorrentOptions(
+                upload_limit=db_rec.get("upload_limit"),
+                download_limit=db_rec.get("download_limit"),
+                max_ratio=db_rec.get("max_ratio"),
+                max_seeding_time=db_rec.get("max_seeding_time"),
+                sequential_download=db_rec.get("sequential_download", False),
+            )
+            self._options[magnet_uri] = opts
+            return opts
+        return TorrentOptions()
 
     def get_torrent_limits(self, magnet_uri: str) -> tuple[int, int] | None:
         handle = self.torrents.get(magnet_uri)
@@ -360,6 +489,33 @@ class DownloadManager:
         try:
             handle.set_upload_limit(up)
             handle.set_download_limit(down)
+        except (AttributeError, RuntimeError):
+            pass
+
+    def _apply_stored_options(self, handle: lt.torrent_handle, magnet_uri: str) -> None:
+        opts = self._options.get(magnet_uri)
+        if opts is None:
+            self._apply_stored_limits(handle, magnet_uri)
+            return
+
+        up = opts.upload_limit if opts.upload_limit is not None else -1
+        down = opts.download_limit if opts.download_limit is not None else -1
+        try:
+            handle.set_upload_limit(up)
+            handle.set_download_limit(down)
+        except (AttributeError, RuntimeError):
+            pass
+
+        try:
+            if hasattr(lt, "torrent_flags") and hasattr(
+                lt.torrent_flags, "sequential_download"
+            ):
+                if opts.sequential_download:
+                    handle.set_flags(lt.torrent_flags.sequential_download)
+                else:
+                    handle.unset_flags(lt.torrent_flags.sequential_download)
+            elif hasattr(handle, "set_sequential_download"):
+                handle.set_sequential_download(opts.sequential_download)
         except (AttributeError, RuntimeError):
             pass
 
@@ -502,6 +658,61 @@ class DownloadManager:
             else 0
         )
 
+        total_upload = float(
+            getattr(s, "all_time_upload", getattr(s, "total_upload", 0))
+        )
+        total_download = float(
+            getattr(s, "all_time_download", getattr(s, "total_download", total_done))
+        )
+        ratio = (
+            round(total_upload / max(total_download, 1), 2)
+            if total_download > 0
+            else 0.0
+        )
+        raw_seeding_duration = getattr(
+            s, "seeding_duration", getattr(s, "time_since_finished", 0)
+        )
+        if isinstance(raw_seeding_duration, datetime.timedelta):
+            seeding_duration = int(raw_seeding_duration.total_seconds())
+        elif isinstance(raw_seeding_duration, (int, float)):
+            seeding_duration = int(raw_seeding_duration)
+        else:
+            seeding_duration = 0
+
+        opts = self.get_torrent_options(magnet_uri)
+        max_ratio = opts.max_ratio
+        max_seeding_time = opts.max_seeding_time
+        sequential_download = bool(opts.sequential_download)
+        try:
+            if (
+                hasattr(lt, "torrent_flags")
+                and hasattr(lt.torrent_flags, "sequential_download")
+                and hasattr(s, "flags")
+                and (s.flags & lt.torrent_flags.sequential_download)
+            ):
+                sequential_download = True
+        except (AttributeError, RuntimeError):
+            pass
+
+        # Check ratio and time limits for seeding torrents
+        if is_seeding and not is_paused:
+            ratio_reached = (
+                max_ratio is not None and max_ratio > 0 and ratio >= max_ratio
+            )
+            time_reached = (
+                max_seeding_time is not None
+                and max_seeding_time > 0
+                and (seeding_duration // 60) >= max_seeding_time
+            )
+            if ratio_reached or time_reached:
+                handle.unset_flags(lt.torrent_flags.auto_managed)
+                handle.pause()
+                is_paused = True
+                from torrra.core.torrent import get_torrent_manager
+
+                with suppress(AttributeError, RuntimeError):
+                    get_torrent_manager().update_torrent_paused_state(magnet_uri, True)
+
         return TorrentStatus(
             state=s.state,
             progress=s.progress * 100,
@@ -521,6 +732,11 @@ class DownloadManager:
             is_missing_files=is_missing_files,
             is_queued=is_queued,
             save_path=str(s.save_path or get_config().get("general.download_path")),
+            ratio=ratio,
+            seeding_duration=seeding_duration,
+            max_ratio=max_ratio,
+            max_seeding_time=max_seeding_time,
+            sequential_download=sequential_download,
         )
 
     def get_torrent_state_text(self, status: TorrentStatus, short: bool = False) -> str:
@@ -587,8 +803,8 @@ class DownloadManager:
                         if magnet_uri in self._file_priorities:
                             handle.prioritize_files(self._file_priorities[magnet_uri])
 
-                        # Re-apply per-torrent speed limits
-                        self._apply_stored_limits(handle, magnet_uri)
+                        # Re-apply per-torrent options
+                        self._apply_stored_options(handle, magnet_uri)
 
                         tm.update_torrent_metadata(magnet_uri, title, size)
                         self._metadata_updated.add(magnet_uri)
