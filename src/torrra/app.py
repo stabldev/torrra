@@ -40,9 +40,6 @@ class TorrraApp(App[None]):
         direct_download: str | None = None,
         direct_save_path: str | None = None,
         show_downloads: bool = False,
-        direct_sequential: bool = False,
-        direct_max_ratio: float | None = None,
-        direct_max_seeding_time: int | None = None,
     ) -> None:
         super().__init__()
         self.indexer: Indexer | None = indexer
@@ -51,9 +48,6 @@ class TorrraApp(App[None]):
         self.direct_download: str | None = direct_download
         self.direct_save_path: str | None = direct_save_path
         self.show_downloads: bool = show_downloads
-        self.direct_sequential: bool = direct_sequential
-        self.direct_max_ratio: float | None = direct_max_ratio
-        self.direct_max_seeding_time: int | None = direct_max_seeding_time
 
         # load theme from config file
         theme = get_config().get("general.theme", "textual-dark")
@@ -90,9 +84,6 @@ class TorrraApp(App[None]):
                     direct_download=self.direct_download,
                     direct_save_path=self.direct_save_path,
                     show_downloads=self.show_downloads,
-                    direct_sequential=self.direct_sequential,
-                    direct_max_ratio=self.direct_max_ratio,
-                    direct_max_seeding_time=self.direct_max_seeding_time,
                 )
             )
 

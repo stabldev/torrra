@@ -26,35 +26,14 @@ def cli(ctx: click.Context, no_cache: bool) -> None:
     type=click.Path(file_okay=False),
     help="Download this torrent to PATH instead of the configured default.",
 )
-@click.option(
-    "--sequential",
-    is_flag=True,
-    help="Download pieces sequentially for early preview / streaming.",
-)
-@click.option(
-    "--seed-ratio",
-    type=str,
-    default=None,
-    help="Max seed ratio before auto-pausing (e.g. 1.5, 2.0).",
-)
-@click.option(
-    "--seed-time",
-    type=str,
-    default=None,
-    help="Max seeding duration before auto-pausing (e.g. 30m, 2h, 1d).",
-)
 def download(
     magnet_uri_or_file: str,
     no_cache: bool,
     save_path: str | None,
-    sequential: bool,
-    seed_ratio: str | None,
-    seed_time: str | None,
 ) -> None:
     import os
     import re
 
-    from torrra.utils.helpers import parse_ratio_limit, parse_seeding_time
     from torrra.utils.indexer import run_without_indexer
 
     # Validate input - can be magnet URI, URL, or local torrent file
@@ -72,32 +51,11 @@ def download(
         )
         return
 
-    parsed_ratio: float | None = None
-    if seed_ratio is not None:
-        try:
-            r = parse_ratio_limit(seed_ratio)
-            parsed_ratio = r if r > 0 else None
-        except ValueError as e:
-            click.secho(f"Invalid --seed-ratio: {e}", fg="red", err=True)
-            return
-
-    parsed_time: int | None = None
-    if seed_time is not None:
-        try:
-            t = parse_seeding_time(seed_time)
-            parsed_time = t if t > 0 else None
-        except ValueError as e:
-            click.secho(f"Invalid --seed-time: {e}", fg="red", err=True)
-            return
-
     # direct download needs no indexer - launch straight into downloads
     run_without_indexer(
         no_cache=no_cache,
         direct_download=magnet_uri_or_file,
         direct_save_path=save_path,
-        direct_sequential=sequential,
-        direct_max_ratio=parsed_ratio,
-        direct_max_seeding_time=parsed_time,
     )
 
 

@@ -55,8 +55,8 @@ files without searching using the `download` command:
 ```bash
 torrra download "magnet:?xt=urn:btih:..."
 # or torrra download "/path/to/file.torrent"
-# optionally prefill a per-torrent destination, sequential download, and seed limits
-torrra download "https://example.com/file.torrent" --save-path /downloads/linux --sequential --seed-ratio 1.5 --seed-time 2h
+# optionally prefill a per-torrent destination
+torrra download "https://example.com/file.torrent" --save-path /downloads/linux
 ```
 
 The file-selection screen lets you choose files and an optional **Save to**
@@ -73,7 +73,7 @@ after restarting Torrra.
 | :------------------------------------- | :--------------------------------------------------------------------------------------------------- |
 | `torrra`                               | Displays the help message if no subcommand is provided                                               |
 | `torrra --help`                        | Shows the general help message                                                                       |
-| `torrra download <uri/file>`           | Directly downloads a torrent with optional `--save-path`, `--sequential`, `--seed-ratio`, and `--seed-time` |
+| `torrra download <uri/file>`           | Directly downloads a torrent with optional `--save-path`                                            |
 | `torrra search <query>`                | Searches for torrents directly from the CLI                                                          |
 | `torrra downloads`                     | Directly opens the downloads view                                                                    |
 | `torrra config`                        | Manages `torrra` configuration                                                                       |

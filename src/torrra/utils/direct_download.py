@@ -19,9 +19,6 @@ async def handle_direct_download(
     home_screen: "HomeScreen",
     input_path: str,
     save_path: str | None = None,
-    sequential: bool = False,
-    max_ratio: float | None = None,
-    max_seeding_time: int | None = None,
 ) -> None:
     dm, tm = get_download_manager(), get_torrent_manager()
 
@@ -74,9 +71,6 @@ async def handle_direct_download(
                 file_priorities=selection.file_priorities,
                 torrent_info=torrent_info,
                 save_path=selection.save_path,
-                max_ratio=max_ratio,
-                max_seeding_time=max_seeding_time,
-                sequential_download=sequential,
             )
         except DownloadError as exc:
             home_screen.app.notify(str(exc), title="Download Failed", severity="error")
@@ -87,13 +81,6 @@ async def handle_direct_download(
             file_priorities=selection.file_priorities,
             save_path=selection.save_path,
         )
-        if max_ratio is not None or max_seeding_time is not None or sequential:
-            tm.update_torrent_options(
-                magnet_uri,
-                max_ratio=max_ratio,
-                max_seeding_time=max_seeding_time,
-                sequential_download=sequential,
-            )
 
         # Refresh downloads content table and ensure downloads is selected
         from torrra.widgets.downloads import DownloadsContent

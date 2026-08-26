@@ -23,9 +23,6 @@ class HomeScreen(Screen[None]):
         direct_download: str | None = None,
         direct_save_path: str | None = None,
         show_downloads: bool = False,
-        direct_sequential: bool = False,
-        direct_max_ratio: float | None = None,
-        direct_max_seeding_time: int | None = None,
     ):
         super().__init__()
         self.indexer: Indexer | None = indexer
@@ -34,9 +31,6 @@ class HomeScreen(Screen[None]):
         self.direct_download: str | None = direct_download
         self.direct_save_path: str | None = direct_save_path
         self.show_downloads: bool = show_downloads
-        self.direct_sequential: bool = direct_sequential
-        self.direct_max_ratio: float | None = direct_max_ratio
-        self.direct_max_seeding_time: int | None = direct_max_seeding_time
 
         self._sidebar: Sidebar
         self._content_switcher: ContentSwitcher
@@ -113,9 +107,6 @@ class HomeScreen(Screen[None]):
                     self,
                     str(self.direct_download),
                     save_path=self.direct_save_path,
-                    sequential=self.direct_sequential,
-                    max_ratio=self.direct_max_ratio,
-                    max_seeding_time=self.direct_max_seeding_time,
                 )
             )
 

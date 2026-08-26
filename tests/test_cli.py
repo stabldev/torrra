@@ -208,9 +208,6 @@ def test_download_command_valid_magnet(monkeypatch: pytest.MonkeyPatch):
         no_cache=True,
         direct_download=magnet,
         direct_save_path=None,
-        direct_sequential=False,
-        direct_max_ratio=None,
-        direct_max_seeding_time=None,
     )
 
 
@@ -230,52 +227,7 @@ def test_download_command_passes_save_path(monkeypatch: pytest.MonkeyPatch):
         no_cache=False,
         direct_download=magnet,
         direct_save_path="/mnt/media/torrents",
-        direct_sequential=False,
-        direct_max_ratio=None,
-        direct_max_seeding_time=None,
     )
-
-
-def test_download_command_with_options(monkeypatch: pytest.MonkeyPatch):
-    mock_run_func = MagicMock()
-    monkeypatch.setattr("torrra.utils.indexer.run_without_indexer", mock_run_func)
-
-    runner = CliRunner()
-    magnet = "magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567"
-    result = runner.invoke(
-        cli,
-        [
-            "download",
-            magnet,
-            "--sequential",
-            "--seed-ratio",
-            "1.5",
-            "--seed-time",
-            "2h",
-        ],
-    )
-
-    assert result.exit_code == 0
-    mock_run_func.assert_called_once_with(
-        no_cache=False,
-        direct_download=magnet,
-        direct_save_path=None,
-        direct_sequential=True,
-        direct_max_ratio=1.5,
-        direct_max_seeding_time=120,
-    )
-
-
-def test_download_command_invalid_options(monkeypatch: pytest.MonkeyPatch):
-    runner = CliRunner()
-    magnet = "magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567"
-    result = runner.invoke(cli, ["download", magnet, "--seed-ratio", "invalid_ratio"])
-    assert result.exit_code == 0
-    assert "Invalid --seed-ratio" in result.output
-
-    result2 = runner.invoke(cli, ["download", magnet, "--seed-time", "invalid_time"])
-    assert result2.exit_code == 0
-    assert "Invalid --seed-time" in result2.output
 
 
 def test_download_command_invalid_input():
