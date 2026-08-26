@@ -37,7 +37,6 @@ class DownloadsContent(Vertical):
         ("D", "delete_torrent_with_data"),
         ("f", "select_files"),
         ("o", "show_torrent_options"),
-        ("s", "show_torrent_options"),
     ]
 
     def __init__(self) -> None:
@@ -239,9 +238,6 @@ class DownloadsContent(Vertical):
             ),
             self._on_torrent_options_set,
         )
-
-    def action_set_speed_limit(self) -> None:
-        self.action_show_torrent_options()
 
     def _on_torrent_options_set(self, options: TorrentOptions | None) -> None:
         if options is None or not self._selected_torrent:
