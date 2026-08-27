@@ -154,3 +154,76 @@ async def test_details_panel_tabs_and_data_tables():
         # Escape closes panel
         await pilot.press("escape")
         assert panel.has_class("hidden")
+
+
+async def test_details_panel_in_place_updates_and_scroll_retention():
+    from textual.widgets import DataTable
+
+    from torrra._types import PeerInfo
+
+    app = DetailsPanelTestApp(show_progress_bar=True)
+    async with app.run_test() as pilot:
+        panel = app.query_one(DetailsPanel)
+        peers_table = panel.query_one("#peers_table", DataTable)
+
+        # Generate 20 peers
+        initial_peers = [
+            PeerInfo(
+                ip=f"10.0.0.{i}:6881",
+                client=f"Client/{i}",
+                down_speed=1000.0 * i,
+                up_speed=500.0 * i,
+                progress=float(i * 4),
+                flags="I",
+            )
+            for i in range(20)
+        ]
+        panel.update_peers(initial_peers)
+        assert len(peers_table.rows) == 20
+
+        # Scroll down in the table
+        peers_table.scroll_to(y=5, animate=False)
+        await pilot.pause()
+        assert peers_table.scroll_y == 5
+
+        # Update peers in-place (same peer list, updated speeds/progress)
+        updated_peers = [
+            PeerInfo(
+                ip=f"10.0.0.{i}:6881",
+                client=f"Client/{i}",
+                down_speed=2000.0 * i,
+                up_speed=1000.0 * i,
+                progress=float(i * 4 + 1),
+                flags="IO",
+            )
+            for i in range(20)
+        ]
+        panel.update_peers(updated_peers)
+        await pilot.pause()
+
+        # Row count unchanged and scroll offset retained!
+        assert len(peers_table.rows) == 20
+        assert peers_table.scroll_y == 5
+
+        # Remove peer 0, add new peer 99
+        updated_peers = updated_peers[1:] + [
+            PeerInfo(
+                ip="10.0.0.99:6881",
+                client="Client/99",
+                down_speed=5000.0,
+                up_speed=1000.0,
+                progress=99.0,
+                flags="IO",
+            )
+        ]
+        panel.update_peers(updated_peers)
+        await pilot.pause()
+
+        assert len(peers_table.rows) == 20
+        assert "10.0.0.99:6881" in peers_table.rows
+        assert "10.0.0.0:6881" not in peers_table.rows
+        assert peers_table.scroll_y == 5
+
+        # Clear tables
+        panel.clear_tables()
+        assert len(peers_table.rows) == 0
