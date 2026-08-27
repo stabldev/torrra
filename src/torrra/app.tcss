@@ -47,6 +47,7 @@ DetailsPanel {
   &.tabbed {
     height: 14;
     max-height: 45%;
+    padding: 0;
   }
   #details_tabs {
     height: 1fr;
@@ -54,6 +55,7 @@ DetailsPanel {
     ContentTabs {
       height: 2;
       background: transparent;
+      padding: 0 1;
       Tab {
         background: transparent;
         padding: 0 1;
@@ -71,6 +73,7 @@ DetailsPanel {
     }
     #tab_general {
       height: 1fr;
+      padding: 0 1;
       #details_content {
         height: auto;
       }
@@ -105,6 +108,7 @@ DetailsPanel {
   }
   #details_shortcuts {
     height: auto;
+    padding: 0 1;
     color: $foreground-muted;
   }
 }
