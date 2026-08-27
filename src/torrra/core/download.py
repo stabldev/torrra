@@ -9,7 +9,15 @@ from typing import ClassVar
 
 import libtorrent as lt
 
-from torrra._types import SessionStats, TorrentFileInfo, TorrentOptions, TorrentStatus
+from torrra._types import (
+    PeerInfo,
+    SessionStats,
+    TorrentFileInfo,
+    TorrentFileProgress,
+    TorrentOptions,
+    TorrentStatus,
+    TrackerInfo,
+)
 from torrra.core.config import get_config
 from torrra.core.constants import (
     DEFAULT_SPEED_LIMIT_DOWNLOAD,
@@ -556,6 +564,179 @@ class DownloadManager:
             return files
         except (AttributeError, RuntimeError):
             return None
+
+    def get_torrent_files_progress(
+        self, magnet_uri: str
+    ) -> list[TorrentFileProgress] | None:
+        handle = self.torrents.get(magnet_uri)
+        if not handle or not handle.is_valid() or not handle.status().has_metadata:
+            return None
+        try:
+            info = handle.torrent_file()
+            if not info:
+                return None
+            fs = info.files()
+            try:
+                progresses = handle.file_progress()
+            except (AttributeError, RuntimeError):
+                progresses = []
+            priorities = self.get_file_priorities(magnet_uri)
+
+            result: list[TorrentFileProgress] = []
+            for i in range(fs.num_files()):
+                if hasattr(lt.file_storage, "flag_pad_file") and (
+                    fs.file_flags(i) & lt.file_storage.flag_pad_file
+                ):
+                    continue
+                size = fs.file_size(i)
+                done = progresses[i] if progresses and i < len(progresses) else 0
+                done = min(done, size)
+                pct = (done / size * 100.0) if size > 0 else 100.0
+
+                prio = priorities[i] if priorities and i < len(priorities) else 1
+                if prio == 0:
+                    prio_label = "Skipped"
+                elif prio > 1:
+                    prio_label = "High"
+                else:
+                    prio_label = "Normal"
+
+                result.append(
+                    TorrentFileProgress(
+                        index=i,
+                        path=fs.file_path(i).replace("\\", "/"),
+                        size=size,
+                        done=done,
+                        progress=pct,
+                        priority=prio,
+                        priority_label=prio_label,
+                    )
+                )
+            return result
+        except (AttributeError, RuntimeError):
+            return None
+
+    def get_torrent_peers(self, magnet_uri: str) -> list[PeerInfo]:
+        handle = self.torrents.get(magnet_uri)
+        if not handle or not handle.is_valid():
+            return []
+        try:
+            peer_list = handle.get_peer_info()
+            peers: list[PeerInfo] = []
+            for p in peer_list:
+                ip_str = "0.0.0.0"
+                if hasattr(p, "ip"):
+                    ip_val = p.ip
+                    if isinstance(ip_val, tuple) and len(ip_val) == 2:
+                        ip_str = f"{ip_val[0]}:{ip_val[1]}"
+                    else:
+                        ip_str = str(ip_val)
+
+                client_str = getattr(p, "client", "") or "Unknown"
+                down_speed = float(
+                    getattr(p, "down_speed", 0.0)
+                    or getattr(p, "payload_down_speed", 0.0)
+                )
+                up_speed = float(
+                    getattr(p, "up_speed", 0.0) or getattr(p, "payload_up_speed", 0.0)
+                )
+                progress = float(getattr(p, "progress", 0.0)) * 100.0
+
+                flags_parts: list[str] = []
+                if getattr(p, "interesting", False):
+                    flags_parts.append("I")
+                if getattr(p, "choked", False):
+                    flags_parts.append("C")
+                if getattr(p, "remote_interested", False):
+                    flags_parts.append("i")
+                if getattr(p, "remote_choked", False):
+                    flags_parts.append("c")
+                if getattr(p, "optimistic_unchoke", False):
+                    flags_parts.append("O")
+                if getattr(p, "snubbed", False):
+                    flags_parts.append("S")
+                if getattr(p, "local_connection", False):
+                    flags_parts.append("L")
+                if getattr(p, "seed", False):
+                    flags_parts.append("s")
+                flags_str = "".join(flags_parts) if flags_parts else "-"
+
+                peers.append(
+                    PeerInfo(
+                        ip=ip_str,
+                        client=client_str,
+                        down_speed=down_speed,
+                        up_speed=up_speed,
+                        progress=progress,
+                        flags=flags_str,
+                    )
+                )
+            return peers
+        except (AttributeError, RuntimeError):
+            return []
+
+    def get_torrent_trackers(self, magnet_uri: str) -> list[TrackerInfo]:
+        handle = self.torrents.get(magnet_uri)
+        if not handle or not handle.is_valid():
+            return []
+        try:
+            tracker_list = handle.trackers()
+            trackers: list[TrackerInfo] = []
+            for t in tracker_list:
+                url = getattr(t, "url", "")
+                if not url:
+                    continue
+                tier = int(getattr(t, "tier", 0))
+
+                updating = bool(getattr(t, "updating", False))
+                fails = int(getattr(t, "fails", 0))
+                is_working_val = getattr(t, "is_working", False)
+                if callable(is_working_val):
+                    with suppress(Exception):
+                        is_working_val = is_working_val()
+                is_working = bool(is_working_val or getattr(t, "verified", False))
+
+                if updating:
+                    status = "Updating"
+                elif fails > 0:
+                    status = "Error"
+                elif is_working:
+                    status = "Working"
+                else:
+                    status = "Not contacted"
+
+                seeds = int(getattr(t, "scrape_complete", 0))
+                peers = int(getattr(t, "scrape_incomplete", 0))
+
+                msg = str(getattr(t, "message", "") or "")
+                if not msg and hasattr(t, "last_error"):
+                    with suppress(Exception):
+                        last_err = t.last_error
+                        if last_err and last_err.value() != 0:  # ty: ignore
+                            msg = str(last_err.message())  # ty: ignore
+
+                trackers.append(
+                    TrackerInfo(
+                        url=url,
+                        tier=tier,
+                        status=status,
+                        seeds=seeds,
+                        peers=peers,
+                        message=msg,
+                    )
+                )
+            return trackers
+        except (AttributeError, RuntimeError):
+            return []
+
+    def force_reannounce_torrent(self, magnet_uri: str) -> None:
+        handle = self.torrents.get(magnet_uri)
+        if handle and handle.is_valid():
+            try:
+                handle.force_reannounce()
+                handle.force_dht_announce()
+            except (AttributeError, RuntimeError):
+                pass
 
     def toggle_pause(self, magnet_uri: str) -> None:
         handle = self.torrents.get(magnet_uri)

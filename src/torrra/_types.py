@@ -92,6 +92,40 @@ class TorrentFileInfo:
     size: int
 
 
+class PeerInfo(TypedDict, total=False):
+    """Information for a single connected peer."""
+
+    ip: str
+    client: str
+    down_speed: float
+    up_speed: float
+    progress: float
+    flags: str
+
+
+class TrackerInfo(TypedDict, total=False):
+    """Information for a single tracker."""
+
+    url: str
+    tier: int
+    status: str
+    seeds: int
+    peers: int
+    message: str
+
+
+class TorrentFileProgress(TypedDict, total=False):
+    """Progress and priority information for a file in a torrent."""
+
+    index: int
+    path: str
+    size: int
+    done: int
+    progress: float
+    priority: int
+    priority_label: str
+
+
 @dataclass
 class Torrent:
     """Torrent I/O dataclass."""

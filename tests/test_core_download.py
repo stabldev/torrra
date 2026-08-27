@@ -867,3 +867,96 @@ def test_seeding_duration_timedelta():
     status = dm.get_torrent_status(magnet)
     assert status is not None
     assert status["seeding_duration"] == 125
+
+
+def test_get_torrent_peers_and_trackers():
+    from unittest.mock import MagicMock
+
+    dm = DownloadManager()
+    magnet = "magnet:?xt=urn:btih:mock_peers_trackers"
+
+    # Test when torrent doesn't exist
+    assert dm.get_torrent_peers(magnet) == []
+    assert dm.get_torrent_trackers(magnet) == []
+    assert dm.get_torrent_files_progress(magnet) is None
+
+    handle_mock = MagicMock()
+    handle_mock.is_valid.return_value = True
+
+    # Mock peer
+    peer_mock = MagicMock()
+    peer_mock.ip = ("192.168.1.50", 6881)
+    peer_mock.client = "qBittorrent/4.6.0"
+    peer_mock.down_speed = 500000.0
+    peer_mock.up_speed = 100000.0
+    peer_mock.progress = 0.75
+    peer_mock.interesting = True
+    peer_mock.choked = False
+    peer_mock.remote_interested = False
+    peer_mock.remote_choked = False
+    peer_mock.optimistic_unchoke = False
+    peer_mock.snubbed = False
+    peer_mock.local_connection = False
+    peer_mock.seed = False
+    handle_mock.get_peer_info.return_value = [peer_mock]
+
+    # Mock tracker
+    tracker_mock = MagicMock()
+    tracker_mock.url = "http://tracker.example.com/announce"
+    tracker_mock.tier = 1
+    tracker_mock.updating = False
+    tracker_mock.fails = 0
+    tracker_mock.is_working.return_value = True
+    tracker_mock.scrape_complete = 50
+    tracker_mock.scrape_incomplete = 10
+    tracker_mock.message = "OK"
+    handle_mock.trackers.return_value = [tracker_mock]
+
+    # Mock files & metadata
+    handle_mock.status.return_value.has_metadata = True
+    info_mock = MagicMock()
+    files_mock = MagicMock()
+    files_mock.num_files.return_value = 1
+    files_mock.file_flags.return_value = 0
+    files_mock.file_path.return_value = "movie.mp4"
+    files_mock.file_size.return_value = 1000000
+    info_mock.files.return_value = files_mock
+    handle_mock.torrent_file.return_value = info_mock
+    handle_mock.file_progress.return_value = [500000]
+    handle_mock.get_file_priorities.return_value = [1]
+
+    dm.torrents = {magnet: handle_mock}
+
+    # Test peers
+    peers = dm.get_torrent_peers(magnet)
+    assert len(peers) == 1
+    assert peers[0]["ip"] == "192.168.1.50:6881"
+    assert peers[0]["client"] == "qBittorrent/4.6.0"
+    assert peers[0]["down_speed"] == 500000.0
+    assert peers[0]["up_speed"] == 100000.0
+    assert peers[0]["progress"] == 75.0
+    assert peers[0]["flags"] == "I"
+
+    # Test trackers
+    trackers = dm.get_torrent_trackers(magnet)
+    assert len(trackers) == 1
+    assert trackers[0]["url"] == "http://tracker.example.com/announce"
+    assert trackers[0]["status"] == "Working"
+    assert trackers[0]["seeds"] == 50
+    assert trackers[0]["peers"] == 10
+    assert trackers[0]["message"] == "OK"
+
+    # Test files progress
+    files = dm.get_torrent_files_progress(magnet)
+    assert files is not None
+    assert len(files) == 1
+    assert files[0]["path"] == "movie.mp4"
+    assert files[0]["size"] == 1000000
+    assert files[0]["done"] == 500000
+    assert files[0]["progress"] == 50.0
+    assert files[0]["priority_label"] == "Normal"
+
+    # Test force reannounce
+    dm.force_reannounce_torrent(magnet)
+    handle_mock.force_reannounce.assert_called_once()
+    handle_mock.force_dht_announce.assert_called_once()

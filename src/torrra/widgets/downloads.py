@@ -37,6 +37,7 @@ class DownloadsContent(Vertical):
         ("D", "delete_torrent_with_data"),
         ("f", "select_files"),
         ("o", "show_torrent_options"),
+        ("r", "reannounce_trackers"),
     ]
 
     def __init__(self) -> None:
@@ -296,8 +297,27 @@ class DownloadsContent(Vertical):
         self._details_panel.add_class("hidden")
         self._filter_table()
 
-    def on_details_panel_closed(self):
+    def on_details_panel_closed(self) -> None:
         self._selected_torrent = None
+
+    def on_details_panel_tab_changed(self, event: DetailsPanel.TabChanged) -> None:
+        if not self._selected_torrent:
+            return
+        if status := self._dm.get_torrent_status(self._selected_torrent["magnet_uri"]):
+            self._update_details_panel(status)
+
+    def action_reannounce_trackers(self) -> None:
+        if not self._selected_torrent:
+            return
+        magnet_uri = self._selected_torrent["magnet_uri"]
+        self._dm.force_reannounce_torrent(magnet_uri)
+        self.notify(
+            "Sent force reannounce to trackers",
+            title="Trackers Reannounced",
+        )
+        if self._details_panel.active_tab == "tab_trackers":
+            trackers = self._dm.get_torrent_trackers(magnet_uri)
+            self._details_panel.update_trackers(trackers)
 
     def on_data_table_row_selected(
         self, event: AutoResizingDataTable.RowSelected
@@ -481,8 +501,8 @@ class DownloadsContent(Vertical):
             f"[dim]Save to:[/dim] [dim]{save_path}[/dim]"
         )
         shortcuts = (
-            r"[dim]\[p] pause/resume · \[f] files · \[o] options · "
-            r"\[d] delete · \[D] delete w/ data · \[esc] close[/dim]"
+            r"[dim]\[p] pause/resume · \[r] reannounce · "
+            r"\[f] files · \[o] options · \[d/D] delete · \[esc] close[/dim]"
         )
         # update details panel internal widgets
         self._details_panel.border_title = current_torrent["title"]
@@ -492,3 +512,15 @@ class DownloadsContent(Vertical):
             eta=eta_text,
             shortcuts=shortcuts,
         )
+
+        active_tab = self._details_panel.active_tab
+        magnet_uri = self._selected_torrent["magnet_uri"]
+        if active_tab == "tab_peers":
+            peers = self._dm.get_torrent_peers(magnet_uri)
+            self._details_panel.update_peers(peers)
+        elif active_tab == "tab_trackers":
+            trackers = self._dm.get_torrent_trackers(magnet_uri)
+            self._details_panel.update_trackers(trackers)
+        elif active_tab == "tab_files":
+            files = self._dm.get_torrent_files_progress(magnet_uri)
+            self._details_panel.update_files(files)
