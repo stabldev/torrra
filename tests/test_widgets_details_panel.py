@@ -157,14 +157,20 @@ async def test_details_panel_tabs_and_data_tables():
 
 
 async def test_details_panel_in_place_updates_and_scroll_retention():
-    from textual.widgets import DataTable
+    from textual.widgets import DataTable, TabbedContent
 
     from torrra._types import PeerInfo
 
     app = DetailsPanelTestApp(show_progress_bar=True)
     async with app.run_test() as pilot:
         panel = app.query_one(DetailsPanel)
+        panel.remove_class("hidden")
+        tc = panel.query_one(TabbedContent)
+        tc.active = "tab_peers"
+        await pilot.pause()
+
         peers_table = panel.query_one("#peers_table", DataTable)
+        peers_table.styles.height = 10
 
         # Generate 20 peers
         initial_peers = [
@@ -180,6 +186,7 @@ async def test_details_panel_in_place_updates_and_scroll_retention():
         ]
         panel.update_peers(initial_peers)
         assert len(peers_table.rows) == 20
+        await pilot.pause()
 
         # Scroll down in the table
         peers_table.scroll_to(y=5, animate=False)

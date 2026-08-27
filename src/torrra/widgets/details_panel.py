@@ -294,9 +294,11 @@ class DetailsPanel(Vertical):
 
             if key in self._peers_table.rows:
                 self._update_cell_if_changed(self._peers_table, key, "client", client)
-                self._update_cell_if_changed(self._peers_table, key, "down", down)
-                self._update_cell_if_changed(self._peers_table, key, "up", up)
-                self._update_cell_if_changed(self._peers_table, key, "done", done)
+                self._update_cell_if_changed(self._peers_table, key, "down_speed", down)
+                self._update_cell_if_changed(self._peers_table, key, "up_speed", up)
+                self._update_cell_if_changed(
+                    self._peers_table, key, "done_percent", done
+                )
                 self._update_cell_if_changed(self._peers_table, key, "flags", flags)
             else:
                 self._peers_table.add_row(ip, client, down, up, done, flags, key=key)
