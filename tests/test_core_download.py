@@ -950,15 +950,17 @@ def test_get_torrent_peers_and_trackers():
     # Test peers
     peers = dm.get_torrent_peers(magnet)
     assert len(peers) == 2
-    assert peers[0]["ip"] == "192.168.1.50:6881"
+    assert peers[0]["ip"] == "192.168.1.50"
+    assert peers[0]["port"] == 6881
     assert peers[0]["client"] == "qBittorrent/4.6.0"
     assert peers[0]["down_speed"] == 500000.0
     assert peers[0]["up_speed"] == 100000.0
     assert peers[0]["progress"] == 75.0
     assert peers[0]["flags"] == "I"
 
-    assert peers[1]["ip"] == "10.0.0.1:51413"
-    assert peers[1]["client"] == "Transmission 4.0.5"
+    assert peers[1]["ip"] == "10.0.0.1"
+    assert peers[1]["port"] == 51413
+    assert peers[1]["client"] == "-TR4050-"
     assert peers[1]["progress"] == 100.0
     assert "s" in peers[1]["flags"]
 

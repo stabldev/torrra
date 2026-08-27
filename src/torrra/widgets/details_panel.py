@@ -39,8 +39,9 @@ class DetailsPanel(Vertical):
     ]
 
     PEER_COLS: ClassVar[list[tuple[str, str, int]]] = [
-        ("IP:Port", "ip", 22),
-        ("Client", "client", 20),
+        ("IP", "ip", 18),
+        ("Port", "port", 7),
+        ("Client", "client", 14),
         ("Down", "down_speed", 10),
         ("Up", "up_speed", 10),
         ("Done", "done_percent", 6),
@@ -270,6 +271,7 @@ class DetailsPanel(Vertical):
                 "[dim]-[/dim]",
                 "[dim]-[/dim]",
                 "[dim]-[/dim]",
+                "[dim]-[/dim]",
                 key="__empty__",
             )
             return
@@ -279,7 +281,9 @@ class DetailsPanel(Vertical):
 
         incoming_keys: set[str] = set()
         for idx, p in enumerate(peers):
-            key = p.get("ip") or f"peer_{idx}"
+            ip_raw = p.get("ip", "0.0.0.0")
+            port_raw = p.get("port", 0)
+            key = f"{ip_raw}:{port_raw}" if ip_raw else f"peer_{idx}"
             incoming_keys.add(key)
             down_speed = p.get("down_speed", 0.0)
             up_speed = p.get("up_speed", 0.0)
@@ -290,9 +294,12 @@ class DetailsPanel(Vertical):
             done = f"[b]{int(p.get('progress', 0.0))}%[/b]"
             client = p.get("client", "Unknown")
             flags = f"[dim]{p.get('flags', '-')}[/dim]"
-            ip = f"[dim]{key}[/dim]"
+            ip = f"[dim]{ip_raw}[/dim]"
+            port = f"[dim]{port_raw}[/dim]"
 
             if key in self._peers_table.rows:
+                self._update_cell_if_changed(self._peers_table, key, "ip", ip)
+                self._update_cell_if_changed(self._peers_table, key, "port", port)
                 self._update_cell_if_changed(self._peers_table, key, "client", client)
                 self._update_cell_if_changed(self._peers_table, key, "down_speed", down)
                 self._update_cell_if_changed(self._peers_table, key, "up_speed", up)
@@ -301,7 +308,9 @@ class DetailsPanel(Vertical):
                 )
                 self._update_cell_if_changed(self._peers_table, key, "flags", flags)
             else:
-                self._peers_table.add_row(ip, client, down, up, done, flags, key=key)
+                self._peers_table.add_row(
+                    ip, port, client, down, up, done, flags, key=key
+                )
 
         existing_keys = [str(r.value) for r in self._peers_table.rows]
         for r_key in existing_keys:

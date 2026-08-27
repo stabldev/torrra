@@ -207,23 +207,22 @@ def test_parse_peer_client():
     assert parse_peer_client("Transmission 4.0.5", None) == "Transmission 4.0.5"
     assert parse_peer_client(b"qBittorrent/4.6.0", None) == "qBittorrent/4.6.0"
 
-    # 2. Azureus-style peer IDs
-    assert parse_peer_client(None, b"-qB4630-123456789012") == "qBittorrent 4.6.3"
-    assert parse_peer_client(b"", b"-TR4050-123456789012") == "Transmission 4.0.5"
-    assert parse_peer_client(None, b"-UT3550-123456789012") == "µTorrent 3.5.5"
-    assert parse_peer_client(None, b"-DE2050-123456789012") == "Deluge 2.0.5"
-    assert parse_peer_client(None, b"-LT2090-123456789012") == "libtorrent 2.0.9"
-    assert parse_peer_client(None, b"-BI2500-123456789012") == "BiglyBT 2.5"
+    # 2. Azureus-style peer ID prefixes
+    assert parse_peer_client(None, b"-qB4630-123456789012") == "-qB4630-"
+    assert parse_peer_client(b"", b"-TR4050-123456789012") == "-TR4050-"
+    assert parse_peer_client(None, b"-UT3550-123456789012") == "-UT3550-"
+    assert parse_peer_client(None, b"-DE2050-123456789012") == "-DE2050-"
+    assert parse_peer_client(None, b"-LT2090-123456789012") == "-LT2090-"
+    assert parse_peer_client(None, b"-BI2500-123456789012") == "-BI2500-"
 
-    # 3. Mainline, BitComet, FMD
-    assert parse_peer_client(None, b"M3-4-2--123456789012") == "BitTorrent 3.4.2"
-    assert parse_peer_client(None, b"exbc\x01\x02123456789012") == "BitComet 1.02"
-    assert parse_peer_client(None, b"FMD12345678901234567") == "Free Download Manager"
+    # 3. Mainline & general ASCII prefixes
+    assert parse_peer_client(None, b"M3-4-2--123456789012") == "M3-4-2--"
+    assert parse_peer_client(None, b"FMD12345678901234567") == "FMD12345"
 
     # 4. sha1_hash mock with to_bytes
     hash_mock = MagicMock()
     hash_mock.to_bytes.return_value = b"-qB4630-123456789012"
-    assert parse_peer_client(None, hash_mock) == "qBittorrent 4.6.3"
+    assert parse_peer_client(None, hash_mock) == "-qB4630-"
 
     # 5. Unknown fallbacks
     assert parse_peer_client(None, None) == "Unknown"

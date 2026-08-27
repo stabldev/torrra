@@ -94,7 +94,8 @@ async def test_details_panel_tabs_and_data_tables():
         panel.update_peers(
             [
                 PeerInfo(
-                    ip="1.2.3.4:5678",
+                    ip="1.2.3.4",
+                    port=5678,
                     client="Transmission/4.0",
                     down_speed=1024.0 * 1024.0,
                     up_speed=512.0 * 1024.0,
@@ -175,7 +176,8 @@ async def test_details_panel_in_place_updates_and_scroll_retention():
         # Generate 20 peers
         initial_peers = [
             PeerInfo(
-                ip=f"10.0.0.{i}:6881",
+                ip=f"10.0.0.{i}",
+                port=6881,
                 client=f"Client/{i}",
                 down_speed=1000.0 * i,
                 up_speed=500.0 * i,
@@ -196,7 +198,8 @@ async def test_details_panel_in_place_updates_and_scroll_retention():
         # Update peers in-place (same peer list, updated speeds/progress)
         updated_peers = [
             PeerInfo(
-                ip=f"10.0.0.{i}:6881",
+                ip=f"10.0.0.{i}",
+                port=6881,
                 client=f"Client/{i}",
                 down_speed=2000.0 * i,
                 up_speed=1000.0 * i,
@@ -215,7 +218,8 @@ async def test_details_panel_in_place_updates_and_scroll_retention():
         # Remove peer 0, add new peer 99
         updated_peers = updated_peers[1:] + [
             PeerInfo(
-                ip="10.0.0.99:6881",
+                ip="10.0.0.99",
+                port=6881,
                 client="Client/99",
                 down_speed=5000.0,
                 up_speed=1000.0,

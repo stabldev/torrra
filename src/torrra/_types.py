@@ -96,6 +96,7 @@ class PeerInfo(TypedDict, total=False):
     """Information for a single connected peer."""
 
     ip: str
+    port: int
     client: str
     down_speed: float
     up_speed: float

@@ -626,12 +626,23 @@ class DownloadManager:
             peers: list[PeerInfo] = []
             for p in peer_list:
                 ip_str = "0.0.0.0"
+                port_val = 0
                 if hasattr(p, "ip"):
                     ip_val = p.ip
                     if isinstance(ip_val, tuple) and len(ip_val) == 2:
-                        ip_str = f"{ip_val[0]}:{ip_val[1]}"
+                        ip_str = str(ip_val[0])
+                        port_val = int(ip_val[1])
                     else:
-                        ip_str = str(ip_val)
+                        ip_val_str = str(ip_val)
+                        if ":" in ip_val_str and not ip_val_str.startswith("["):
+                            parts = ip_val_str.rsplit(":", 1)
+                            if parts[1].isdigit():
+                                ip_str = parts[0]
+                                port_val = int(parts[1])
+                            else:
+                                ip_str = ip_val_str
+                        else:
+                            ip_str = ip_val_str
 
                 client_str = parse_peer_client(
                     getattr(p, "client", None), getattr(p, "pid", None)
@@ -667,6 +678,7 @@ class DownloadManager:
                 peers.append(
                     PeerInfo(
                         ip=ip_str,
+                        port=port_val,
                         client=client_str,
                         down_speed=down_speed,
                         up_speed=up_speed,
