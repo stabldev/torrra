@@ -1,3 +1,4 @@
+from contextlib import suppress
 from itertools import pairwise
 
 
@@ -228,3 +229,163 @@ def get_tomllib():
         import tomli as tomllib  # type: ignore
 
     return tomllib
+
+
+AZUREUS_CLIENTS: dict[str, str] = {
+    "7T": "aTorrent",
+    "AB": "AnyEvent::BitTorrent",
+    "AG": "Ares",
+    "A~": "Ares",
+    "AR": "Arctic",
+    "AT": "Artemis",
+    "AV": "Avicora",
+    "AZ": "Vuze",
+    "BB": "BitBuddy",
+    "BC": "BitComet",
+    "BE": "Baretorrent",
+    "BF": "BitFlu",
+    "BG": "BTG",
+    "BI": "BiglyBT",
+    "BL": "BitLord",
+    "BP": "BitTorrent Pro",
+    "BR": "BitRocket",
+    "BS": "BTSlave",
+    "BT": "BitTorrent",
+    "BW": "BitWombat",
+    "BX": "BittorrentX",
+    "CD": "Enhanced CTorrent",
+    "CT": "CTorrent",
+    "DE": "Deluge",
+    "DP": "DirectoryPlate",
+    "EB": "EBit",
+    "FC": "FileCroc",
+    "FD": "Free Download Manager",
+    "FG": "FlashGet",
+    "FL": "Folx",
+    "FT": "FoxTorrent",
+    "FW": "FrostWire",
+    "FX": "Freebox BitTorrent",
+    "GR": "GrabBit",
+    "GS": "GSTorrent",
+    "HL": "Halite",
+    "HN": "Hydranode",
+    "KG": "KGet",
+    "KT": "KTorrent",
+    "LH": "LH-ABC",
+    "LK": "Linktorrent",
+    "LP": "Lphant",
+    "LT": "libtorrent",
+    "lt": "libtorrent",
+    "LW": "LimeWire",
+    "MG": "MediaGet",
+    "MK": "Meerkat",
+    "ML": "MLDonkey",
+    "MO": "MonoTorrent",
+    "MP": "MooPolice",
+    "MR": "Miro",
+    "MT": "MoonlightTorrent",
+    "NE": "NetExtensions",
+    "NX": "Net Transport",
+    "OS": "OneSwarm",
+    "OT": "OmegaTorrent",
+    "PD": "Pando",
+    "PI": "PicoTorrent",
+    "QD": "QQDownload",
+    "qB": "qBittorrent",
+    "QT": "QtTorrent",
+    "RT": "Retriever",
+    "SB": "Swiftbit",
+    "SD": "Xunlei",
+    "SN": "Sharenet",
+    "SS": "SwarmScope",
+    "ST": "SymTorrent",
+    "SZ": "Shareaza",
+    "TB": "Torch",
+    "TD": "TidTor",
+    "TL": "Tribler",
+    "TN": "TorrentDotNET",
+    "TO": "Torrra",
+    "TR": "Transmission",
+    "TS": "Tixati",
+    "TT": "TuoTu",
+    "UL": "uLeecher!",
+    "UM": "µTorrent Mac",
+    "UT": "µTorrent",
+    "VG": "Vagaa",
+    "WD": "WebTorrent Desktop",
+    "WT": "BitLet",
+    "WW": "WebTorrent",
+    "WY": "FireTorrent",
+    "XF": "Xfplay",
+    "XL": "Xunlei",
+    "XS": "XSwifter",
+    "XT": "XanTorrent",
+    "XX": "Xtorrent",
+    "ZT": "ZipTorrent",
+}
+
+
+def parse_peer_client(client_raw: object, pid_raw: object) -> str:
+    """Identify a peer's BitTorrent client.
+
+    Prefers the BEP 10 extended handshake client string if present. Otherwise,
+    parses the 20-byte Peer ID (BEP 20 convention) sent in the initial handshake.
+    """
+    if client_raw:
+        if isinstance(client_raw, bytes):
+            decoded = client_raw.decode("utf-8", errors="replace").strip()
+        else:
+            decoded = str(client_raw).strip()
+        if decoded:
+            return decoded
+
+    if not pid_raw:
+        return "Unknown"
+
+    pid = b""
+    to_bytes_fn = getattr(pid_raw, "to_bytes", None)
+    if callable(to_bytes_fn):
+        with suppress(Exception):
+            res = to_bytes_fn()
+            if isinstance(res, (bytes, bytearray)):
+                pid = bytes(res)
+    elif isinstance(pid_raw, (bytes, bytearray)):
+        pid = bytes(pid_raw)
+
+    if not pid or len(pid) < 8 or all(b == 0 for b in pid):
+        return "Unknown"
+
+    # 1. Azureus style: -XX1234-
+    if pid[0:1] == b"-" and pid[7:8] == b"-":
+        code = pid[1:3].decode("ascii", errors="ignore")
+        client_name = AZUREUS_CLIENTS.get(code, code)
+        v_chars: list[str] = []
+        for b in pid[3:7]:
+            if 48 <= b <= 57 or 65 <= b <= 90 or 97 <= b <= 122:
+                v_chars.append(chr(b))
+            else:
+                break
+        if v_chars:
+            res = ".".join(v_chars)
+            while res.endswith(".0") and res.count(".") > 1:
+                res = res[:-2]
+            return f"{client_name} {res}".strip()
+        return client_name
+
+    # 2. Mainline style: M3-4-2--...
+    if len(pid) >= 7 and pid[0:1] == b"M" and pid[2:3] == b"-" and pid[4:5] == b"-":
+        try:
+            v = f"{chr(pid[1])}.{chr(pid[3])}.{chr(pid[5])}"
+            return f"BitTorrent {v}"
+        except ValueError:
+            pass
+
+    # 3. BitComet: exbc\x01\x02
+    if len(pid) >= 6 and pid[:4] == b"exbc":
+        return f"BitComet {pid[4]}.{pid[5]:02d}"
+
+    # 4. Free Download Manager: FMD
+    if pid[:3] == b"FMD":
+        return "Free Download Manager"
+
+    return "Unknown"

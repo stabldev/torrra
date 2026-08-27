@@ -30,6 +30,7 @@ from torrra.utils.helpers import (
     coerce_ratio_limit,
     coerce_seeding_time,
     coerce_speed_limit,
+    parse_peer_client,
 )
 from torrra.utils.magnet import enhance_magnet_uri, fix_magnet_uri
 
@@ -632,7 +633,9 @@ class DownloadManager:
                     else:
                         ip_str = str(ip_val)
 
-                client_str = getattr(p, "client", "") or "Unknown"
+                client_str = parse_peer_client(
+                    getattr(p, "client", None), getattr(p, "pid", None)
+                )
                 down_speed = float(
                     getattr(p, "down_speed", 0.0)
                     or getattr(p, "payload_down_speed", 0.0)

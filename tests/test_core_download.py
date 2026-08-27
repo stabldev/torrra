@@ -898,7 +898,27 @@ def test_get_torrent_peers_and_trackers():
     peer_mock.snubbed = False
     peer_mock.local_connection = False
     peer_mock.seed = False
-    handle_mock.get_peer_info.return_value = [peer_mock]
+
+    # Mock peer 2 (empty client string, identified via peer ID)
+    peer_mock2 = MagicMock()
+    peer_mock2.ip = ("10.0.0.1", 51413)
+    peer_mock2.client = b""
+    pid_mock = MagicMock()
+    pid_mock.to_bytes.return_value = b"-TR4050-123456789012"
+    peer_mock2.pid = pid_mock
+    peer_mock2.down_speed = 0.0
+    peer_mock2.up_speed = 0.0
+    peer_mock2.progress = 1.0
+    peer_mock2.interesting = False
+    peer_mock2.choked = True
+    peer_mock2.remote_interested = False
+    peer_mock2.remote_choked = True
+    peer_mock2.optimistic_unchoke = False
+    peer_mock2.snubbed = False
+    peer_mock2.local_connection = False
+    peer_mock2.seed = True
+
+    handle_mock.get_peer_info.return_value = [peer_mock, peer_mock2]
 
     # Mock tracker
     tracker_mock = MagicMock()
@@ -929,13 +949,18 @@ def test_get_torrent_peers_and_trackers():
 
     # Test peers
     peers = dm.get_torrent_peers(magnet)
-    assert len(peers) == 1
+    assert len(peers) == 2
     assert peers[0]["ip"] == "192.168.1.50:6881"
     assert peers[0]["client"] == "qBittorrent/4.6.0"
     assert peers[0]["down_speed"] == 500000.0
     assert peers[0]["up_speed"] == 100000.0
     assert peers[0]["progress"] == 75.0
     assert peers[0]["flags"] == "I"
+
+    assert peers[1]["ip"] == "10.0.0.1:51413"
+    assert peers[1]["client"] == "Transmission 4.0.5"
+    assert peers[1]["progress"] == 100.0
+    assert "s" in peers[1]["flags"]
 
     # Test trackers
     trackers = dm.get_torrent_trackers(magnet)

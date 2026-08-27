@@ -196,3 +196,37 @@ def test_coerce_seeding_time():
     assert coerce_seeding_time("unlimited") == 0
     assert coerce_seeding_time(False) == 0
     assert coerce_seeding_time("invalid") == 0
+
+
+def test_parse_peer_client():
+    from unittest.mock import MagicMock
+
+    from torrra.utils.helpers import parse_peer_client
+
+    # 1. Extended handshake client string present
+    assert parse_peer_client("Transmission 4.0.5", None) == "Transmission 4.0.5"
+    assert parse_peer_client(b"qBittorrent/4.6.0", None) == "qBittorrent/4.6.0"
+
+    # 2. Azureus-style peer IDs
+    assert parse_peer_client(None, b"-qB4630-123456789012") == "qBittorrent 4.6.3"
+    assert parse_peer_client(b"", b"-TR4050-123456789012") == "Transmission 4.0.5"
+    assert parse_peer_client(None, b"-UT3550-123456789012") == "µTorrent 3.5.5"
+    assert parse_peer_client(None, b"-DE2050-123456789012") == "Deluge 2.0.5"
+    assert parse_peer_client(None, b"-LT2090-123456789012") == "libtorrent 2.0.9"
+    assert parse_peer_client(None, b"-BI2500-123456789012") == "BiglyBT 2.5"
+
+    # 3. Mainline, BitComet, FMD
+    assert parse_peer_client(None, b"M3-4-2--123456789012") == "BitTorrent 3.4.2"
+    assert parse_peer_client(None, b"exbc\x01\x02123456789012") == "BitComet 1.02"
+    assert parse_peer_client(None, b"FMD12345678901234567") == "Free Download Manager"
+
+    # 4. sha1_hash mock with to_bytes
+    hash_mock = MagicMock()
+    hash_mock.to_bytes.return_value = b"-qB4630-123456789012"
+    assert parse_peer_client(None, hash_mock) == "qBittorrent 4.6.3"
+
+    # 5. Unknown fallbacks
+    assert parse_peer_client(None, None) == "Unknown"
+    assert parse_peer_client(b"", b"") == "Unknown"
+    assert parse_peer_client(None, b"\x00" * 20) == "Unknown"
+    assert parse_peer_client(None, b"123") == "Unknown"
