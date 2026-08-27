@@ -14,6 +14,7 @@ from textual.widgets import (
     TabPane,
     Tabs,
 )
+from textual.widgets.data_table import CellDoesNotExist
 from typing_extensions import override
 
 from torrra._types import PeerInfo, TorrentFileProgress, TrackerInfo
@@ -233,11 +234,35 @@ class DetailsPanel(Vertical):
         if shortcuts is not None:
             self._shortcuts_widget.update(shortcuts)
 
+    def clear_tables(self) -> None:
+        """Clear all detail tables when switching between torrents."""
+        if self._peers_table:
+            self._peers_table.clear()
+        if self._trackers_table:
+            self._trackers_table.clear()
+        if self._files_table:
+            self._files_table.clear()
+
+    @staticmethod
+    def _update_cell_if_changed(
+        table: DataTable[str], row_key: str, col_key: str, value: str
+    ) -> None:
+        try:
+            if table.get_cell(row_key, col_key) != value:
+                table.update_cell(row_key, col_key, value)
+        except (CellDoesNotExist, KeyError):
+            table.update_cell(row_key, col_key, value)
+
     def update_peers(self, peers: list[PeerInfo]) -> None:
         if not self._peers_table:
             return
-        self._peers_table.clear()
         if not peers:
+            if (
+                len(self._peers_table.rows) == 1
+                and "__empty__" in self._peers_table.rows
+            ):
+                return
+            self._peers_table.clear()
             self._peers_table.add_row(
                 "[dim]No connected peers[/dim]",
                 "[dim]-[/dim]",
@@ -245,9 +270,17 @@ class DetailsPanel(Vertical):
                 "[dim]-[/dim]",
                 "[dim]-[/dim]",
                 "[dim]-[/dim]",
+                key="__empty__",
             )
             return
-        for p in peers:
+
+        if "__empty__" in self._peers_table.rows:
+            self._peers_table.remove_row("__empty__")
+
+        incoming_keys: set[str] = set()
+        for idx, p in enumerate(peers):
+            key = p.get("ip") or f"peer_{idx}"
+            incoming_keys.add(key)
             down_speed = p.get("down_speed", 0.0)
             up_speed = p.get("up_speed", 0.0)
             down_str = f"{human_readable_size(down_speed, short=True)}/s"
@@ -255,20 +288,36 @@ class DetailsPanel(Vertical):
             down = f"[b]{down_str}[/b]" if down_speed > 0 else f"[dim]{down_str}[/dim]"
             up = f"{up_str}" if up_speed > 0 else f"[dim]{up_str}[/dim]"
             done = f"[b]{int(p.get('progress', 0.0))}%[/b]"
-            self._peers_table.add_row(
-                f"[dim]{p.get('ip', '0.0.0.0')}[/dim]",
-                p.get("client", "Unknown"),
-                down,
-                up,
-                done,
-                f"[dim]{p.get('flags', '-')}[/dim]",
-            )
+            client = p.get("client", "Unknown")
+            flags = f"[dim]{p.get('flags', '-')}[/dim]"
+            ip = f"[dim]{key}[/dim]"
+
+            if key in self._peers_table.rows:
+                self._update_cell_if_changed(self._peers_table, key, "client", client)
+                self._update_cell_if_changed(self._peers_table, key, "down_speed", down)
+                self._update_cell_if_changed(self._peers_table, key, "up_speed", up)
+                self._update_cell_if_changed(
+                    self._peers_table, key, "done_percent", done
+                )
+                self._update_cell_if_changed(self._peers_table, key, "flags", flags)
+            else:
+                self._peers_table.add_row(ip, client, down, up, done, flags, key=key)
+
+        existing_keys = [str(r.value) for r in self._peers_table.rows]
+        for r_key in existing_keys:
+            if r_key not in incoming_keys:
+                self._peers_table.remove_row(r_key)
 
     def update_trackers(self, trackers: list[TrackerInfo]) -> None:
         if not self._trackers_table:
             return
-        self._trackers_table.clear()
         if not trackers:
+            if (
+                len(self._trackers_table.rows) == 1
+                and "__empty__" in self._trackers_table.rows
+            ):
+                return
+            self._trackers_table.clear()
             self._trackers_table.add_row(
                 "[dim]-[/dim]",
                 "[dim]No trackers found (DHT / PeX only)[/dim]",
@@ -276,9 +325,20 @@ class DetailsPanel(Vertical):
                 "[dim]-[/dim]",
                 "[dim]-[/dim]",
                 "[dim]-[/dim]",
+                key="__empty__",
             )
             return
-        for t in trackers:
+
+        if "__empty__" in self._trackers_table.rows:
+            self._trackers_table.remove_row("__empty__")
+
+        incoming_keys: set[str] = set()
+        for idx, t in enumerate(trackers):
+            tier_val = t.get("tier", 0)
+            url = t.get("url", "")
+            key = f"{tier_val}_{url}" if url else str(idx)
+            incoming_keys.add(key)
+
             status_raw = t.get("status", "Unknown")
             if status_raw == "Working":
                 status = "[green]Working[/green]"
@@ -297,37 +357,71 @@ class DetailsPanel(Vertical):
             )
             peers_count = t.get("peers", 0)
             peers = f"{peers_count}" if peers_count > 0 else f"[dim]{peers_count}[/dim]"
+            msg = f"[dim]{t.get('message', '')}[/dim]"
+            tier = f"[dim]{tier_val}[/dim]"
 
-            self._trackers_table.add_row(
-                f"[dim]{t.get('tier', 0)}[/dim]",
-                t.get("url", ""),
-                status,
-                seeds,
-                peers,
-                f"[dim]{t.get('message', '')}[/dim]",
-            )
+            if key in self._trackers_table.rows:
+                self._update_cell_if_changed(
+                    self._trackers_table, key, "status", status
+                )
+                self._update_cell_if_changed(self._trackers_table, key, "seeds", seeds)
+                self._update_cell_if_changed(self._trackers_table, key, "peers", peers)
+                self._update_cell_if_changed(self._trackers_table, key, "message", msg)
+            else:
+                self._trackers_table.add_row(
+                    tier, url, status, seeds, peers, msg, key=key
+                )
+
+        existing_keys = [str(r.value) for r in self._trackers_table.rows]
+        for r_key in existing_keys:
+            if r_key not in incoming_keys:
+                self._trackers_table.remove_row(r_key)
 
     def update_files(self, files: list[TorrentFileProgress] | None) -> None:
         if not self._files_table:
             return
-        self._files_table.clear()
         if files is None:
+            if (
+                len(self._files_table.rows) == 1
+                and "__loading__" in self._files_table.rows
+            ):
+                return
+            self._files_table.clear()
             self._files_table.add_row(
                 "[dim]Fetching torrent metadata...[/dim]",
                 "[dim]-[/dim]",
                 "[dim]-[/dim]",
                 "[dim]-[/dim]",
+                key="__loading__",
             )
             return
+
         if not files:
+            if (
+                len(self._files_table.rows) == 1
+                and "__empty__" in self._files_table.rows
+            ):
+                return
+            self._files_table.clear()
             self._files_table.add_row(
                 "[dim]No files found[/dim]",
                 "[dim]-[/dim]",
                 "[dim]-[/dim]",
                 "[dim]-[/dim]",
+                key="__empty__",
             )
             return
-        for f in files:
+
+        if "__loading__" in self._files_table.rows:
+            self._files_table.remove_row("__loading__")
+        if "__empty__" in self._files_table.rows:
+            self._files_table.remove_row("__empty__")
+
+        incoming_keys: set[str] = set()
+        for idx, f in enumerate(files):
+            key = str(f.get("index", idx))
+            incoming_keys.add(key)
+
             prio_label = f.get("priority_label", "Normal")
             if prio_label == "High":
                 prio = "[b]High[/b]"
@@ -340,10 +434,16 @@ class DetailsPanel(Vertical):
             done = (
                 f"[b]{progress_val}%[/b]" if progress_val == 100 else f"{progress_val}%"
             )
+            path = f.get("path", "")
+            size = f"[dim]{human_readable_size(f.get('size', 0))}[/dim]"
 
-            self._files_table.add_row(
-                f.get("path", ""),
-                f"[dim]{human_readable_size(f.get('size', 0))}[/dim]",
-                done,
-                prio,
-            )
+            if key in self._files_table.rows:
+                self._update_cell_if_changed(self._files_table, key, "done", done)
+                self._update_cell_if_changed(self._files_table, key, "priority", prio)
+            else:
+                self._files_table.add_row(path, size, done, prio, key=key)
+
+        existing_keys = [str(r.value) for r in self._files_table.rows]
+        for r_key in existing_keys:
+            if r_key not in incoming_keys:
+                self._files_table.remove_row(r_key)

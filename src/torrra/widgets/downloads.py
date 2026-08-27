@@ -323,9 +323,12 @@ class DownloadsContent(Vertical):
         self, event: AutoResizingDataTable.RowSelected
     ) -> None:
         row_key = cast(str, event.row_key.value)
-        self._selected_torrent = next(
+        new_torrent = next(
             (d for d in self._torrents if d["magnet_uri"] == row_key), None
         )
+        if self._selected_torrent != new_torrent:
+            self._details_panel.clear_tables()
+        self._selected_torrent = new_torrent
 
         if self._selected_torrent:
             self._details_panel.border_title = self._selected_torrent["title"]
