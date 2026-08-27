@@ -810,6 +810,10 @@ async def test_downloads_details_panel_interaction(monkeypatch, mock_config):
     handle_mock.get_file_priorities.return_value = [1]
     handle_mock.upload_limit.return_value = 0
     handle_mock.download_limit.return_value = 0
+    info_mock = MagicMock()
+    info_mock.name.return_value = "Details Test Torrent"
+    info_mock.total_size.return_value = 1048576
+    handle_mock.torrent_file.return_value = info_mock
     dm.torrents[magnet] = handle_mock
 
     app = TorrraApp(
