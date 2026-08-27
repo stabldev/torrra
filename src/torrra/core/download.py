@@ -589,11 +589,7 @@ class DownloadManager:
                 ):
                     continue
                 size = fs.file_size(i)
-                done = (
-                    progresses[i]
-                    if progresses and i < len(progresses)
-                    else 0
-                )
+                done = progresses[i] if progresses and i < len(progresses) else 0
                 done = min(done, size)
                 pct = (done / size * 100.0) if size > 0 else 100.0
 
@@ -642,8 +638,7 @@ class DownloadManager:
                     or getattr(p, "payload_down_speed", 0.0)
                 )
                 up_speed = float(
-                    getattr(p, "up_speed", 0.0)
-                    or getattr(p, "payload_up_speed", 0.0)
+                    getattr(p, "up_speed", 0.0) or getattr(p, "payload_up_speed", 0.0)
                 )
                 progress = float(getattr(p, "progress", 0.0)) * 100.0
 
@@ -715,8 +710,12 @@ class DownloadManager:
 
                 msg = str(getattr(t, "message", "") or "")
                 if not msg and hasattr(t, "last_error"):
-                    last_err = getattr(t, "last_error")
-                    if last_err and hasattr(last_err, "value") and last_err.value() != 0:
+                    last_err = t.last_error
+                    if (
+                        last_err
+                        and hasattr(last_err, "value")
+                        and last_err.value() != 0
+                    ):
                         msg = last_err.message()
 
                 trackers.append(
@@ -741,7 +740,6 @@ class DownloadManager:
                 handle.force_dht_announce()
             except (AttributeError, RuntimeError):
                 pass
-
 
     def toggle_pause(self, magnet_uri: str) -> None:
         handle = self.torrents.get(magnet_uri)

@@ -59,7 +59,7 @@ async def test_details_panel_with_progress_bar_and_eta():
 
 
 async def test_details_panel_tabs_and_data_tables():
-    from textual.widgets import DataTable, TabbedContent
+    from textual.widgets import DataTable
 
     from torrra._types import PeerInfo, TorrentFileProgress, TrackerInfo
 
@@ -154,4 +154,3 @@ async def test_details_panel_tabs_and_data_tables():
         # Escape closes panel
         await pilot.press("escape")
         assert panel.has_class("hidden")
-

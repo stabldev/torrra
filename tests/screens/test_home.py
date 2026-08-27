@@ -848,4 +848,3 @@ async def test_downloads_details_panel_interaction(monkeypatch, mock_config):
         await pilot.press("escape")
         await pilot.pause()
         assert dp.has_class("hidden")
-

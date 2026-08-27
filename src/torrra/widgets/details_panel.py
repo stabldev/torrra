@@ -66,9 +66,7 @@ class DetailsPanel(Vertical):
         enable_tabs: bool | None = None,
     ) -> None:
         self.show_progress_bar: bool = show_progress_bar
-        self.is_tabbed: bool = (
-            show_progress_bar if enable_tabs is None else enable_tabs
-        )
+        self.is_tabbed: bool = show_progress_bar if enable_tabs is None else enable_tabs
         super().__init__(classes="hidden tabbed" if self.is_tabbed else "hidden")
 
         # UI refs
@@ -120,10 +118,8 @@ class DetailsPanel(Vertical):
             try:
                 content_tabs = self._tabs.query_one(Tabs)
                 content_tabs.can_focus = False
-                content_tabs._highlight_active = (
-                    lambda animate=False: Tabs._highlight_active(
-                        content_tabs, animate=False
-                    )
+                content_tabs._highlight_active = lambda animate=False: (
+                    Tabs._highlight_active(content_tabs, animate=False)
                 )
             except Exception:
                 pass
@@ -247,9 +243,7 @@ class DetailsPanel(Vertical):
             up_speed = p.get("up_speed", 0.0)
             down_str = f"{human_readable_size(down_speed, short=True)}/s"
             up_str = f"{human_readable_size(up_speed, short=True)}/s"
-            down = (
-                f"[b]{down_str}[/b]" if down_speed > 0 else f"[dim]{down_str}[/dim]"
-            )
+            down = f"[b]{down_str}[/b]" if down_speed > 0 else f"[dim]{down_str}[/dim]"
             up = f"{up_str}" if up_speed > 0 else f"[dim]{up_str}[/dim]"
             done = f"[b]{int(p.get('progress', 0.0))}%[/b]"
             self._peers_table.add_row(
@@ -293,11 +287,7 @@ class DetailsPanel(Vertical):
                 else f"[dim]{seeds_count}[/dim]"
             )
             peers_count = t.get("peers", 0)
-            peers = (
-                f"{peers_count}"
-                if peers_count > 0
-                else f"[dim]{peers_count}[/dim]"
-            )
+            peers = f"{peers_count}" if peers_count > 0 else f"[dim]{peers_count}[/dim]"
 
             self._trackers_table.add_row(
                 f"[dim]{t.get('tier', 0)}[/dim]",
@@ -339,9 +329,7 @@ class DetailsPanel(Vertical):
 
             progress_val = int(f.get("progress", 0.0))
             done = (
-                f"[b]{progress_val}%[/b]"
-                if progress_val == 100
-                else f"{progress_val}%"
+                f"[b]{progress_val}%[/b]" if progress_val == 100 else f"{progress_val}%"
             )
 
             self._files_table.add_row(
@@ -350,4 +338,3 @@ class DetailsPanel(Vertical):
                 done,
                 prio,
             )
-

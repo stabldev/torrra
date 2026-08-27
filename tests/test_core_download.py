@@ -960,4 +960,3 @@ def test_get_torrent_peers_and_trackers():
     dm.force_reannounce_torrent(magnet)
     handle_mock.force_reannounce.assert_called_once()
     handle_mock.force_dht_announce.assert_called_once()
-
