@@ -56,3 +56,102 @@ async def test_details_panel_with_progress_bar_and_eta():
         assert "ETA:" in str(eta_widget.content)
         assert "12m 30s" in str(eta_widget.content)
         assert "[p] pause · [d] delete" in str(shortcuts_widget.content)
+
+
+async def test_details_panel_tabs_and_data_tables():
+    from textual.widgets import DataTable, TabbedContent
+
+    from torrra._types import PeerInfo, TorrentFileProgress, TrackerInfo
+
+    app = DetailsPanelTestApp(show_progress_bar=True)
+    async with app.run_test() as pilot:
+        panel = app.query_one(DetailsPanel)
+        assert panel.is_tabbed is True
+        assert panel.active_tab == "tab_general"
+
+        # Tab navigation via Right arrow
+        panel.focus()
+        await pilot.press("right")
+        assert panel.active_tab == "tab_peers"
+        await pilot.press("right")
+        assert panel.active_tab == "tab_trackers"
+        await pilot.press("right")
+        assert panel.active_tab == "tab_files"
+        await pilot.press("right")
+        assert panel.active_tab == "tab_general"
+
+        # Tab navigation via Left arrow
+        await pilot.press("left")
+        assert panel.active_tab == "tab_files"
+        await pilot.press("left")
+        assert panel.active_tab == "tab_trackers"
+
+        # Test peers table update
+        peers_table = panel.query_one("#peers_table", DataTable)
+        panel.update_peers([])
+        assert len(peers_table.rows) == 1
+
+        panel.update_peers(
+            [
+                PeerInfo(
+                    ip="1.2.3.4:5678",
+                    client="Transmission/4.0",
+                    down_speed=1024.0 * 1024.0,
+                    up_speed=512.0 * 1024.0,
+                    progress=80.0,
+                    flags="IO",
+                )
+            ]
+        )
+        assert len(peers_table.rows) == 1
+
+        # Test trackers table update
+        trackers_table = panel.query_one("#trackers_table", DataTable)
+        panel.update_trackers([])
+        assert len(trackers_table.rows) == 1
+
+        panel.update_trackers(
+            [
+                TrackerInfo(
+                    url="udp://tracker.openbittorrent.com:80",
+                    tier=0,
+                    status="Working",
+                    seeds=120,
+                    peers=45,
+                    message="",
+                )
+            ]
+        )
+        assert len(trackers_table.rows) == 1
+
+        # Test files table update
+        files_table = panel.query_one("#files_table", DataTable)
+        panel.update_files(None)
+        assert len(files_table.rows) == 1
+
+        panel.update_files([])
+        assert len(files_table.rows) == 1
+
+        panel.update_files(
+            [
+                TorrentFileProgress(
+                    index=0,
+                    path="sample.mkv",
+                    size=1048576,
+                    done=524288,
+                    progress=50.0,
+                    priority=1,
+                    priority_label="Normal",
+                )
+            ]
+        )
+        assert len(files_table.rows) == 1
+
+        # Up/Down row navigation on active table
+        await pilot.press("down")
+        await pilot.press("up")
+
+        # Escape closes panel
+        await pilot.press("escape")
+        assert panel.has_class("hidden")
+

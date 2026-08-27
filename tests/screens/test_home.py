@@ -753,3 +753,99 @@ def test_status_bar_turtle_badge(mock_config):
         == "[b]↓[/b] 2.00 MB/s · [b]↑[/b] 1.00 KB/s · [b]DHT:[/b] 42 nodes"
     )
     assert sb._limit_badge() == ""
+
+
+async def test_downloads_details_panel_interaction(monkeypatch, mock_config):
+    from unittest.mock import MagicMock
+
+    import libtorrent as lt
+
+    from torrra._types import Torrent
+    from torrra.app import TorrraApp
+    from torrra.core.download import get_download_manager
+    from torrra.core.torrent import get_torrent_manager
+    from torrra.widgets.details_panel import DetailsPanel
+    from torrra.widgets.downloads import DownloadsContent
+
+    dm = get_download_manager()
+    tm = get_torrent_manager()
+
+    magnet = "magnet:?xt=urn:btih:testdetailspanel12345&dn=DetailsTest"
+    tm.add_torrent(
+        Torrent(
+            magnet_uri=magnet,
+            title="Details Test Torrent",
+            size=1048576,
+            seeders=5,
+            leechers=2,
+            source="Test",
+        )
+    )
+
+    handle_mock = MagicMock()
+    handle_mock.is_valid.return_value = True
+    status_mock = MagicMock()
+    status_mock.state = lt.torrent_status.states.downloading
+    status_mock.progress = 0.5
+    status_mock.download_rate = 100000.0
+    status_mock.upload_rate = 50000.0
+    status_mock.total_done = 524288
+    status_mock.total_wanted = 1048576
+    status_mock.total_wanted_done = 524288
+    status_mock.flags = 0
+    status_mock.is_seeding = False
+    status_mock.is_finished = False
+    status_mock.has_metadata = True
+    status_mock.save_path = "C:/downloads"
+    status_mock.num_seeds = 5
+    status_mock.num_peers = 2
+    status_mock.list_seeds = 5
+    status_mock.list_peers = 2
+    status_mock.error_file = -1
+    status_mock.errc = None
+    handle_mock.status.return_value = status_mock
+    handle_mock.get_peer_info.return_value = []
+    handle_mock.trackers.return_value = []
+    handle_mock.file_progress.return_value = [524288]
+    handle_mock.get_file_priorities.return_value = [1]
+    handle_mock.upload_limit.return_value = 0
+    handle_mock.download_limit.return_value = 0
+    dm.torrents[magnet] = handle_mock
+
+    app = TorrraApp(
+        indexer=None,
+        use_cache=False,
+        search_query=None,
+        show_downloads=True,
+    )
+
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        dc = app.screen.query_one(DownloadsContent)
+        dp = app.screen.query_one(DetailsPanel)
+
+        assert dp.has_class("hidden")
+
+        # Select first row
+        dc._table.focus()
+        await pilot.press("enter")
+        await pilot.pause()
+
+        assert not dp.has_class("hidden")
+        assert dp.active_tab == "tab_general"
+
+        # Switch tabs
+        await pilot.press("right")
+        await pilot.pause()
+        assert dp.active_tab == "tab_peers"
+
+        # Press 'r' to reannounce
+        await pilot.press("r")
+        await pilot.pause()
+        handle_mock.force_reannounce.assert_called()
+
+        # Press escape to close
+        await pilot.press("escape")
+        await pilot.pause()
+        assert dp.has_class("hidden")
+

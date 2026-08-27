@@ -44,6 +44,50 @@ DetailsPanel {
   &:focus {
     border: solid $secondary;
   }
+  &.tabbed {
+    height: 14;
+    max-height: 45%;
+  }
+  #details_tabs {
+    height: 1fr;
+    background: transparent;
+    ContentTabs {
+      height: 2;
+      background: transparent;
+      Tab {
+        background: transparent;
+        padding: 0 1;
+        &.-active {
+          text-style: bold;
+          color: $block-cursor-foreground;
+          background: $block-cursor-background;
+        }
+      }
+    }
+    TabPane {
+      height: 1fr;
+      padding: 0;
+      background: transparent;
+    }
+    #tab_general {
+      height: 1fr;
+      #details_content {
+        height: auto;
+      }
+      #details_progress_row {
+        dock: bottom;
+      }
+    }
+  }
+  DataTable {
+    height: 1fr;
+    border: none;
+    background: transparent;
+    scrollbar-size: 0 0;
+    & > .datatable--header {
+      color: $foreground-muted;
+    }
+  }
   #details_progress_row {
     height: auto;
     width: 100%;
