@@ -710,13 +710,10 @@ class DownloadManager:
 
                 msg = str(getattr(t, "message", "") or "")
                 if not msg and hasattr(t, "last_error"):
-                    last_err = t.last_error
-                    if (
-                        last_err
-                        and hasattr(last_err, "value")
-                        and last_err.value() != 0
-                    ):
-                        msg = last_err.message()
+                    with suppress(Exception):
+                        last_err = t.last_error
+                        if last_err and last_err.value() != 0:  # ty: ignore
+                            msg = str(last_err.message())  # ty: ignore
 
                 trackers.append(
                     TrackerInfo(

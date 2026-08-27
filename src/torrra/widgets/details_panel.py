@@ -1,10 +1,19 @@
+from contextlib import suppress
 from typing import ClassVar
 
 from textual.app import ComposeResult
 from textual.binding import Binding, BindingType
 from textual.containers import Horizontal, Vertical
+from textual.css.query import NoMatches
 from textual.message import Message
-from textual.widgets import DataTable, ProgressBar, Static, TabbedContent, TabPane
+from textual.widgets import (
+    DataTable,
+    ProgressBar,
+    Static,
+    TabbedContent,
+    TabPane,
+    Tabs,
+)
 from typing_extensions import override
 
 from torrra._types import PeerInfo, TorrentFileProgress, TrackerInfo
@@ -113,16 +122,16 @@ class DetailsPanel(Vertical):
 
         if self.is_tabbed:
             self._tabs = self.query_one(TabbedContent)
-            from textual.widgets import Tabs
-
-            try:
+            with suppress(NoMatches):
                 content_tabs = self._tabs.query_one(Tabs)
                 content_tabs.can_focus = False
-                content_tabs._highlight_active = lambda animate=False: (
-                    Tabs._highlight_active(content_tabs, animate=False)
+                setattr(  # noqa: B010
+                    content_tabs,
+                    "_highlight_active",
+                    lambda animate=False: Tabs._highlight_active(
+                        content_tabs, animate=False
+                    ),
                 )
-            except Exception:
-                pass
 
             self._peers_table = self.query_one("#peers_table", DataTable)
             self._peers_table.can_focus = False
