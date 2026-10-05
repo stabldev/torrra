@@ -40,3 +40,11 @@ async def test_resolve_unhandled_url_returns_none():
 
     resolved = await resolve_magnet_uri(test_url)
     assert resolved is None
+
+
+def test_magnet_module_exports_open_uri():
+    from torrra.utils.helpers import open_uri as helper_open_uri
+    from torrra.utils.magnet import open_magnet_uri, open_uri
+
+    assert open_uri is helper_open_uri
+    assert open_magnet_uri is helper_open_uri

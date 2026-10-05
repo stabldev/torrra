@@ -5,6 +5,19 @@ from typing import Any
 import httpx
 import libtorrent as lt
 
+from torrra.utils.helpers import open_magnet_uri, open_uri
+
+__all__ = [
+    "DEFAULT_TRACKERS",
+    "enhance_magnet_uri",
+    "fix_magnet_uri",
+    "open_magnet_uri",
+    "open_uri",
+    "resolve_magnet_uri",
+    "resolve_torrent",
+]
+
+
 DEFAULT_TRACKERS: list[str] = [
     "udp://zer0day.ch:1337/announce",
     "udp://tracker.publictracker.xyz:6969/announce",

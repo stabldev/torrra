@@ -1,3 +1,6 @@
+from typing import Any
+from unittest.mock import MagicMock, patch
+
 import pytest
 
 from torrra.utils.helpers import (
@@ -10,6 +13,8 @@ from torrra.utils.helpers import (
     human_readable_eta,
     human_readable_size,
     lazy_import,
+    open_magnet_uri,
+    open_uri,
     parse_ratio_limit,
     parse_seeding_time,
     parse_speed_limit,
@@ -196,3 +201,87 @@ def test_coerce_seeding_time():
     assert coerce_seeding_time("unlimited") == 0
     assert coerce_seeding_time(False) == 0
     assert coerce_seeding_time("invalid") == 0
+
+
+def test_open_uri_darwin():
+    with (
+        patch("platform.system", return_value="Darwin"),
+        patch("subprocess.run") as mock_run,
+    ):
+        mock_run.return_value = MagicMock(returncode=0)
+        uri = "magnet:?xt=urn:btih:example123"
+        assert open_uri(uri) is True
+        mock_run.assert_called_once_with(["open", uri], check=False)
+
+
+def test_open_uri_windows():
+    with (
+        patch("platform.system", return_value="Windows"),
+        patch("subprocess.run") as mock_run,
+    ):
+        mock_run.return_value = MagicMock(returncode=0)
+        uri = "magnet:?xt=urn:btih:example123"
+        assert open_uri(uri) is True
+        mock_run.assert_called_once_with(f'start "" "{uri}"', shell=True, check=False)
+
+
+def test_open_uri_windows_with_quotes():
+    with (
+        patch("platform.system", return_value="Windows"),
+        patch("subprocess.run") as mock_run,
+    ):
+        mock_run.return_value = MagicMock(returncode=0)
+        uri = 'magnet:?xt=urn:btih:example123&dn="test"'
+        assert open_uri(uri) is True
+        expected_cmd = 'start "" "magnet:?xt=urn:btih:example123&dn=%22test%22"'
+        mock_run.assert_called_once_with(expected_cmd, shell=True, check=False)
+
+
+def test_open_uri_windows_fallback_startfile():
+    with (
+        patch("platform.system", return_value="Windows"),
+        patch("subprocess.run", side_effect=OSError("cmd failed")),
+        patch("os.startfile", create=True) as mock_startfile,
+    ):
+        uri = "magnet:?xt=urn:btih:example123"
+        assert open_uri(uri) is True
+        mock_startfile.assert_called_once_with(uri)
+
+
+def test_open_uri_linux():
+    with (
+        patch("platform.system", return_value="Linux"),
+        patch("subprocess.run") as mock_run,
+    ):
+        mock_run.return_value = MagicMock(returncode=0)
+        uri = "magnet:?xt=urn:btih:example123"
+        assert open_uri(uri) is True
+        mock_run.assert_called_once_with(["xdg-open", uri], check=False)
+
+
+@pytest.mark.parametrize("invalid_uri", ["", "   ", None, 123, []])
+def test_open_uri_invalid(invalid_uri: Any):
+    with patch("subprocess.run") as mock_run:
+        assert open_uri(invalid_uri) is False
+        mock_run.assert_not_called()
+
+
+def test_open_uri_failure_returncode():
+    with (
+        patch("platform.system", return_value="Darwin"),
+        patch("subprocess.run") as mock_run,
+    ):
+        mock_run.return_value = MagicMock(returncode=1)
+        assert open_uri("magnet:?xt=urn:btih:fail") is False
+
+
+def test_open_uri_failure_exception():
+    with (
+        patch("platform.system", return_value="Linux"),
+        patch("subprocess.run", side_effect=FileNotFoundError("xdg-open not found")),
+    ):
+        assert open_uri("magnet:?xt=urn:btih:fail") is False
+
+
+def test_open_magnet_uri_alias():
+    assert open_magnet_uri is open_uri
