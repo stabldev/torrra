@@ -907,3 +907,105 @@ async def test_home_screen_torrent_restore_failure_notifies_once(
         # Should only be notified once on launch, not duplicated by DownloadsContent
         assert len(restore_failures) == 1
         assert "Could not restore 'Failed Restore Torrent'" in restore_failures[0][0][0]
+
+
+async def test_search_row_selected_external_client(
+    app: TorrraApp,
+    mock_indexer: MagicMock,
+    mock_config: Config,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    mock_indexer.search.return_value = [
+        Torrent(
+            magnet_uri="magnet:?xt=urn:btih:mock_torrent_123",
+            title="Mock Torrent",
+            size=1024,
+            seeders=10,
+            leechers=1,
+            source="Mock",
+        )
+    ]
+    mock_config.set("general.download_in_external_client", "true")
+    opened_uris: list[str] = []
+
+    def mock_open_uri(uri: str) -> bool:
+        opened_uris.append(uri)
+        return True
+
+    monkeypatch.setattr("torrra.widgets.search.open_uri", mock_open_uri)
+
+    notifications: list[tuple[tuple[Any, ...], dict[str, Any]]] = []
+
+    def mock_notify(*args: Any, **kwargs: Any) -> None:
+        notifications.append((args, kwargs))
+
+    monkeypatch.setattr(app, "notify", mock_notify)
+
+    async with app.run_test() as pilot:
+        table = app.screen.query_one("SearchContent DataTable", DataTable)
+        assert table.row_count == 1
+        table.focus()
+        table.action_select_cursor()
+        await pilot.pause()
+
+        assert len(opened_uris) == 1
+        assert "magnet:?xt=urn:btih:mock_torrent_123" in opened_uris[0]
+        assert any(
+            kwargs.get("title") == "Torrent Opened" for _, kwargs in notifications
+        )
+
+
+async def test_search_row_selected_external_client_failure(
+    app: TorrraApp,
+    mock_indexer: MagicMock,
+    mock_config: Config,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    mock_indexer.search.return_value = [
+        Torrent(
+            magnet_uri="magnet:?xt=urn:btih:mock_torrent_123",
+            title="Mock Torrent",
+            size=1024,
+            seeders=10,
+            leechers=1,
+            source="Mock",
+        )
+    ]
+    mock_config.set("general.download_in_external_client", "true")
+
+    def mock_open_uri_fail(uri: str) -> bool:
+        return False
+
+    monkeypatch.setattr("torrra.widgets.search.open_uri", mock_open_uri_fail)
+
+    notifications: list[tuple[tuple[Any, ...], dict[str, Any]]] = []
+
+    def mock_notify(*args: Any, **kwargs: Any) -> None:
+        notifications.append((args, kwargs))
+
+    monkeypatch.setattr(app, "notify", mock_notify)
+
+    async with app.run_test() as pilot:
+        table = app.screen.query_one("SearchContent DataTable", DataTable)
+        assert table.row_count == 1
+        table.focus()
+        table.action_select_cursor()
+        await pilot.pause()
+
+        assert any(
+            kwargs.get("severity") == "error" and "Failed to open magnet URI" in args[0]
+            for args, kwargs in notifications
+        )
+
+
+def test_torrra_app_open_url(monkeypatch: pytest.MonkeyPatch):
+    app = TorrraApp(indexer=None, use_cache=False, search_query=None)
+    called_with: list[str] = []
+
+    monkeypatch.setattr(
+        "torrra.utils.helpers.open_uri",
+        lambda uri: called_with.append(uri) or True,
+    )
+
+    app.open_url("magnet:?xt=urn:btih:xyz")
+    assert called_with == ["magnet:?xt=urn:btih:xyz"]

@@ -34,7 +34,7 @@ from torrra.core.torrent import get_torrent_manager
 from torrra.indexers.base import BaseIndexer
 from torrra.screens.file_selection import FileSelectionScreen
 from torrra.screens.sort_selector import SortSelectorScreen
-from torrra.utils.helpers import human_readable_size, lazy_import
+from torrra.utils.helpers import human_readable_size, lazy_import, open_uri
 from torrra.utils.magnet import resolve_torrent
 from torrra.widgets.data_table import AutoResizingDataTable
 from torrra.widgets.details_panel import DetailsPanel
@@ -194,11 +194,17 @@ class SearchContent(Vertical):
         config = get_config()
         if config.get("general.download_in_external_client", False):
             self._is_selecting_files = False
-            self.app.open_url(resolved_magnet_uri)
-            self.notify(
-                "Opened in default magnet: handler",
-                title="Torrent Opened",
-            )
+            if open_uri(resolved_magnet_uri):
+                self.notify(
+                    "Opened in default magnet: handler",
+                    title="Torrent Opened",
+                )
+            else:
+                self.notify(
+                    "Failed to open magnet URI in external client",
+                    title="Torrent Open Failed",
+                    severity="error",
+                )
         else:  # continue with libtorrent file selection
             self.app.push_screen(
                 FileSelectionScreen(

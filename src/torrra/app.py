@@ -91,6 +91,13 @@ class TorrraApp(App[None]):
         self.push_screen(ThemeSelectorScreen())
 
     @override
+    def open_url(self, url: str, *, new_tab: bool = True) -> None:
+        from torrra.utils.helpers import open_uri
+
+        if not open_uri(url):
+            super().open_url(url, new_tab=new_tab)
+
+    @override
     def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
         # "?" is bound with priority so it works from any list, but it is also a
         # perfectly ordinary character to type into a search query, so step

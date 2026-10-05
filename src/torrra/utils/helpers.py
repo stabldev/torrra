@@ -228,3 +228,62 @@ def get_tomllib():
         import tomli as tomllib  # type: ignore
 
     return tomllib
+
+
+def open_uri(uri: str) -> bool:
+    """Open a URI using the platform-specific default application.
+
+    Routes based on platform system:
+        magnet://
+             │
+             ├── macOS    → open       → Transmission
+             ├── Windows  → start      → Transmission
+             └── Linux    → xdg-open   → Transmission
+
+    Args:
+        uri: The URI to open (e.g. a magnet link or web URL).
+
+    Returns:
+        True if the launch command succeeded, False otherwise.
+    """
+    if not uri or not isinstance(uri, str):
+        return False
+
+    uri = uri.strip()
+    if not uri:
+        return False
+
+    import os
+    import platform
+    import subprocess
+
+    system = platform.system().lower()
+    try:
+        if system == "darwin":
+            proc = subprocess.run(["open", uri], check=False)
+            return proc.returncode == 0
+        elif system == "windows":
+            safe_uri = uri.replace('"', "%22")
+            try:
+                proc = subprocess.run(f'start "" "{safe_uri}"', shell=True, check=False)
+                if proc.returncode == 0:
+                    return True
+            except (OSError, subprocess.SubprocessError):
+                pass
+            if hasattr(os, "startfile"):
+                try:
+                    os.startfile(uri)
+                    return True
+                except OSError:
+                    pass
+            return False
+        else:  # Linux and other Unix-like systems
+            proc = subprocess.run(["xdg-open", uri], check=False)
+            return proc.returncode == 0
+    except (OSError, subprocess.SubprocessError):
+        pass
+
+    return False
+
+
+open_magnet_uri = open_uri
