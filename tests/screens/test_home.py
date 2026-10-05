@@ -1,4 +1,4 @@
-from typing import cast
+from typing import Any, cast
 from unittest.mock import MagicMock
 
 import pytest
@@ -852,3 +852,58 @@ async def test_downloads_details_panel_interaction(monkeypatch, mock_config):
         await pilot.press("escape")
         await pilot.pause()
         assert dp.has_class("hidden")
+
+
+async def test_home_screen_torrent_restore_failure_notifies_once(
+    tmp_path: Any, monkeypatch: pytest.MonkeyPatch
+):
+    from pathlib import Path
+
+    from torrra.core.config import get_config
+    from torrra.core.torrent import get_torrent_manager
+
+    blocker = Path(tmp_path) / "blocking_file"
+    blocker.touch()
+    inaccessible_path = blocker / "downloads"
+
+    config = get_config()
+    config.set("general.download_path", str(inaccessible_path))
+
+    tm = get_torrent_manager()
+    magnet = "magnet:?xt=urn:btih:1111111111111111111111111111111111111111"
+    tm.add_torrent(
+        Torrent(
+            magnet_uri=magnet,
+            title="Failed Restore Torrent",
+            size=1024,
+            seeders=0,
+            leechers=0,
+            source="Test",
+        ),
+    )
+
+    app = TorrraApp(
+        indexer=None,
+        use_cache=False,
+        search_query=None,
+        show_downloads=True,
+    )
+
+    notifications: list[tuple[tuple[Any, ...], dict[str, Any]]] = []
+
+    def mock_notify(*args: Any, **kwargs: Any) -> None:
+        notifications.append((args, kwargs))
+
+    monkeypatch.setattr(app, "notify", mock_notify)
+
+    async with app.run_test() as pilot:
+        await pilot.pause()
+
+        restore_failures = [
+            (args, kwargs)
+            for args, kwargs in notifications
+            if kwargs.get("title") == "Torrent Restore Failed"
+        ]
+        # Should only be notified once on launch, not duplicated by DownloadsContent
+        assert len(restore_failures) == 1
+        assert "Could not restore 'Failed Restore Torrent'" in restore_failures[0][0][0]

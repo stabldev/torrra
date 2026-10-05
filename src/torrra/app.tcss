@@ -119,6 +119,10 @@ Toast {
   background: $surface;
 }
 
+ToastRack {
+  scrollbar-size: 0 0;
+}
+
 StatusBar {
   dock: bottom;
   height: 1;

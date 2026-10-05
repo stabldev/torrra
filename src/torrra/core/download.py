@@ -3,6 +3,7 @@ from __future__ import annotations
 import atexit
 import datetime
 import os
+import tempfile
 from contextlib import suppress
 from functools import lru_cache
 from typing import ClassVar
@@ -24,7 +25,7 @@ from torrra.core.constants import (
     DEFAULT_SPEED_LIMIT_UPLOAD,
 )
 from torrra.core.db import DB_DIR
-from torrra.core.exceptions import DownloadError
+from torrra.core.exceptions import ConfigError, DownloadError, DownloadPathError
 from torrra.core.paths import normalize_download_path, prepare_download_path
 from torrra.utils.helpers import (
     coerce_ratio_limit,
@@ -145,12 +146,20 @@ class DownloadManager:
         self, magnet_uri: str, save_path: str | None = None
     ) -> lt.torrent_handle:
         """Fetch torrent metadata without downloading its payload."""
-        return self._add_torrent(
-            magnet_uri=magnet_uri,
-            save_path=save_path,
-            create_path=True,
-            metadata_only=True,
-        )
+        try:
+            return self._add_torrent(
+                magnet_uri=magnet_uri,
+                save_path=save_path,
+                create_path=True,
+                metadata_only=True,
+            )
+        except (ConfigError, DownloadPathError):
+            return self._add_torrent(
+                magnet_uri=magnet_uri,
+                save_path=tempfile.gettempdir(),
+                create_path=True,
+                metadata_only=True,
+            )
 
     def _add_torrent(
         self,
