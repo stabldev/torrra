@@ -15,6 +15,7 @@ from torrra.core.results import SortKey
 from torrra.screens.home import HomeScreen
 from torrra.screens.sort_selector import SortSelectorScreen
 from torrra.widgets.search import SearchContent
+from torrra.widgets.status_bar import StatusBar
 
 
 @pytest.fixture
@@ -691,3 +692,163 @@ async def test_title_column_keeps_a_usable_width_in_a_narrow_terminal(
         table = _table_of(wide_value_app)
         declared = {key: width for _, key, width in SearchContent.COLS}
         assert _col_width(table, "title_col") >= declared["title_col"]
+
+
+async def test_home_screen_contains_status_bar(app: TorrraApp):
+    async with app.run_test():
+        assert isinstance(app.screen, HomeScreen)
+        status_bar = app.screen.query_one(StatusBar)
+        assert status_bar is not None
+        assert "? for shortcuts" in str(status_bar._shortcuts_widget.content)
+        assert "DHT:" in str(status_bar._stats_widget.content)
+
+
+def test_status_bar_formatting(mock_config):
+    sb = StatusBar()
+    assert "? for shortcuts" in str(sb._shortcuts_widget.content)
+
+    sb.update_stats(0.0, 0.0, 0)
+    assert (
+        str(sb._stats_widget.content)
+        == "[b]↓[/b] 0 B/s · [b]↑[/b] 0 B/s · [b]DHT:[/b] 0 nodes"
+    )
+    # turtle badge hidden when global speed limits are disabled
+    assert sb._limit_badge() == ""
+
+    sb.update_stats(1048576.0, 524288.0, 1)
+    assert (
+        str(sb._stats_widget.content)
+        == "[b]↓[/b] 1.00 MB/s · [b]↑[/b] 512.00 KB/s · [b]DHT:[/b] 1 node"
+    )
+
+
+def test_status_bar_turtle_badge(mock_config):
+    sb = StatusBar()
+    assert sb._limit_badge() == ""
+
+    mock_config.set("speed_limit.enabled", "true")
+    mock_config.set("speed_limit.upload_limit", "2097152")
+    mock_config.set("speed_limit.download_limit", "1048576")
+    sb.update_stats(0.0, 0.0, 0)
+
+    badge = sb._limit_badge()
+    assert "TURTLE" in badge
+    stats_text = str(sb._stats_widget.content)
+    assert "[1 MB/s]" in stats_text
+    assert "[2 MB/s]" in stats_text
+
+    # unlimited entries are omitted from the bracketed limits
+    mock_config.set("speed_limit.upload_limit", "0")
+    sb.update_stats(0.0, 0.0, 0)
+    assert "TURTLE" in sb._limit_badge()
+    stats_text = str(sb._stats_widget.content)
+    assert "[1 MB/s]" in stats_text
+    assert "[0 B/s]" not in stats_text
+
+    # stats render unchanged again once limits are disabled
+    mock_config.set("speed_limit.enabled", "false")
+    sb.update_stats(2097152.0, 1024.0, 42)
+    assert (
+        str(sb._stats_widget.content)
+        == "[b]↓[/b] 2.00 MB/s · [b]↑[/b] 1.00 KB/s · [b]DHT:[/b] 42 nodes"
+    )
+    assert sb._limit_badge() == ""
+
+
+async def test_downloads_details_panel_interaction(monkeypatch, mock_config):
+    from unittest.mock import MagicMock
+
+    import libtorrent as lt
+
+    from torrra._types import Torrent
+    from torrra.app import TorrraApp
+    from torrra.core.download import get_download_manager
+    from torrra.core.torrent import get_torrent_manager
+    from torrra.widgets.details_panel import DetailsPanel
+    from torrra.widgets.downloads import DownloadsContent
+
+    dm = get_download_manager()
+    tm = get_torrent_manager()
+
+    magnet = "magnet:?xt=urn:btih:testdetailspanel12345&dn=DetailsTest"
+    tm.add_torrent(
+        Torrent(
+            magnet_uri=magnet,
+            title="Details Test Torrent",
+            size=1048576,
+            seeders=5,
+            leechers=2,
+            source="Test",
+        )
+    )
+
+    handle_mock = MagicMock()
+    handle_mock.is_valid.return_value = True
+    status_mock = MagicMock()
+    status_mock.state = lt.torrent_status.states.downloading
+    status_mock.progress = 0.5
+    status_mock.download_rate = 100000.0
+    status_mock.upload_rate = 50000.0
+    status_mock.total_done = 524288
+    status_mock.total_wanted = 1048576
+    status_mock.total_wanted_done = 524288
+    status_mock.flags = 0
+    status_mock.is_seeding = False
+    status_mock.is_finished = False
+    status_mock.has_metadata = True
+    status_mock.save_path = "C:/downloads"
+    status_mock.num_seeds = 5
+    status_mock.num_peers = 2
+    status_mock.list_seeds = 5
+    status_mock.list_peers = 2
+    status_mock.error_file = -1
+    status_mock.errc = None
+    handle_mock.status.return_value = status_mock
+    handle_mock.get_peer_info.return_value = []
+    handle_mock.trackers.return_value = []
+    handle_mock.file_progress.return_value = [524288]
+    handle_mock.get_file_priorities.return_value = [1]
+    handle_mock.upload_limit.return_value = 0
+    handle_mock.download_limit.return_value = 0
+    info_mock = MagicMock()
+    info_mock.name.return_value = "Details Test Torrent"
+    info_mock.total_size.return_value = 1048576
+    handle_mock.torrent_file.return_value = info_mock
+    dm.torrents[magnet] = handle_mock
+
+    app = TorrraApp(
+        indexer=None,
+        use_cache=False,
+        search_query=None,
+        show_downloads=True,
+    )
+
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        dc = app.screen.query_one(DownloadsContent)
+        dp = app.screen.query_one(DetailsPanel)
+
+        assert dp.has_class("hidden")
+
+        # Select first row
+        dc._table.focus()
+        await pilot.press("enter")
+        await pilot.pause()
+
+        assert not dp.has_class("hidden")
+        assert dp.active_tab == "tab_general"
+
+        # Switch tabs
+        await pilot.press("right")
+        await pilot.pause()
+        assert dp.active_tab == "tab_peers"
+
+        # Press 'r' to reannounce
+        await pilot.press("r")
+        await pilot.pause()
+        handle_mock.force_reannounce.assert_called()
+
+        # Press escape to close
+        await pilot.press("escape")
+        await pilot.pause()
+        assert dp.has_class("hidden")

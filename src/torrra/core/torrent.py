@@ -4,6 +4,7 @@ from functools import lru_cache
 
 from torrra._types import Torrent, TorrentRecord
 from torrra.core.db import get_db_connection, init_db
+from torrra.core.paths import normalize_download_path
 
 
 @lru_cache
@@ -17,18 +18,26 @@ class TorrentManager:
         init_db()
 
     def add_torrent(
-        self, torrent: Torrent, file_priorities: list[int] | None = None
+        self,
+        torrent: Torrent,
+        file_priorities: list[int] | None = None,
+        save_path: str | None = None,
     ) -> None:
         prios = (
             file_priorities if file_priorities is not None else torrent.file_priorities
         )
+        selected_save_path = save_path if save_path is not None else torrent.save_path
+        if selected_save_path is not None:
+            selected_save_path = str(normalize_download_path(selected_save_path))
         priorities_json = json.dumps(prios) if prios is not None else None
         with get_db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
                 """
-                INSERT OR IGNORE INTO torrents (magnet_uri, title, size, source, file_priorities)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT OR IGNORE INTO torrents (
+                    magnet_uri, title, size, source, file_priorities, save_path
+                )
+                VALUES (?, ?, ?, ?, ?, ?)
                 """,
                 (
                     torrent.magnet_uri,
@@ -36,6 +45,7 @@ class TorrentManager:
                     torrent.size,
                     torrent.source,
                     priorities_json,
+                    selected_save_path,
                 ),
             )
             if priorities_json is not None:
@@ -92,6 +102,44 @@ class TorrentManager:
             )
             conn.commit()
 
+    def update_torrent_limits(
+        self, magnet_uri: str, upload_limit: int | None, download_limit: int | None
+    ) -> None:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "UPDATE torrents SET upload_limit = ?, download_limit = ? "
+                "WHERE magnet_uri = ?",
+                (upload_limit, download_limit, magnet_uri),
+            )
+            conn.commit()
+
+    def update_torrent_options(
+        self,
+        magnet_uri: str,
+        upload_limit: int | None = None,
+        download_limit: int | None = None,
+        max_ratio: float | None = None,
+        max_seeding_time: int | None = None,
+        sequential_download: bool = False,
+    ) -> None:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "UPDATE torrents SET upload_limit = ?, download_limit = ?, "
+                "max_ratio = ?, max_seeding_time = ?, sequential_download = ? "
+                "WHERE magnet_uri = ?",
+                (
+                    upload_limit,
+                    download_limit,
+                    max_ratio,
+                    max_seeding_time,
+                    int(sequential_download),
+                    magnet_uri,
+                ),
+            )
+            conn.commit()
+
     def get_torrent(self, magnet_uri: str) -> TorrentRecord | None:
         with get_db_connection() as conn:
             conn.row_factory = sqlite3.Row
@@ -100,7 +148,8 @@ class TorrentManager:
             row = cursor.fetchone()
             if not row:
                 return None
-            prio_raw = dict(row).get("file_priorities")
+            row_dict = dict(row)
+            prio_raw = row_dict.get("file_priorities")
             file_priorities = json.loads(prio_raw) if prio_raw else None
             return TorrentRecord(
                 magnet_uri=row["magnet_uri"],
@@ -110,6 +159,12 @@ class TorrentManager:
                 is_paused=bool(row["is_paused"]),
                 is_notified=bool(row["is_notified"]),
                 file_priorities=file_priorities,
+                upload_limit=row_dict.get("upload_limit"),
+                download_limit=row_dict.get("download_limit"),
+                save_path=row_dict.get("save_path"),
+                max_ratio=row_dict.get("max_ratio"),
+                max_seeding_time=row_dict.get("max_seeding_time"),
+                sequential_download=bool(row_dict.get("sequential_download", 0)),
             )
 
     def get_all_torrents(self) -> list[TorrentRecord]:
@@ -121,7 +176,8 @@ class TorrentManager:
 
             result = []
             for row in rows:
-                prio_raw = dict(row).get("file_priorities")
+                row_dict = dict(row)
+                prio_raw = row_dict.get("file_priorities")
                 file_priorities = json.loads(prio_raw) if prio_raw else None
                 result.append(
                     TorrentRecord(
@@ -132,6 +188,14 @@ class TorrentManager:
                         is_paused=bool(row["is_paused"]),
                         is_notified=bool(row["is_notified"]),
                         file_priorities=file_priorities,
+                        upload_limit=row_dict.get("upload_limit"),
+                        download_limit=row_dict.get("download_limit"),
+                        save_path=row_dict.get("save_path"),
+                        max_ratio=row_dict.get("max_ratio"),
+                        max_seeding_time=row_dict.get("max_seeding_time"),
+                        sequential_download=bool(
+                            row_dict.get("sequential_download", 0)
+                        ),
                     )
                 )
             return result

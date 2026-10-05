@@ -49,14 +49,21 @@ Running `torrra` with no arguments opens the welcome screen, where you type a se
 
 ## Direct Download
 
-You can download torrents directly from magnet URIs or .torrent files without searching using the `download` command:
+You can download torrents directly from magnet URIs, URLs, or local `.torrent`
+files without searching using the `download` command:
 
 ```bash
 torrra download "magnet:?xt=urn:btih:..."
 # or torrra download "/path/to/file.torrent"
+# optionally prefill a per-torrent destination
+torrra download "https://example.com/file.torrent" --save-path /downloads/linux
 ```
 
-This command will immediately start the download and open the downloads interface showing the new torrent.
+The file-selection screen lets you choose files and an optional **Save to**
+directory before the download starts. It initially shows
+`general.download_path`; leave it unchanged or clear it to keep using the global
+fallback. A different selected directory is saved with the torrent and reused
+after restarting Torrra.
 
 ## Command-Line Interface (CLI)
 
@@ -66,10 +73,10 @@ This command will immediately start the download and open the downloads interfac
 | :------------------------------------- | :--------------------------------------------------------------------------------------------------- |
 | `torrra`                               | Displays the help message if no subcommand is provided                                               |
 | `torrra --help`                        | Shows the general help message                                                                       |
-| `torrra --version`                     | Displays the current installed version of `torrra`                                                   |
-| `torrra search <query>`                | Searches for a torrent directly from the command line, bypassing the welcome screen.                 |
-| `torrra download <magnet_uri_or_file>` | Downloads a torrent directly from a magnet URI or .torrent file.                                     |
-| `torrra config`                        | Accesses the configuration subcommands (see below)                                                   |
+| `torrra download <uri/file>`           | Directly downloads a torrent with optional `--save-path`                                            |
+| `torrra search <query>`                | Searches for torrents directly from the CLI                                                          |
+| `torrra downloads`                     | Directly opens the downloads view                                                                    |
+| `torrra config`                        | Manages `torrra` configuration                                                                       |
 | `torrra jackett`                       | Initializes `torrra` using [`Jackett`](https://github.com/Jackett/Jackett) as the torrent indexer    |
 | `torrra prowlarr`                      | Initializes `torrra` using [`Prowlarr`](https://github.com/Prowlarr/Prowlarr) as the torrent indexer |
 
@@ -82,6 +89,7 @@ These subcommands allow you to manage `torrra`'s configuration directly from the
 | `torrra config get <key>`         | Retrieves the value associated with a specific configuration key |
 | `torrra config set <key> <value>` | Sets a configuration key to a specified value                    |
 | `torrra config list`              | Lists all currently set configuration values                     |
+| `torrra config edit`              | Opens the configuration file in the default editor               |
 
 ### Indexer Options
 
@@ -104,6 +112,7 @@ The TUI has two views, **Search** and **Downloads**, which you switch between us
 | :------- | :----------------------------------------------------------- |
 | `Tab`    | Move focus between the search box, the sidebar and the list  |
 | `ctrl+t` | Open the theme switcher to change the application's appearance |
+| `t`      | Toggle turtle mode — cap all traffic at your configured global speed limits (set them in `config.toml` under `[speed_limit]`, e.g. `torrra config set speed_limit.download_limit 2M`) |
 | `?`      | Show all keyboard shortcuts                                  |
 | `ctrl+q` | Quit `torrra`                                                |
 
@@ -139,12 +148,16 @@ These work in both the search results and the downloads list.
 | `Enter` / `l` | Show details and progress for the highlighted download       |
 | `p`           | Pause or resume the selected download (the same key toggles) |
 | `f`           | Open the file selection modal to choose files to download    |
+| `o`           | Open torrent options (speed limits, max ratio, seed time, sequential download) |
 | `d`           | Remove the selected torrent, keeping any downloaded files    |
 | `D`           | Remove the selected torrent **and** delete its files         |
 
+While a download's details panel is open, per-torrent limits, current seed ratio,
+and sequential status (`[Seq]`) are displayed.
+
 ### File selection
 
-Files are shown in a collapsible folder tree. Folders are expanded by default; use the arrow keys to navigate, `←`/`→` to collapse/expand a folder, and `Space` to toggle the highlighted file — or a whole folder subtree.
+Files are shown in a collapsible folder tree. Folders are expanded by default; use the arrow keys to navigate, `←`/`→` to collapse/expand a folder, and `Space` to toggle the highlighted file — or a whole folder subtree. The **Save to** field accepts an absolute path; leave it blank to use the configured global default.
 
 | Key            | Action                                                      |
 | :------------- | :---------------------------------------------------------- |

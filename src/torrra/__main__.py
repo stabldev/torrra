@@ -18,10 +18,19 @@ def cli(ctx: click.Context, no_cache: bool) -> None:
 # --------------------------------------------------
 # DOWNLOAD
 # --------------------------------------------------
-@cli.command(help="Download a torrent directly from magnet URI or .torrent file.")
+@cli.command(help="Download a torrent from a magnet URI, URL, or local .torrent file.")
 @click.argument("magnet_uri_or_file")
 @click.option("--no-cache", is_flag=True, help="Disable caching mechanism.")
-def download(magnet_uri_or_file: str, no_cache: bool) -> None:
+@click.option(
+    "--save-path",
+    type=click.Path(file_okay=False),
+    help="Download this torrent to PATH instead of the configured default.",
+)
+def download(
+    magnet_uri_or_file: str,
+    no_cache: bool,
+    save_path: str | None,
+) -> None:
     import os
     import re
 
@@ -43,7 +52,11 @@ def download(magnet_uri_or_file: str, no_cache: bool) -> None:
         return
 
     # direct download needs no indexer - launch straight into downloads
-    run_without_indexer(no_cache=no_cache, direct_download=magnet_uri_or_file)
+    run_without_indexer(
+        no_cache=no_cache,
+        direct_download=magnet_uri_or_file,
+        direct_save_path=save_path,
+    )
 
 
 # --------------------------------------------------
@@ -150,6 +163,39 @@ def config_list():
         click.echo("\n".join(get_config().list()))
     except ConfigError as e:
         click.secho(e, fg="red", err=True)
+
+
+@config.command(name="edit", help="Open the configuration file in the default editor.")
+@click.option(
+    "-e",
+    "--editor",
+    required=False,
+    help="Editor command to use (defaults to $VISUAL, $EDITOR, or system default).",
+)
+def config_edit(editor: str | None = None):
+    from torrra.core.config import CONFIG_FILE, get_config
+    from torrra.utils.helpers import get_tomllib
+
+    tomllib = get_tomllib()
+
+    # Ensure config file exists before editing
+    get_config()
+
+    try:
+        click.edit(filename=str(CONFIG_FILE), editor=editor)
+    except (click.ClickException, OSError) as e:
+        click.secho(f"Failed to open editor: {e}", fg="red", err=True)
+        return
+
+    # Clear cached config instance so subsequent calls reload changes
+    get_config.cache_clear()
+
+    # Validate TOML syntax after editing
+    try:
+        with open(CONFIG_FILE, "rb") as f:
+            tomllib.load(f)
+    except (OSError, tomllib.TOMLDecodeError) as e:
+        click.secho(f"Invalid Configuration: {e}", fg="yellow", err=True)
 
 
 if __name__ == "__main__":

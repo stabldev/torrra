@@ -44,10 +44,72 @@ DetailsPanel {
   &:focus {
     border: solid $secondary;
   }
+  &.tabbed {
+    height: 14;
+    max-height: 45%;
+    padding: 0;
+  }
+  #details_tabs {
+    height: 1fr;
+    background: transparent;
+    ContentTabs {
+      height: 2;
+      background: transparent;
+      padding: 0 1;
+      Tab {
+        background: transparent;
+        padding: 0 1;
+        &.-active {
+          text-style: bold;
+          color: $block-cursor-foreground;
+          background: $block-cursor-background;
+        }
+      }
+    }
+    TabPane {
+      height: 1fr;
+      padding: 0;
+      background: transparent;
+    }
+    #tab_general {
+      height: 1fr;
+      padding: 0 1;
+      #details_content {
+        height: auto;
+      }
+      #details_progress_row {
+        dock: bottom;
+      }
+    }
+  }
+  DataTable {
+    height: 1fr;
+    border: none;
+    background: transparent;
+    scrollbar-size: 0 0;
+    & > .datatable--header {
+      color: $foreground-muted;
+    }
+  }
+  #details_progress_row {
+    height: auto;
+    width: 100%;
+    align-vertical: middle;
+  }
   ProgressBar {
+    width: 1fr;
     #bar {
       width: 1fr;
     }
+  }
+  #details_eta {
+    width: auto;
+    margin-left: 1;
+  }
+  #details_shortcuts {
+    height: auto;
+    padding: 0 1;
+    color: $foreground-muted;
   }
 }
 
@@ -55,6 +117,22 @@ Toast {
   width: auto;
   padding: 0 1;
   background: $surface;
+}
+
+StatusBar {
+  dock: bottom;
+  height: 1;
+  width: 100%;
+  padding: 0 1;
+  background: $surface;
+  color: $foreground-muted;
+  #shortcuts {
+    width: auto;
+  }
+  #stats {
+    width: 1fr;
+    text-align: right;
+  }
 }
 
 /* ------------------------- */
@@ -197,6 +275,126 @@ ThemeSelectorScreen {
   }
 }
 
+SpeedLimitScreen {
+  align: center middle;
+  #speed-limit-container {
+    height: auto;
+    max-width: 44;
+    width: 44;
+    padding: 0 2;
+    background: $surface;
+    border: tall $secondary;
+    Label {
+      width: 100%;
+      text-align: left;
+    }
+    #speed-limit-name {
+      color: $text-muted;
+      margin-bottom: 1;
+    }
+    #speed-limit-fields {
+      height: auto;
+      .speed-field-row {
+        height: 1;
+        align-vertical: middle;
+        .speed-field-label {
+          width: 10;
+          color: $text;
+        }
+        Input {
+          width: 1fr;
+          height: 1;
+          border: none;
+          background: $surface;
+          padding: 0 1;
+        }
+        .speed-unit-label {
+          width: 6;
+          color: $text-muted;
+          text-align: right;
+        }
+      }
+    }
+    .error-text {
+      color: $error;
+    }
+    #speed-limit-footer {
+      color: $text-muted;
+      text-align: center;
+      margin-top: 1;
+    }
+  }
+}
+
+TorrentOptionsScreen {
+  align: center middle;
+  #torrent-options-container {
+    height: auto;
+    max-width: 52;
+    width: 52;
+    padding: 0 2;
+    background: $surface;
+    border: tall $secondary;
+    Label {
+      width: 100%;
+      text-align: left;
+    }
+    #torrent-options-name {
+      color: $text-muted;
+      margin-bottom: 1;
+    }
+    #torrent-options-fields {
+      height: auto;
+      .torrent-option-row {
+        height: 1;
+        align-vertical: middle;
+        margin-bottom: 0;
+        .torrent-option-label {
+          width: 12;
+          color: $text;
+        }
+        Input {
+          width: 1fr;
+          height: 1;
+          border: none;
+          background: $surface;
+          padding: 0 1;
+        }
+        .torrent-option-unit-label {
+          width: 10;
+          color: $text-muted;
+          text-align: right;
+          margin-left: 1;
+        }
+      }
+      .torrent-option-hint {
+        width: 100%;
+        color: $text-muted;
+        margin-bottom: 1;
+      }
+      .checkbox-row {
+        height: 1;
+        margin-top: 1;
+        align-vertical: middle;
+        Checkbox {
+          background: $surface;
+          border: none;
+          height: 1;
+          padding: 0;
+        }
+      }
+    }
+    .error-text {
+      color: $error;
+    }
+    #torrent-options-footer {
+      color: $text-muted;
+      text-align: center;
+      margin-top: 1;
+    }
+  }
+}
+
 /* ------------------------- */
 /* SORT SELECT SCREEN        */
 /* ------------------------- */
@@ -228,19 +426,21 @@ SortSelectorScreen {
 FileSelectionScreen {
   align: center middle;
   #file-selection-container {
-    height: 18;
+    height: auto;
     max-height: 80%;
     width: 60;
     max-width: 85%;
     background: $surface;
     border: tall $secondary;
     padding: 0 1;
-
+    &.loaded {
+      height: 21;
+    }
     #file-selection-header {
       height: auto;
       margin-bottom: 1;
-      padding: 0 1;
       #torrent-name {
+        padding: 0 1;
         width: 100%;
         text-align: center;
         color: $foreground;
@@ -251,13 +451,22 @@ FileSelectionScreen {
         text-align: center;
         color: $foreground-muted;
       }
+      #save-path-label {
+        margin-top: 1;
+        color: $foreground-muted;
+      }
+      #save-path {
+        height: 1;
+        border: none;
+        background: $surface;
+      }
     }
-
     #file-selection-loading {
-      height: 1fr;
+      height: auto;
       #loading-spinner-area {
-        height: 1fr;
+        height: auto;
         align: center middle;
+        margin-bottom: 1;
         Static {
           text-align: center;
           content-align-horizontal: center;
@@ -275,7 +484,6 @@ FileSelectionScreen {
         color: $foreground-muted;
       }
     }
-
     #file-selection-body {
       height: 1fr;
       margin: 0;
@@ -285,7 +493,6 @@ FileSelectionScreen {
         scrollbar-size: 0 0;
       }
     }
-
     #file-selection-footer {
       height: auto;
       margin-top: 1;
@@ -297,4 +504,3 @@ FileSelectionScreen {
     }
   }
 }
-

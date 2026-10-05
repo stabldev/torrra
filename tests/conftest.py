@@ -9,22 +9,30 @@ from torrra._types import Indexer
 from torrra.app import TorrraApp
 from torrra.core import config as config_module
 from torrra.core import db as db_module
-from torrra.core.config import Config
 from torrra.core.download import get_download_manager
 from torrra.core.torrent import get_torrent_manager
 
 
 @pytest.fixture(autouse=True)
 def isolated_db(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-    # Ensure every test runs with an isolated database and clean managers
+    # Ensure every test runs with isolated state and clean managers.
     temp_db_dir = tmp_path / "torrra_db"
     temp_db_file = temp_db_dir / "torrra.db"
+    temp_config_dir = tmp_path / "torrra_config"
+    temp_config_file = temp_config_dir / "config.toml"
+    temp_download_dir = tmp_path / "downloads"
 
     monkeypatch.setattr(db_module, "DB_DIR", temp_db_dir)
     monkeypatch.setattr(db_module, "DB_FILE", temp_db_file)
+    monkeypatch.setattr(config_module, "CONFIG_DIR", temp_config_dir)
+    monkeypatch.setattr(config_module, "CONFIG_FILE", temp_config_file)
+    monkeypatch.setattr(
+        config_module, "user_downloads_dir", lambda: str(temp_download_dir)
+    )
 
     get_torrent_manager.cache_clear()
     get_download_manager.cache_clear()
+    config_module.get_config.cache_clear()
 
     db_module.init_db()
 
@@ -32,6 +40,7 @@ def isolated_db(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
 
     get_torrent_manager.cache_clear()
     get_download_manager.cache_clear()
+    config_module.get_config.cache_clear()
 
 
 @pytest.fixture
@@ -91,8 +100,12 @@ def mock_config(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     # return a cached instance that was created before our patch was applied.
     config_module.get_config.cache_clear()
 
-    # this will now create a Config instance using the tmp_path
-    yield Config()
+    # this will now create a Config instance using the tmp_path, seeded into
+    # the lru_cache so every get_config() call returns this same instance
+    # (otherwise a divergent copy gets cached on first use)
+    config_instance = config_module.get_config()
+
+    yield config_instance
 
     # drop the temp instance so later tests don't resolve a deleted tmp_path
     config_module.get_config.cache_clear()

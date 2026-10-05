@@ -20,6 +20,7 @@ def run_with_indexer(
     no_cache: bool,
     search_query: str | None = None,
     direct_download: str | None = None,
+    direct_save_path: str | None = None,
     show_downloads: bool = False,
 ) -> None:
     config = get_config()
@@ -90,6 +91,7 @@ def run_with_indexer(
             use_cache=use_cache,
             search_query=search_query,
             direct_download=direct_download,
+            direct_save_path=direct_save_path,
             show_downloads=show_downloads,
         )
         app.run()
@@ -101,6 +103,7 @@ def run_without_indexer(
     *,
     no_cache: bool,
     direct_download: str | None = None,
+    direct_save_path: str | None = None,
     show_downloads: bool = False,
 ) -> None:
     """Launch the app without an indexer.
@@ -125,6 +128,7 @@ def run_without_indexer(
             use_cache=use_cache,
             search_query=None,
             direct_download=direct_download,
+            direct_save_path=direct_save_path,
             show_downloads=show_downloads,
         )
         app.run()
@@ -137,6 +141,7 @@ def run_with_default_indexer(
     no_cache: bool,
     search_query: str | None = None,
     direct_download: str | None = None,
+    direct_save_path: str | None = None,
     show_downloads: bool = False,
 ) -> None:
     config = get_config()
@@ -169,6 +174,7 @@ def run_with_default_indexer(
             no_cache=no_cache,
             search_query=search_query,
             direct_download=direct_download,
+            direct_save_path=direct_save_path,
             show_downloads=show_downloads,
         )
     except ConfigError as e:

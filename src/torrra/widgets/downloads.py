@@ -1,13 +1,22 @@
 from typing import ClassVar, cast
 
+from rich.markup import escape
 from textual.app import ComposeResult
 from textual.containers import Vertical
 from typing_extensions import override
 
-from torrra._types import Torrent, TorrentRecord, TorrentStatus
+from torrra._types import (
+    DownloadSelection,
+    Torrent,
+    TorrentOptions,
+    TorrentRecord,
+    TorrentStatus,
+)
 from torrra.core.download import DownloadManager, get_download_manager
+from torrra.core.exceptions import ConfigError, DownloadError
 from torrra.core.torrent import TorrentManager, get_torrent_manager
 from torrra.screens.file_selection import FileSelectionScreen
+from torrra.screens.torrent_options import TorrentOptionsScreen
 from torrra.utils.helpers import human_readable_eta, human_readable_size
 from torrra.widgets.data_table import AutoResizingDataTable
 from torrra.widgets.details_panel import DetailsPanel
@@ -19,14 +28,16 @@ class DownloadsContent(Vertical):
         ("Title", "title", 25),
         ("Stat", "status", 4),
         ("Done", "done_percent", 4),
-        ("Up", "up_speed", 6),
-        ("Down", "down_speed", 6),
+        ("Up", "up_speed", 9),
+        ("Down", "down_speed", 10),
     ]
 
     BINDINGS: ClassVar[list[tuple[str, str]]] = [
         ("d", "delete_torrent"),
         ("D", "delete_torrent_with_data"),
         ("f", "select_files"),
+        ("o", "show_torrent_options"),
+        ("r", "reannounce_trackers"),
     ]
 
     def __init__(self) -> None:
@@ -138,11 +149,25 @@ class DownloadsContent(Vertical):
         self._torrents = self._tm.get_all_torrents()
 
         for torrent in self._torrents:
-            self._dm.add_torrent(
-                torrent["magnet_uri"],
-                is_paused=torrent["is_paused"],
-                file_priorities=torrent.get("file_priorities"),
-            )
+            try:
+                self._dm.add_torrent(
+                    torrent["magnet_uri"],
+                    is_paused=torrent["is_paused"],
+                    file_priorities=torrent.get("file_priorities"),
+                    upload_limit=torrent.get("upload_limit"),
+                    download_limit=torrent.get("download_limit"),
+                    save_path=torrent.get("save_path"),
+                    create_path=torrent.get("save_path") is None,
+                    max_ratio=torrent.get("max_ratio"),
+                    max_seeding_time=torrent.get("max_seeding_time"),
+                    sequential_download=torrent.get("sequential_download", False),
+                )
+            except (ConfigError, DownloadError) as exc:
+                self.notify(
+                    f"Could not restore '{torrent['title']}': {exc}",
+                    title="Torrent Restore Failed",
+                    severity="error",
+                )
 
         self._filter_table()
 
@@ -151,8 +176,6 @@ class DownloadsContent(Vertical):
             return
 
         magnet_uri = self._selected_torrent["magnet_uri"]
-        title = self._selected_torrent["title"]
-        short_title = (title[:50] + "...") if len(title) > 40 else title
 
         status = self._dm.get_torrent_status(magnet_uri)
         if not status:
@@ -165,17 +188,6 @@ class DownloadsContent(Vertical):
 
         if self._selected_torrent:
             self._selected_torrent["is_paused"] = target_paused
-
-        if target_paused:
-            self.notify(
-                f"Paused download of [b]{short_title}[/b]",
-                title="Download Paused",
-            )
-        else:
-            self.notify(
-                f"Resumed download of [b]{short_title}[/b]",
-                title="Download Resumed",
-            )
 
     def action_delete_torrent(self) -> None:
         self._remove_selected_torrent()
@@ -202,6 +214,7 @@ class DownloadsContent(Vertical):
                     seeders=0,
                     leechers=0,
                     file_priorities=current_priorities,
+                    save_path=self._selected_torrent.get("save_path"),
                 ),
                 existing_priorities=current_priorities,
                 is_edit_mode=True,
@@ -209,30 +222,71 @@ class DownloadsContent(Vertical):
             self._on_edit_files_done,
         )
 
-    def _on_edit_files_done(self, priorities: list[int] | None) -> None:
-        if priorities is None or not self._selected_torrent:
-            return
-
-        magnet_uri = self._selected_torrent["magnet_uri"]
-        self._selected_torrent["file_priorities"] = priorities
-
-        self._dm.set_file_priorities(magnet_uri, priorities)
-        self._tm.update_torrent_file_priorities(magnet_uri, priorities)
-
-        title = self._selected_torrent["title"]
-        short_title = (title[:50] + "...") if len(title) > 40 else title
-        self.notify(
-            f"Updated file selection for [b]{short_title}[/b]",
-            title="Files Updated",
-        )
-
-    def _remove_selected_torrent(self, delete_files: bool = False) -> None:
+    def action_show_torrent_options(self) -> None:
         if not self._selected_torrent:
             return
 
         magnet_uri = self._selected_torrent["magnet_uri"]
         title = self._selected_torrent["title"]
         short_title = (title[:50] + "...") if len(title) > 40 else title
+
+        opts = self._dm.get_torrent_options(magnet_uri)
+
+        self.app.push_screen(
+            TorrentOptionsScreen(
+                title=short_title,
+                options=opts,
+            ),
+            self._on_torrent_options_set,
+        )
+
+    def _on_torrent_options_set(self, options: TorrentOptions | None) -> None:
+        if options is None or not self._selected_torrent:
+            return
+
+        magnet_uri = self._selected_torrent["magnet_uri"]
+        self._dm.set_torrent_options(magnet_uri, options)
+
+        self._selected_torrent["upload_limit"] = options.upload_limit
+        self._selected_torrent["download_limit"] = options.download_limit
+        self._selected_torrent["max_ratio"] = options.max_ratio
+        self._selected_torrent["max_seeding_time"] = options.max_seeding_time
+        self._selected_torrent["sequential_download"] = options.sequential_download
+
+        # refresh the details panel so the new options are visible
+        if status := self._dm.get_torrent_status(magnet_uri):
+            self._update_details_panel(status)
+
+    def _on_speed_limit_set(self, limits: tuple[int, int] | None) -> None:
+        if limits is None or not self._selected_torrent:
+            return
+
+        up, down = limits
+        magnet_uri = self._selected_torrent["magnet_uri"]
+        self._dm.set_torrent_limits(magnet_uri, up, down)
+
+        # refresh the details panel so the new limits are visible
+        if status := self._dm.get_torrent_status(magnet_uri):
+            self._update_details_panel(status)
+
+    def _on_edit_files_done(self, selection: DownloadSelection | None) -> None:
+        if selection is None or not self._selected_torrent:
+            return
+
+        magnet_uri = self._selected_torrent["magnet_uri"]
+        priorities = selection.file_priorities
+        if priorities is None:
+            return
+        self._selected_torrent["file_priorities"] = priorities
+
+        self._dm.set_file_priorities(magnet_uri, priorities)
+        self._tm.update_torrent_file_priorities(magnet_uri, priorities)
+
+    def _remove_selected_torrent(self, delete_files: bool = False) -> None:
+        if not self._selected_torrent:
+            return
+
+        magnet_uri = self._selected_torrent["magnet_uri"]
 
         self._dm.remove_torrent(magnet_uri, delete_files=delete_files)
         self._tm.remove_torrent(magnet_uri)
@@ -243,26 +297,38 @@ class DownloadsContent(Vertical):
         self._details_panel.add_class("hidden")
         self._filter_table()
 
-        msg = (
-            f"Removed [b]{short_title}[/b] and its data"
-            if delete_files
-            else f"Removed [b]{short_title}[/b] from list"
-        )
-        self.notify(
-            msg,
-            title="Torrent Removed",
-        )
-
-    def on_details_panel_closed(self):
+    def on_details_panel_closed(self) -> None:
         self._selected_torrent = None
+
+    def on_details_panel_tab_changed(self, event: DetailsPanel.TabChanged) -> None:
+        if not self._selected_torrent:
+            return
+        if status := self._dm.get_torrent_status(self._selected_torrent["magnet_uri"]):
+            self._update_details_panel(status)
+
+    def action_reannounce_trackers(self) -> None:
+        if not self._selected_torrent:
+            return
+        magnet_uri = self._selected_torrent["magnet_uri"]
+        self._dm.force_reannounce_torrent(magnet_uri)
+        self.notify(
+            "Sent force reannounce to trackers",
+            title="Trackers Reannounced",
+        )
+        if self._details_panel.active_tab == "tab_trackers":
+            trackers = self._dm.get_torrent_trackers(magnet_uri)
+            self._details_panel.update_trackers(trackers)
 
     def on_data_table_row_selected(
         self, event: AutoResizingDataTable.RowSelected
     ) -> None:
         row_key = cast(str, event.row_key.value)
-        self._selected_torrent = next(
+        new_torrent = next(
             (d for d in self._torrents if d["magnet_uri"] == row_key), None
         )
+        if self._selected_torrent != new_torrent:
+            self._details_panel.clear_tables()
+        self._selected_torrent = new_torrent
 
         if self._selected_torrent:
             self._details_panel.border_title = self._selected_torrent["title"]
@@ -393,22 +459,71 @@ class DownloadsContent(Vertical):
         )
 
         state_text = self._dm.get_torrent_state_text(status)
-        size = human_readable_size(float(current_torrent["size"]))
-        up_speed = f"{human_readable_size(status['up_speed'])}/s"
-        down_speed = f"{human_readable_size(status['down_speed'])}/s"
+        total_size = float(current_torrent["size"])
+        downloaded = status.get("total_done")
+        if downloaded is None or downloaded == 0:
+            downloaded = (status.get("progress", 0.0) / 100.0) * total_size
+        else:
+            downloaded = float(downloaded)
+
+        if total_size > 0:
+            downloaded = min(downloaded, total_size)
+
+        size = f"{human_readable_size(downloaded)} / {human_readable_size(total_size)}"
         eta_text = human_readable_eta(status["eta"], is_seeding=status["is_seeding"])
+        limits = self._dm.get_torrent_limits(self._selected_torrent["magnet_uri"])
+        up_limit_suffix = (
+            f" [dim][{human_readable_size(limits[0], short=True)}/s][/dim]"
+            if limits and limits[0] is not None and limits[0] > 0
+            else ""
+        )
+        down_limit_suffix = (
+            f" [dim][{human_readable_size(limits[1], short=True)}/s][/dim]"
+            if limits and limits[1] is not None and limits[1] > 0
+            else ""
+        )
+        up_speed = f"{human_readable_size(status['up_speed'])}/s{up_limit_suffix}"
+        down_speed = f"{human_readable_size(status['down_speed'])}/s{down_limit_suffix}"
 
         seeders_text = f"{status.get('seeders', 0)}/{status.get('total_seeders', 0)}"
         peers_text = f"{status.get('peers', 0)}/{status.get('total_peers', 0)}"
-        details = f"""
-[b]Size:[/b] {size} · [b]Status:[/b] {state_text} · [b]Source:[/b] {current_torrent["source"]}
-[b]Seeders:[/b] {seeders_text} · [b]Peers:[/b] {peers_text} · [b]Up:[/b] {up_speed} · [b]Down:[/b] {down_speed} · [b]ETA:[/b] {eta_text}
+        save_path = escape(status["save_path"])
 
-[dim]\\[p] pause/resume · \\[f] select files · \\[d] delete · \\[D] delete w/ data · \\[esc] close[/dim]
-"""
+        ratio = status.get("ratio", 0.0)
+        max_ratio = status.get("max_ratio")
+        ratio_part = (
+            f" [dim]·[/dim] Ratio: [b]{ratio:.2f}[/b]/{max_ratio:.2f}"
+            if max_ratio is not None and max_ratio > 0
+            else ""
+        )
+        seq_badge = " [dim]\\[Seq][/dim]" if status.get("sequential_download") else ""
+
+        details = (
+            f"Status: [b]{state_text}[/b]{seq_badge} [dim]·[/dim] Size: {size}{ratio_part} [dim]·[/dim] [dim]Source:[/dim] [dim]{current_torrent['source']}[/dim]\n"
+            f"Down: [b]{down_speed}[/b] [dim]·[/dim] Up: {up_speed} [dim]·[/dim] [dim]Seeds:[/dim] [dim]{seeders_text}[/dim] [dim]·[/dim] [dim]Peers:[/dim] [dim]{peers_text}[/dim]\n"
+            f"[dim]Save to:[/dim] [dim]{save_path}[/dim]"
+        )
+        shortcuts = (
+            r"[dim]\[p] pause/resume · \[r] reannounce · "
+            r"\[f] files · \[o] options · \[d/D] delete · \[esc] close[/dim]"
+        )
         # update details panel internal widgets
         self._details_panel.border_title = current_torrent["title"]
         self._details_panel.update_content(
-            details.strip(),
+            details,
             progress=status["progress"],
+            eta=eta_text,
+            shortcuts=shortcuts,
         )
+
+        active_tab = self._details_panel.active_tab
+        magnet_uri = self._selected_torrent["magnet_uri"]
+        if active_tab == "tab_peers":
+            peers = self._dm.get_torrent_peers(magnet_uri)
+            self._details_panel.update_peers(peers)
+        elif active_tab == "tab_trackers":
+            trackers = self._dm.get_torrent_trackers(magnet_uri)
+            self._details_panel.update_trackers(trackers)
+        elif active_tab == "tab_files":
+            files = self._dm.get_torrent_files_progress(magnet_uri)
+            self._details_panel.update_files(files)

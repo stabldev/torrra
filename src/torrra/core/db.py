@@ -30,7 +30,13 @@ def init_db() -> None:
                 source TEXT,
                 is_paused BOOLEAN DEFAULT 0,
                 is_notified BOOLEAN DEFAULT 0,
-                file_priorities TEXT DEFAULT NULL
+                file_priorities TEXT DEFAULT NULL,
+                upload_limit INTEGER DEFAULT NULL,
+                download_limit INTEGER DEFAULT NULL,
+                save_path TEXT DEFAULT NULL,
+                max_ratio REAL DEFAULT NULL,
+                max_seeding_time INTEGER DEFAULT NULL,
+                sequential_download BOOLEAN DEFAULT 0
             )
             """
         )
@@ -42,5 +48,32 @@ def init_db() -> None:
         with suppress(sqlite3.OperationalError):
             cursor.execute(
                 "ALTER TABLE torrents ADD COLUMN file_priorities TEXT DEFAULT NULL"
+            )
+        columns = {
+            row[1] for row in cursor.execute("PRAGMA table_info(torrents)").fetchall()
+        }
+        if "upload_limit" not in columns:
+            cursor.execute(
+                "ALTER TABLE torrents ADD COLUMN upload_limit INTEGER DEFAULT NULL"
+            )
+        if "download_limit" not in columns:
+            cursor.execute(
+                "ALTER TABLE torrents ADD COLUMN download_limit INTEGER DEFAULT NULL"
+            )
+        if "save_path" not in columns:
+            cursor.execute(
+                "ALTER TABLE torrents ADD COLUMN save_path TEXT DEFAULT NULL"
+            )
+        if "max_ratio" not in columns:
+            cursor.execute(
+                "ALTER TABLE torrents ADD COLUMN max_ratio REAL DEFAULT NULL"
+            )
+        if "max_seeding_time" not in columns:
+            cursor.execute(
+                "ALTER TABLE torrents ADD COLUMN max_seeding_time INTEGER DEFAULT NULL"
+            )
+        if "sequential_download" not in columns:
+            cursor.execute(
+                "ALTER TABLE torrents ADD COLUMN sequential_download BOOLEAN DEFAULT 0"
             )
         conn.commit()

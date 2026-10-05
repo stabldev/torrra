@@ -15,6 +15,7 @@ class TorrentDict(TypedDict, total=False):
     leechers: int
     source: str
     file_priorities: list[int] | None
+    save_path: str | None
 
 
 class TorrentStatus(TypedDict, total=False):
@@ -24,6 +25,7 @@ class TorrentStatus(TypedDict, total=False):
     progress: float
     down_speed: float
     up_speed: float
+    total_done: int
     seeders: int
     total_seeders: int
     leechers: int
@@ -36,6 +38,12 @@ class TorrentStatus(TypedDict, total=False):
     error_file: int
     is_missing_files: bool
     is_queued: bool
+    save_path: str
+    ratio: float
+    seeding_duration: int
+    max_ratio: float | None
+    max_seeding_time: int | None
+    sequential_download: bool
 
 
 class TorrentRecord(TypedDict, total=False):
@@ -48,6 +56,31 @@ class TorrentRecord(TypedDict, total=False):
     is_paused: bool
     is_notified: bool
     file_priorities: list[int] | None
+    upload_limit: int | None
+    download_limit: int | None
+    save_path: str | None
+    max_ratio: float | None
+    max_seeding_time: int | None
+    sequential_download: bool
+
+
+class SessionStats(TypedDict, total=False):
+    """Session statistics for overall download/upload speeds and DHT."""
+
+    download_rate: float
+    upload_rate: float
+    dht_nodes: int
+
+
+@dataclass
+class TorrentOptions:
+    """Per-torrent configuration options."""
+
+    upload_limit: int | None = None
+    download_limit: int | None = None
+    max_ratio: float | None = None
+    max_seeding_time: int | None = None
+    sequential_download: bool = False
 
 
 @dataclass
@@ -57,6 +90,40 @@ class TorrentFileInfo:
     index: int
     path: str
     size: int
+
+
+class PeerInfo(TypedDict, total=False):
+    """Information for a single connected peer."""
+
+    ip: str
+    client: str
+    down_speed: float
+    up_speed: float
+    progress: float
+    flags: str
+
+
+class TrackerInfo(TypedDict, total=False):
+    """Information for a single tracker."""
+
+    url: str
+    tier: int
+    status: str
+    seeds: int
+    peers: int
+    message: str
+
+
+class TorrentFileProgress(TypedDict, total=False):
+    """Progress and priority information for a file in a torrent."""
+
+    index: int
+    path: str
+    size: int
+    done: int
+    progress: float
+    priority: int
+    priority_label: str
 
 
 @dataclass
@@ -70,6 +137,7 @@ class Torrent:
     leechers: int
     source: str
     file_priorities: list[int] | None = None
+    save_path: str | None = None
 
     @classmethod
     def from_dict(cls, d: TorrentDict) -> "Torrent":
@@ -77,6 +145,14 @@ class Torrent:
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
+
+
+@dataclass
+class DownloadSelection:
+    """Options confirmed before starting a torrent download."""
+
+    file_priorities: list[int] | None
+    save_path: str | None
 
 
 # INDEXER TYPES

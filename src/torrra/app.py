@@ -3,6 +3,7 @@ from typing import ClassVar
 from textual import work
 from textual.app import App
 from textual.binding import Binding, BindingType
+from textual.css.query import NoMatches
 from textual.reactive import Reactive
 from textual.types import CSSPathType
 from textual.widgets import Input
@@ -10,11 +11,13 @@ from typing_extensions import override
 
 from torrra._types import Indexer
 from torrra.core.config import get_config
+from torrra.core.exceptions import ConfigError
 from torrra.screens.help import HelpScreen
 from torrra.screens.home import HomeScreen
 from torrra.screens.theme_selector import ThemeSelectorScreen
 from torrra.screens.welcome import GO_TO_DOWNLOADS, WelcomeScreen
 from torrra.utils.fs import get_resource_path
+from torrra.widgets.status_bar import StatusBar
 
 
 class TorrraApp(App[None]):
@@ -25,6 +28,7 @@ class TorrraApp(App[None]):
     ENABLE_COMMAND_PALETTE: ClassVar[bool] = False
     BINDINGS: ClassVar[list[BindingType]] = [
         Binding("ctrl+t", "switch_theme"),
+        Binding("t", "toggle_speed_limit"),
         Binding("question_mark", "show_help", priority=True),
     ]
 
@@ -34,6 +38,7 @@ class TorrraApp(App[None]):
         use_cache: bool,
         search_query: str | None,
         direct_download: str | None = None,
+        direct_save_path: str | None = None,
         show_downloads: bool = False,
     ) -> None:
         super().__init__()
@@ -41,6 +46,7 @@ class TorrraApp(App[None]):
         self.use_cache: bool = use_cache
         self.search_query: str | None = search_query
         self.direct_download: str | None = direct_download
+        self.direct_save_path: str | None = direct_save_path
         self.show_downloads: bool = show_downloads
 
         # load theme from config file
@@ -51,6 +57,14 @@ class TorrraApp(App[None]):
                 + f"available themes: {', '.join(sorted(self.available_themes))}"
             )
         self.theme = theme
+
+        # validate the download path up front so a bad value is reported once,
+        # here, instead of surfacing as an uncaught error (or a silently
+        # skipped torrent) every time a download is added
+        try:
+            get_config().get("general.download_path")
+        except ConfigError as e:
+            raise RuntimeError(f"invalid download_path configured.\n{e}") from e
 
     async def on_mount(self) -> None:
         # the welcome screen only exists to collect a search query, so it is
@@ -68,6 +82,7 @@ class TorrraApp(App[None]):
                     search_query=self.search_query or "",
                     use_cache=self.use_cache,
                     direct_download=self.direct_download,
+                    direct_save_path=self.direct_save_path,
                     show_downloads=self.show_downloads,
                 )
             )
@@ -95,6 +110,30 @@ class TorrraApp(App[None]):
         else:
             self.push_screen(HelpScreen())
 
+    def _refresh_status_bar(self) -> None:
+        status_bar = self._find_status_bar()
+        if status_bar is not None:
+            status_bar.update_stats(*status_bar._last_stats)
+
+    def _find_status_bar(self) -> "StatusBar | None":
+        # the status bar lives on the home screen, which may be buried under
+        # other screens (welcome/help) or not mounted at all yet
+        for screen in self.screen_stack:
+            try:
+                return screen.query_one(StatusBar)
+            except NoMatches:
+                continue
+        return None
+
+    def action_toggle_speed_limit(self) -> None:
+        from torrra.core.download import get_download_manager
+
+        dm = get_download_manager()
+        enable = not dm.is_speed_limit_enabled()
+
+        dm.set_speed_limit_enabled(enable)
+        self._refresh_status_bar()
+
     @work(exclusive=True)
     async def _show_welcome_and_search(self) -> None:
         # only ever called with an indexer configured (see on_mount)
@@ -108,6 +147,7 @@ class TorrraApp(App[None]):
                 search_query=result if is_search else "",
                 use_cache=self.use_cache,
                 direct_download=None,
+                direct_save_path=None,
                 show_downloads=not is_search,
             )
         )

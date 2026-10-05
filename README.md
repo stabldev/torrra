@@ -52,12 +52,14 @@ torrra search "arch linux iso"
 
 ### 3. Direct Download
 
-You can download torrents directly from `magnet URIs` or `.torrent` files\
-without searching using the `download` command:
+You can download torrents directly from `magnet URIs`, URLs, or local
+`.torrent` files without searching using the `download` command:
 
 ```bash
 torrra download "magnet:?xt=urn:btih:..."
 # or torrra download "/path/to/file.torrent"
+# choose a destination for this torrent
+torrra download "magnet:?xt=urn:btih:..." --save-path /downloads/linux
 ```
 
 [Full Usage guide →](https://torrra.readthedocs.io/en/latest/usage.html)\
@@ -90,6 +92,7 @@ torrra # default indexer will be used
 
 - Search with [`Jackett`](https://github.com/Jackett/Jackett) or [`Prowlarr`](https://github.com/Prowlarr/Prowlarr)
 - Download torrents directly with pause/resume support
+- Choose and persist a separate download directory for each torrent
 - Beautiful and responsive TUI built with [`Textual`](https://textual.textualize.io/)
 - Customizable themes (dark, light, and more)
 - Smart config + opt-in caching for fast searches
@@ -106,6 +109,15 @@ Whether it's reporting a bug, submitting a feature request, or writing code, we 
 - **Found a bug or have an idea?** [Open an issue](https://github.com/stabldev/torrra/issues/new/choose) to let us know.
 - **Want to contribute code?** Check out the [Contributing Guide](https://torrra.readthedocs.io/en/latest/contributing.html),\
   to learn how to set up your development environment and submit a pull request.
+
+## Contributors
+
+Big thanks to all the amazing contributors who have helped shape Torrra! 💙\
+Every contribution, big or small, is genuinely appreciated.
+
+<a href="https://github.com/stabldev/torrra/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=stabldev/torrra&columns=10" />
+</a>
 
 ## License
 

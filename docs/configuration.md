@@ -18,8 +18,10 @@ The precise location varies by OS:
 Here's an example of what your `config.toml` might look like:
 
 ```toml
+schema_version = 1
+
 [general]
-download_path = "/home/username/Downloads"    # The default folder where torrents will be saved
+download_path = "/home/username/Downloads"    # Fallback folder when a torrent has no custom save path
 download_in_external_client = false           # If true, opens magnet links in an external torrent client instead of downloading the .torrent file.
 theme = "textual-dark"                        # Theme for the application (e.g., "textual-dark", "textual-light", etc.).
 timeout = 10                                  # The timeout in seconds for requests to indexers.
@@ -30,6 +32,11 @@ seed_ratio = 1.5                              # Target upload/download ratio. Se
 default_sort = "relevance"                    # Initial sort for search results: "relevance", "seeders", "size", "title" or "leechers".
 default_sort_order = "auto"                   # Direction for the initial sort: "auto", "desc" or "asc". "auto" uses each field's natural direction (title A-Z, seeders/size/leechers high-to-low). Ignored when default_sort is "relevance".
 min_seeders = 0                               # Hide results with fewer seeders than this. 0 shows everything.
+
+[speed_limit]
+upload_limit = "10 KB/s"                        # Global upload cap (turtle mode). e.g. "10 KB/s", "500K", "2M", "unlimited" or 0.
+download_limit = "10 KB/s"                      # Global download cap (turtle mode). e.g. "10 KB/s", "2M", "unlimited" or 0.
+enabled = false                               # Whether turtle mode is currently active. Toggled at runtime with the `t` key.
 
 [indexers]
 default = "jackett"                           # The name of the default indexer to use if none is specified at runtime
@@ -44,6 +51,60 @@ api_key = "your-prowlarr-api-key"             # API key for authentication
 ```
 
 You can create or edit this file manually with a text editor.
+
+### Global Speed Limits (Turtle Mode)
+
+The `[speed_limit]` section defines session-wide bandwidth caps, similar to
+"alt-speed" in Transmission or qBittorrent:
+
+```toml
+[speed_limit]
+upload_limit = "1 MB/s"       # global upload cap; "unlimited" or 0 = no cap
+download_limit = "2 MB/s"     # global download cap; "unlimited" or 0 = no cap
+enabled = false               # whether turtle mode is currently active
+```
+
+When `enabled` is `true`, all traffic in every `torrra` session is capped at
+these rates. Inside the TUI you can toggle this on/off instantly with the `t`
+key — the status bar shows a `TURTLE` badge while active.
+
+New configs ship with qBittorrent-style defaults of 10 KB/s in both
+directions, so turtle mode works out of the box. Set custom limits from your
+shell (human-readable units are accepted):
+
+```bash
+torrra config set speed_limit.download_limit 2M
+torrra config set speed_limit.upload_limit 500K
+```
+
+These global caps coexist with per-torrent limits set via `s` in the Downloads
+view; each torrent is limited by whichever cap is lower.
+
+### Download Paths
+
+`general.download_path` is shown as the initial **Save to** value. Leave it
+unchanged or clear the field to keep using that global fallback. When adding a
+torrent from search, a magnet URI, a URL, or a local `.torrent` file, you can
+enter a different directory in the file-selection screen. Direct downloads can
+also prefill it:
+
+```bash
+torrra download "magnet:?xt=urn:btih:..." --save-path /downloads/linux
+```
+
+Paths must be absolute, and missing directories are created when a new download
+is confirmed. Torrra shows an error rather than silently falling back if an
+explicit path is invalid or not writable.
+
+A torrent's custom path is stored in Torrra's SQLite data file and reused after
+a restart. Existing database rows without a stored path continue to use the
+current `general.download_path`. Changing or moving the path of a torrent that
+has already been added is not currently supported.
+
+The SQLite file is also placed by `platformdirs`: under
+`~/.local/share/torrra/torrra.db` on Linux,
+`~/Library/Application Support/torrra/torrra.db` on macOS, and
+`%LOCALAPPDATA%\torrra\torrra.db` on Windows.
 
 ### Theme Configuration
 
@@ -100,7 +161,7 @@ If the selected indexer is not defined in the config file, `torrra` will show an
 
 `torrra` provides built-in command-line tools to inspect and modify your configuration settings without directly editing the `config.toml` file. This is particularly useful for scripting or quick adjustments.
 
-Use the `torrra config` subcommand followed by `get`, `set`, or `list`.
+Use the `torrra config` subcommand followed by `get`, `set`, `list`, or `edit`.
 
 ### Retrieving a Configuration Value
 
@@ -131,3 +192,17 @@ torrra config list
 ```
 
 This command will display a comprehensive list of all configured settings and their current values, including general preferences and indexer-related entries.
+
+### Editing Configuration in an Editor
+
+To open the `config.toml` file directly in your default command-line editor (or the editor set in `$VISUAL` / `$EDITOR`):
+
+```bash
+torrra config edit
+```
+
+You can also specify a custom editor using the `--editor` (or `-e`) option:
+
+```bash
+torrra config edit --editor nano
+```

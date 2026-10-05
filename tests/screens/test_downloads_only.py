@@ -1,3 +1,4 @@
+import pytest
 from textual.widgets import ContentSwitcher
 
 from torrra.app import TorrraApp
@@ -90,3 +91,33 @@ async def test_downloads_content_is_interactive_without_indexer():
 
         downloads = app.screen.query_one(DownloadsContent)
         assert downloads._table.has_focus
+
+
+def test_app_rejects_invalid_download_path_at_startup(mock_config):
+    # a download_path that cannot resolve must be reported once at startup,
+    # not surface as an uncaught error when a torrent is later added
+    mock_config.set("general.download_path", "$UNDEFINED_VAR_STARTUP/downloads")
+
+    with pytest.raises(RuntimeError, match="invalid download_path configured"):
+        TorrraApp(
+            indexer=None,
+            use_cache=False,
+            search_query=None,
+            show_downloads=True,
+        )
+
+
+def test_app_accepts_literal_dollar_in_download_path(mock_config):
+    # regression: '$' is a legal filename character in an absolute path
+    mock_config.set("general.download_path", "/Volumes/My$Drive/Downloads")
+
+    # constructing the app is enough - validation happens in __init__, and
+    # running the TUI here would touch the real torrent database
+    app = TorrraApp(
+        indexer=None,
+        use_cache=False,
+        search_query=None,
+        show_downloads=True,
+    )
+
+    assert app.show_downloads is True
