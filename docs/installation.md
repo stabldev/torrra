@@ -71,6 +71,24 @@ You can download pre-built executables of `torrra` directly from the [GitHub Rel
 >
 > (Replace `vX.Y.Z-*-x86_64` with the actual filename you downloaded.)
 
+## Windows
+
+On Windows, you can install `torrra` directly without needing Python or `uv`:
+
+### Via WinGet (Recommended)
+
+```powershell
+winget install stabldev.torrra
+```
+
+### Via PowerShell Installer Script
+
+Run in PowerShell:
+
+```powershell
+irm https://raw.githubusercontent.com/stabldev/torrra/main/install.ps1 | iex
+```
+
 ## Homebrew (macOS)
 
 Thanks to community contribution, `torrra` is also available via [Homebrew](https://brew.sh/) for macOS users.
