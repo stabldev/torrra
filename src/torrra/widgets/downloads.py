@@ -13,7 +13,6 @@ from torrra._types import (
     TorrentStatus,
 )
 from torrra.core.download import DownloadManager, get_download_manager
-from torrra.core.exceptions import ConfigError, DownloadError
 from torrra.core.torrent import TorrentManager, get_torrent_manager
 from torrra.screens.file_selection import FileSelectionScreen
 from torrra.screens.torrent_options import TorrentOptionsScreen
@@ -147,28 +146,6 @@ class DownloadsContent(Vertical):
 
     def refresh_torrents(self) -> None:
         self._torrents = self._tm.get_all_torrents()
-
-        for torrent in self._torrents:
-            try:
-                self._dm.add_torrent(
-                    torrent["magnet_uri"],
-                    is_paused=torrent["is_paused"],
-                    file_priorities=torrent.get("file_priorities"),
-                    upload_limit=torrent.get("upload_limit"),
-                    download_limit=torrent.get("download_limit"),
-                    save_path=torrent.get("save_path"),
-                    create_path=torrent.get("save_path") is None,
-                    max_ratio=torrent.get("max_ratio"),
-                    max_seeding_time=torrent.get("max_seeding_time"),
-                    sequential_download=torrent.get("sequential_download", False),
-                )
-            except (ConfigError, DownloadError) as exc:
-                self.notify(
-                    f"Could not restore '{torrent['title']}': {exc}",
-                    title="Torrent Restore Failed",
-                    severity="error",
-                )
-
         self._filter_table()
 
     def key_p(self) -> None:

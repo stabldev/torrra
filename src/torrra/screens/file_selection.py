@@ -353,6 +353,7 @@ class FileSelectionScreen(ModalScreen[DownloadSelection | None]):
         self._loading_container = self.query_one("#file-selection-loading", Vertical)
         self._body_container = self.query_one("#file-selection-body", Vertical)
         self._footer_container = self.query_one("#file-selection-footer", Vertical)
+        path_error: Exception | None = None
         if not self.is_edit_mode:
             self._save_path_label = self.query_one("#save-path-label", Static)
             self._save_path_input = self.query_one("#save-path", Input)
@@ -363,10 +364,12 @@ class FileSelectionScreen(ModalScreen[DownloadSelection | None]):
                     )
                     self._save_path_input.value = str(self._default_save_path)
                 except (ConfigError, DownloadPathError) as exc:
-                    self._show_path_error(exc)
+                    path_error = exc
 
         if self._torrent_info is not None:
             self._populate_files(self._torrent_info)
+            if path_error is not None:
+                self._show_path_error(path_error)
             return
 
         dm = get_download_manager()
@@ -376,22 +379,32 @@ class FileSelectionScreen(ModalScreen[DownloadSelection | None]):
                 info = handle.torrent_file()
                 if info:
                     self._populate_files(info)
+                    if path_error is not None:
+                        self._show_path_error(path_error)
                     return
             except (AttributeError, RuntimeError):
                 pass
 
+        save_path: str | None = None
+        if path_error is None:
+            try:
+                save_path = self._validated_save_path()
+            except (ConfigError, DownloadPathError) as exc:
+                path_error = exc
+
         try:
-            save_path = self._validated_save_path()
             dm.fetch_metadata(self.torrent.magnet_uri, save_path=save_path)
-        except (ConfigError, DownloadPathError) as exc:
-            self._show_path_error(exc)
-            return
         except DownloadError as exc:
             self.notify(str(exc), title="Metadata Fetch Failed", severity="error")
             self._loading_status_label.update("Unable to fetch torrent metadata.")
             return
+
+        if path_error is not None:
+            self._show_path_error(path_error)
+
         self._poll_timer = self.set_interval(0.3, self._poll_metadata)
-        self.call_after_refresh(self.set_focus, None)
+        if self._save_path_input is None or self._save_path_input.has_class("hidden"):
+            self.call_after_refresh(self.set_focus, None)
 
     def _validated_save_path(self) -> str | None:
         if self.is_edit_mode:
@@ -416,9 +429,10 @@ class FileSelectionScreen(ModalScreen[DownloadSelection | None]):
         self._loading_status_label.update(
             "Choose a valid download directory, then press [b]enter[/b]."
         )
-        if self._save_path_input is not None and not self._save_path_input.has_class(
-            "hidden"
-        ):
+        if self._save_path_label is not None:
+            self._save_path_label.remove_class("hidden")
+        if self._save_path_input is not None:
+            self._save_path_input.remove_class("hidden")
             self._save_path_input.focus()
 
     def _poll_metadata(self) -> None:
@@ -436,9 +450,18 @@ class FileSelectionScreen(ModalScreen[DownloadSelection | None]):
                         return
                 except (AttributeError, RuntimeError):
                     pass
-            self._loading_status_label.update(
-                f"Fetching torrent metadata...\n[dim](peers: {status.num_peers})[/dim]"
-            )
+            peers_info = f"[dim](peers: {status.num_peers})[/dim]"
+            if (
+                self._save_path_input is not None
+                and not self._save_path_input.has_class("hidden")
+            ):
+                self._loading_status_label.update(
+                    f"Choose a valid download dir, then press [b]enter[/b].\nFetching torrent metadata... {peers_info}"
+                )
+            else:
+                self._loading_status_label.update(
+                    f"Fetching torrent metadata...\n{peers_info}"
+                )
 
     def _populate_files(self, info: lt.torrent_info) -> None:
         self._torrent_info = info

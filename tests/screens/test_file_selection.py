@@ -953,3 +953,144 @@ async def test_file_selection_container_loaded_class_when_torrent_info_provided(
         assert container.has_class("loaded")
         assert not screen.query_one("#save-path", Input).has_class("hidden")
         assert not screen.query_one("#save-path-label", Static).has_class("hidden")
+
+
+async def test_file_selection_reveals_save_path_when_default_path_fails_validation(
+    tmp_path: Any,
+):
+    from pathlib import Path
+
+    from torrra.core.config import get_config
+
+    blocker = Path(tmp_path) / "blocking_file"
+    blocker.touch()
+    inaccessible_path = blocker / "downloads"
+
+    config = get_config()
+    config.set("general.download_path", str(inaccessible_path))
+
+    torrent = Torrent(
+        magnet_uri="magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567",
+        title="Inaccessible Default Path Torrent",
+        size=1024,
+        seeders=10,
+        leechers=2,
+        source="Mock",
+    )
+
+    screen = FileSelectionScreen(torrent=torrent)
+    app = DummyHostApp(screen)
+
+    async with app.run_test() as pilot:
+        await pilot.pause()
+
+        save_path_input = screen.query_one("#save-path", Input)
+        save_path_label = screen.query_one("#save-path-label", Static)
+
+        # Both elements should be revealed and the input focused
+        assert not save_path_input.has_class("hidden")
+        assert not save_path_label.has_class("hidden")
+        assert save_path_input.has_focus
+
+        # Supply a valid local destination
+        valid_dest = Path(tmp_path) / "valid_downloads"
+        save_path_input.value = str(valid_dest)
+
+        # Confirm with enter
+        await pilot.press("enter")
+        await pilot.pause()
+
+        assert isinstance(app.result, DownloadSelection)
+        assert app.result.file_priorities is None
+        assert app.result.save_path == str(valid_dest)
+        # Global config is preserved
+        assert config.get("general.download_path") == str(inaccessible_path)
+
+
+async def test_file_selection_reveals_save_path_when_normalization_fails():
+    from torrra.core.config import get_config
+
+    config = get_config()
+    config.set("general.download_path", "$UNRESOLVED_ENV_VAR/downloads")
+
+    torrent = Torrent(
+        magnet_uri="magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567",
+        title="Invalid Normalization Torrent",
+        size=1024,
+        seeders=10,
+        leechers=2,
+        source="Mock",
+    )
+
+    screen = FileSelectionScreen(torrent=torrent)
+    app = DummyHostApp(screen)
+
+    async with app.run_test() as pilot:
+        await pilot.pause()
+
+        save_path_input = screen.query_one("#save-path", Input)
+        save_path_label = screen.query_one("#save-path-label", Static)
+
+        assert not save_path_input.has_class("hidden")
+        assert not save_path_label.has_class("hidden")
+        assert save_path_input.has_focus
+
+
+async def test_file_selection_fetches_and_populates_files_with_invalid_default_path(
+    tmp_path: Any,
+):
+    from pathlib import Path
+
+    from torrra.core.config import get_config
+
+    blocker = Path(tmp_path) / "blocking_file"
+    blocker.touch()
+    inaccessible_path = blocker / "downloads"
+
+    config = get_config()
+    config.set("general.download_path", str(inaccessible_path))
+
+    torrent = Torrent(
+        magnet_uri="magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567",
+        title="Inaccessible Default Path Torrent",
+        size=1024,
+        seeders=10,
+        leechers=2,
+        source="Mock",
+    )
+
+    screen = FileSelectionScreen(torrent=torrent)
+    app = DummyHostApp(screen)
+
+    async with app.run_test() as pilot:
+        await pilot.pause()
+
+        # Input should be revealed and focused
+        save_path_input = screen.query_one("#save-path", Input)
+        assert not save_path_input.has_class("hidden")
+        assert save_path_input.has_focus
+
+        # Polling timer should be active (fetching was started)
+        assert screen._poll_timer is not None
+
+        # Simulate metadata arrival from swarm
+        mock_ti = create_mock_torrent_info()
+        screen._populate_files(mock_ti)
+        await pilot.pause()
+
+        # Files tree should be populated and visible
+        tree = screen.query_one(FileSelectionTree)
+        assert not screen.query_one("#file-selection-body").has_class("hidden")
+        assert len(tree.selected) == 3
+
+        # Supply valid destination
+        valid_dest = Path(tmp_path) / "valid_downloads"
+        save_path_input.value = str(valid_dest)
+
+        # Confirm download with enter
+        await pilot.press("enter")
+        await pilot.pause()
+
+        assert isinstance(app.result, DownloadSelection)
+        assert app.result.file_priorities == [4, 4, 4]
+        assert app.result.save_path == str(valid_dest)
