@@ -32,6 +32,7 @@ seed_ratio = 1.5                              # Target upload/download ratio. Se
 default_sort = "relevance"                    # Initial sort for search results: "relevance", "seeders", "size", "title" or "leechers".
 default_sort_order = "auto"                   # Direction for the initial sort: "auto", "desc" or "asc". "auto" uses each field's natural direction (title A-Z, seeders/size/leechers high-to-low). Ignored when default_sort is "relevance".
 min_seeders = 0                               # Hide results with fewer seeders than this. 0 shows everything.
+update_check = true                           # Check for a newer release each time the TUI starts.
 
 [speed_limit]
 upload_limit = "10 KB/s"                        # Global upload cap (turtle mode). e.g. "10 KB/s", "500K", "2M", "unlimited" or 0.
@@ -79,6 +80,26 @@ torrra config set speed_limit.upload_limit 500K
 
 These global caps coexist with per-torrent limits set via `s` in the Downloads
 view; each torrent is limited by whichever cap is lower.
+
+### Update Notifications
+
+`torrra` checks for a newer release every time the TUI starts and shows a small
+notification when one is available. It never downloads or installs updates
+itself; updates always go through the channel you installed with:
+
+- `uv tool` → `uv tool upgrade torrra`
+- `pipx` → `pipx upgrade torrra`
+- WinGet → `winget upgrade stabldev.torrra`
+- Homebrew → `brew upgrade torrra`
+- AUR, system packages, Nix, and Docker → use the corresponding package manager
+  or pull the latest image
+
+The check uses PyPI for Python installs and GitHub Releases for standalone
+binaries. Disable it with:
+
+```bash
+torrra config set general.update_check false
+```
 
 ### Download Paths
 

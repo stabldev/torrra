@@ -96,6 +96,7 @@ torrra # default indexer will be used
 - Beautiful and responsive TUI built with [`Textual`](https://textual.textualize.io/)
 - Customizable themes (dark, light, and more)
 - Smart config + opt-in caching for fast searches
+- In-app notification when a newer release is available
 - Sort search results by seeders, size, title or leechers, and hide dead torrents
 - Native support for Linux, macOS, and Windows
 

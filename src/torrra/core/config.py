@@ -21,6 +21,7 @@ from torrra.core.constants import (
     DEFAULT_SPEED_LIMIT_DOWNLOAD,
     DEFAULT_SPEED_LIMIT_UPLOAD,
     DEFAULT_TIMEOUT,
+    DEFAULT_UPDATE_CHECK,
 )
 from torrra.core.exceptions import ConfigError
 from torrra.utils.helpers import get_tomllib, parse_speed_limit
@@ -71,6 +72,7 @@ def get_default_config() -> dict[str, Any]:
             "default_sort": DEFAULT_SORT,
             "default_sort_order": DEFAULT_SORT_ORDER,
             "min_seeders": DEFAULT_MIN_SEEDERS,
+            "update_check": DEFAULT_UPDATE_CHECK,
         },
         "speed_limit": {
             "upload_limit": DEFAULT_SPEED_LIMIT_UPLOAD,

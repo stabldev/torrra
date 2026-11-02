@@ -26,6 +26,10 @@ def test_config_get_existing_value(mock_config: Config):
     assert mock_config.get("general.use_cache") is True
 
 
+def test_update_check_is_enabled_by_default(mock_config: Config):
+    assert mock_config.get("general.update_check") is True
+
+
 def test_config_get_nonexistent_with_default(mock_config: Config):
     # test that a default value is returned for a non-existent key
     assert mock_config.get("general.non_existent_key", "default") == "default"

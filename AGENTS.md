@@ -16,7 +16,8 @@
 
 - CLI entrypoint is `torrra.__main__:cli`. Heavy TUI/libtorrent imports are intentionally deferred inside command handlers; preserve this so `--version` and `config` commands stay fast.
 - `utils/indexer.py` validates config, healthchecks the indexer, and constructs `TorrraApp`. `app.py` routes to `WelcomeScreen` or `HomeScreen`; `screens/` holds full-screen flows, `widgets/` holds embedded UI, and `app.tcss` is loaded via `utils/fs.get_resource_path`.
-- `core/` holds non-UI logic: `config.py` (TOML + schema migrations), `db.py`/`torrent.py` (SQLite), `download.py` (libtorrent), `cache.py` (diskcache), `results.py` (client-side sort/filter). `indexers/` contains Jackett/Prowlarr adapters.
+- `core/` holds non-UI logic: `config.py` (TOML + schema migrations), `db.py`/`torrent.py` (SQLite), `download.py` (libtorrent), `cache.py` (diskcache), `results.py` (client-side sort/filter), `updater.py` (release notifications). `indexers/` contains Jackett/Prowlarr adapters.
+- Update checks are notification-only and run on every TUI mount; they must never install packages or modify package-manager-owned files. Tests stub `TorrraApp._check_for_updates`.
 - New indexers subclass `BaseIndexer` and also require wiring in `_types.IndexerName`, `utils/indexer.py`/`__main__.py`, and `torrra.spec` `hiddenimports`.
 - New runtime data files must be added to `torrra.spec` `datas` for the standalone PyInstaller binary.
 - `get_config()`, `get_torrent_manager()`, and `get_download_manager()` are process-wide `@lru_cache` singletons. Tests must call `.cache_clear()` after monkeypatching path globals.

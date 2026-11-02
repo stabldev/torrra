@@ -1,11 +1,15 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+from PyInstaller.utils.hooks import copy_metadata
+
 a = Analysis(
     ["src/torrra/__main__.py"],
     pathex=[],
     binaries=[],
     datas=[
       ("src/torrra/app.tcss", "torrra"),
+      # keep `importlib.metadata.version("torrra")` working in the frozen binary
+      *copy_metadata("torrra"),
     ],
     hiddenimports=[
       "torrra.indexers.jackett",
