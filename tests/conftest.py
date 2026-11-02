@@ -43,6 +43,12 @@ def isolated_db(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     config_module.get_config.cache_clear()
 
 
+@pytest.fixture(autouse=True)
+def block_update_checks(monkeypatch: pytest.MonkeyPatch):
+    # App startup checks PyPI in a worker; tests must never hit the network.
+    monkeypatch.setattr(TorrraApp, "_check_for_updates", lambda self: None)
+
+
 @pytest.fixture
 def fast_sleep(monkeypatch: pytest.MonkeyPatch):
     # patch asyncio sleep to almost wake up instantly

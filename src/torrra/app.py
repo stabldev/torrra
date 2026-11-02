@@ -1,4 +1,4 @@
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
 from textual import work
 from textual.app import App
@@ -18,6 +18,9 @@ from torrra.screens.theme_selector import ThemeSelectorScreen
 from torrra.screens.welcome import GO_TO_DOWNLOADS, WelcomeScreen
 from torrra.utils.fs import get_resource_path
 from torrra.widgets.status_bar import StatusBar
+
+if TYPE_CHECKING:
+    from torrra.core.updater import UpdateInfo
 
 
 class TorrraApp(App[None]):
@@ -86,6 +89,9 @@ class TorrraApp(App[None]):
                     show_downloads=self.show_downloads,
                 )
             )
+
+        if get_config().get("general.update_check", True):
+            self._check_for_updates()
 
     def action_switch_theme(self) -> None:
         self.push_screen(ThemeSelectorScreen())
@@ -157,4 +163,28 @@ class TorrraApp(App[None]):
                 direct_save_path=None,
                 show_downloads=not is_search,
             )
+        )
+
+    @work(thread=True, exclusive=True, group="update-check")
+    def _check_for_updates(self) -> None:
+        # notification-only: never installs anything, and every failure is silent
+        from torrra.core.updater import check_for_update
+
+        info = check_for_update()
+        if info is None:
+            return
+
+        try:
+            self.call_from_thread(self._notify_update_available, info)
+        except RuntimeError:
+            # the app may have been closed while the request was in flight
+            pass
+
+    def _notify_update_available(self, info: "UpdateInfo") -> None:
+        from torrra.core.updater import format_update_message
+
+        self.notify(
+            format_update_message(info),
+            title="Update available",
+            timeout=10,
         )

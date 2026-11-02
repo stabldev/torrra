@@ -1,9 +1,9 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.10"
 resolution-markers = [
     "python_full_version >= '3.12' and sys_platform == 'emscripten'",
-    "(python_full_version >= '3.11' and sys_platform != 'emscripten') or (python_full_version == '3.11.*' and sys_platform == 'emscripten')",
+    "python_full_version == '3.11.*' or (python_full_version >= '3.12' and sys_platform != 'emscripten')",
     "python_full_version < '3.11'",
 ]
 
@@ -1770,7 +1770,7 @@ version = "8.2.3"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version >= '3.12' and sys_platform == 'emscripten'",
-    "(python_full_version >= '3.11' and sys_platform != 'emscripten') or (python_full_version == '3.11.*' and sys_platform == 'emscripten')",
+    "python_full_version == '3.11.*' or (python_full_version >= '3.12' and sys_platform != 'emscripten')",
 ]
 dependencies = [
     { name = "alabaster" },
@@ -2014,6 +2014,7 @@ dependencies = [
     { name = "diskcache" },
     { name = "httpx" },
     { name = "libtorrent" },
+    { name = "packaging" },
     { name = "platformdirs" },
     { name = "textual" },
     { name = "tomli", marker = "python_full_version < '3.11'" },
@@ -2047,6 +2048,7 @@ requires-dist = [
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "libtorrent", specifier = ">=2.1.1" },
     { name = "myst-parser", marker = "extra == 'docs'", specifier = ">=4.0.1" },
+    { name = "packaging", specifier = ">=24.0" },
     { name = "platformdirs", specifier = ">=4.5.0" },
     { name = "qiskit-sphinx-theme", marker = "extra == 'docs'", specifier = ">=2.0.0" },
     { name = "sphinx", marker = "extra == 'docs'", specifier = ">=8,<9" },

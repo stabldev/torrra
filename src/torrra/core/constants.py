@@ -1,6 +1,8 @@
 DEFAULT_CACHE_TTL = 300  # 5 mins
 DEFAULT_TIMEOUT = 10  # 10 sec
 DEFAULT_MAX_RETRIES = 3
+DEFAULT_UPDATE_CHECK = True
+UPDATE_CHECK_TIMEOUT = 3.0  # 3 sec, best-effort only
 DEFAULT_SORT = "relevance"
 # "auto" means each sort key uses its own natural direction, so title reads A-Z
 # while seeders reads high-to-low. an explicit "asc"/"desc" overrides that.

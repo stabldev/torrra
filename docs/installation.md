@@ -142,6 +142,22 @@ paths and the torrent list to survive container recreation.
 - `stabldev/torrra:latest` - Always points to the most recent stable release.
 - `stabldev/torrra:<version>` - For a specific release version (e.g., `stabldev/torrra:0.1.0`).
 
+## Update Notifications
+
+`torrra` checks for a newer release each time the TUI starts and shows a small
+in-app notification when one is available. It does not install updates itself.
+Use the update command for your installation method:
+
+- `uv tool upgrade torrra`
+- `pipx upgrade torrra`
+- `winget upgrade stabldev.torrra`
+- `brew upgrade torrra`
+- AUR, Nix, and Docker users should update through their package manager or pull
+  the latest image.
+
+Update checks can be disabled with
+`torrra config set general.update_check false`.
+
 ## Local Development
 
 If you intend to contribute to `torrra` or want to run it directly from its source code, follow these steps to set up your local development environment:
