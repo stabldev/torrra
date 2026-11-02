@@ -1,7 +1,12 @@
+from unittest.mock import MagicMock
+
 import pytest
 from textual.widgets import ContentSwitcher
 
+from torrra._types import Torrent
 from torrra.app import TorrraApp
+from torrra.core.download import get_download_manager
+from torrra.core.torrent import get_torrent_manager
 from torrra.screens.file_selection import FileSelectionScreen
 from torrra.screens.home import HomeScreen
 from torrra.widgets.downloads import DownloadsContent
@@ -121,3 +126,83 @@ def test_app_accepts_literal_dollar_in_download_path(mock_config):
     )
 
     assert app.show_downloads is True
+
+
+@pytest.mark.parametrize(("key", "delete_files"), [("d", False), ("D", True)])
+async def test_delete_shortcuts(key: str, delete_files: bool):
+    magnet = "magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567"
+    app = TorrraApp(
+        indexer=None,
+        use_cache=False,
+        search_query=None,
+        show_downloads=True,
+    )
+
+    async with app.run_test() as pilot:
+        tm = get_torrent_manager()
+        dm = get_download_manager()
+        tm.add_torrent(
+            Torrent(
+                magnet_uri=magnet,
+                title="Delete Shortcut",
+                size=1024,
+                seeders=0,
+                leechers=0,
+                source="Test",
+            )
+        )
+
+        downloads = app.screen.query_one(DownloadsContent)
+        downloads.refresh_torrents()
+        await pilot.pause()
+        downloads._selected_torrent = downloads._torrents[0]
+        dm.remove_torrent = MagicMock(return_value=True)
+        tm.remove_torrent = MagicMock()
+        downloads.focus_table()
+        await pilot.pause()
+
+        await pilot.press(key)
+        await pilot.pause()
+
+        dm.remove_torrent.assert_called_once_with(magnet, delete_files=delete_files)
+        tm.remove_torrent.assert_called_once_with(magnet)
+
+
+async def test_delete_with_data_keeps_row_when_files_cannot_be_deleted():
+    magnet = "magnet:?xt=urn:btih:89abcdef0123456789abcdef0123456789abcdef"
+    app = TorrraApp(
+        indexer=None,
+        use_cache=False,
+        search_query=None,
+        show_downloads=True,
+    )
+
+    async with app.run_test() as pilot:
+        tm = get_torrent_manager()
+        dm = get_download_manager()
+        tm.add_torrent(
+            Torrent(
+                magnet_uri=magnet,
+                title="Undeletable",
+                size=1024,
+                seeders=0,
+                leechers=0,
+                source="Test",
+            )
+        )
+
+        downloads = app.screen.query_one(DownloadsContent)
+        downloads.refresh_torrents()
+        await pilot.pause()
+        downloads._selected_torrent = downloads._torrents[0]
+        dm.remove_torrent = MagicMock(return_value=False)
+        tm.remove_torrent = MagicMock()
+        downloads.focus_table()
+        await pilot.pause()
+
+        await pilot.press("D")
+        await pilot.pause()
+
+        tm.remove_torrent.assert_not_called()
+        assert downloads._selected_torrent is not None
+        assert magnet in [t["magnet_uri"] for t in downloads._torrents]
