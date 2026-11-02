@@ -123,6 +123,8 @@ jobs:
         uses: softprops/action-gh-release@v3
         with:
           files: dist-out/*
+          # keeps the WinGet manifest's ReleaseNotes/ReleaseNotesUrl populated
+          generate_release_notes: true
 
   aur:
     name: Publish to AUR
