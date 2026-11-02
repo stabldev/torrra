@@ -6,6 +6,14 @@ from torrra._types import Torrent, TorrentRecord
 from torrra.core.db import get_db_connection, init_db
 from torrra.core.paths import normalize_download_path
 
+# `torrent_info` is deliberately excluded: it holds the (potentially large)
+# bencoded metadata blob and `get_all_torrents` runs on every UI tick.
+_TORRENT_COLUMNS = (
+    "magnet_uri, title, size, source, is_paused, is_notified, "
+    "file_priorities, upload_limit, download_limit, save_path, "
+    "max_ratio, max_seeding_time, sequential_download"
+)
+
 
 @lru_cache
 def get_torrent_manager() -> "TorrentManager":
@@ -88,6 +96,29 @@ class TorrentManager:
             )
             conn.commit()
 
+    def update_torrent_info(self, magnet_uri: str, info: bytes) -> None:
+        """Persist the bencoded info section for a torrent."""
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "UPDATE torrents SET torrent_info = ? WHERE magnet_uri = ?",
+                (info, magnet_uri),
+            )
+            conn.commit()
+
+    def get_torrent_info(self, magnet_uri: str) -> bytes | None:
+        """Return the persisted bencoded info section, if any."""
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT torrent_info FROM torrents WHERE magnet_uri = ?",
+                (magnet_uri,),
+            )
+            row = cursor.fetchone()
+            if not row or row[0] is None:
+                return None
+            return bytes(row[0])
+
     def update_torrent_file_priorities(
         self, magnet_uri: str, file_priorities: list[int] | None
     ) -> None:
@@ -144,7 +175,10 @@ class TorrentManager:
         with get_db_connection() as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM torrents WHERE magnet_uri = ?", (magnet_uri,))
+            cursor.execute(
+                f"SELECT {_TORRENT_COLUMNS} FROM torrents WHERE magnet_uri = ?",
+                (magnet_uri,),
+            )
             row = cursor.fetchone()
             if not row:
                 return None
@@ -171,7 +205,7 @@ class TorrentManager:
         with get_db_connection() as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM torrents")
+            cursor.execute(f"SELECT {_TORRENT_COLUMNS} FROM torrents")
             rows = cursor.fetchall()
 
             result = []

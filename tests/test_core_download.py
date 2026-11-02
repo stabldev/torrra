@@ -1,3 +1,4 @@
+import time
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, cast
@@ -5,9 +6,10 @@ from typing import Any, cast
 import libtorrent as lt
 import pytest
 
-from torrra._types import TorrentOptions, TorrentStatus
-from torrra.core.download import DownloadManager
+from torrra._types import Torrent, TorrentOptions, TorrentStatus
+from torrra.core.download import DownloadManager, torrent_info_from_info_section
 from torrra.core.exceptions import DownloadError
+from torrra.core.torrent import TorrentManager
 
 
 class FakeTorrentHandle:
@@ -19,6 +21,7 @@ class FakeTorrentHandle:
             save_path=save_path,
         )
         self.metadata: object | None = None
+        self.set_metadata_calls: list[bytes] = []
 
     def is_valid(self) -> bool:
         return self._valid
@@ -28,6 +31,10 @@ class FakeTorrentHandle:
 
     def torrent_file(self) -> object | None:
         return self.metadata
+
+    def set_metadata(self, metadata: bytes) -> None:
+        self.set_metadata_calls.append(metadata)
+        self._status.has_metadata = True
 
     def prioritize_files(self, _priorities: list[int]) -> None:
         return None
@@ -960,3 +967,141 @@ def test_get_torrent_peers_and_trackers():
     dm.force_reannounce_torrent(magnet)
     handle_mock.force_reannounce.assert_called_once()
     handle_mock.force_dht_announce.assert_called_once()
+
+
+def _static_torrent_info() -> lt.torrent_info:
+    info = {
+        b"name": b"x.bin",
+        b"piece length": 16384,
+        b"pieces": b"\x00" * 20,
+        b"length": 16384,
+    }
+    ti = torrent_info_from_info_section(lt.bencode(info))
+    assert ti is not None
+    return ti
+
+
+def _torrent_record(magnet_uri: str) -> Torrent:
+    return Torrent(
+        magnet_uri=magnet_uri,
+        title="Test",
+        size=16384,
+        seeders=0,
+        leechers=0,
+        source="Test",
+    )
+
+
+def test_torrent_info_from_info_section_roundtrip():
+    info = {
+        b"name": b"x.bin",
+        b"piece length": 16384,
+        b"pieces": b"\x00" * 20,
+        b"length": 16384,
+    }
+
+    ti = torrent_info_from_info_section(lt.bencode(info))
+
+    assert ti is not None
+    assert ti.name() == "x.bin"
+    assert ti.info_section() == lt.bencode(info)
+
+
+def test_torrent_info_from_info_section_rejects_garbage():
+    assert torrent_info_from_info_section(b"not-bencoded") is None
+
+
+def test_add_torrent_aligns_info_hashes(fake_parse_magnet: None):
+    session = FakeTorrentSession()
+    manager = make_download_manager(session)
+    ti = _static_torrent_info()
+
+    manager.add_torrent("magnet:?xt=urn:btih:align", torrent_info=ti)
+
+    params, _ = session.added[0]
+    assert params.ti is ti
+    assert params.info_hashes.has_v1()
+    assert str(params.info_hashes.v1) == str(ti.info_hash())
+
+
+def test_check_metadata_updates_persists_torrent_info(fake_parse_magnet: None):
+    session = FakeTorrentSession()
+    manager = make_download_manager(session)
+    magnet = "magnet:?xt=urn:btih:persist-info"
+    handle = cast(FakeTorrentHandle, manager.add_torrent(magnet))
+    tm = TorrentManager()
+    tm.add_torrent(_torrent_record(magnet))
+
+    handle.status().has_metadata = True
+    handle.metadata = SimpleNamespace(
+        name=lambda: "Persisted",
+        total_size=lambda: 16384,
+        info_section=lambda: b"persisted-info",
+    )
+
+    manager.check_metadata_updates()
+
+    assert tm.get_torrent_info(magnet) == b"persisted-info"
+    record = tm.get_torrent(magnet)
+    assert record is not None
+    assert record["title"] == "Persisted"
+
+
+def test_remove_torrent_with_data_uses_persisted_metadata(fake_parse_magnet: None):
+    session = FakeTorrentSession()
+    manager = make_download_manager(session)
+    magnet = "magnet:?xt=urn:btih:restored"
+    handle = cast(FakeTorrentHandle, manager.add_torrent(magnet))
+    tm = TorrentManager()
+    tm.add_torrent(_torrent_record(magnet))
+    tm.update_torrent_info(magnet, b"persisted-info")
+
+    assert manager.remove_torrent(magnet, delete_files=True) is True
+
+    assert handle.set_metadata_calls == [b"persisted-info"]
+    assert handle in session.removed
+    assert magnet not in manager.torrents
+
+
+def test_remove_torrent_with_data_requires_metadata(fake_parse_magnet: None):
+    session = FakeTorrentSession()
+    manager = make_download_manager(session)
+    magnet = "magnet:?xt=urn:btih:no-metadata"
+    handle = cast(FakeTorrentHandle, manager.add_torrent(magnet))
+
+    assert manager.remove_torrent(magnet, delete_files=True) is False
+    assert handle.set_metadata_calls == []
+    assert handle not in session.removed
+    assert magnet in manager.torrents
+
+    assert manager.remove_torrent(magnet) is True
+    assert handle in session.removed
+    assert magnet not in manager.torrents
+
+
+def test_restored_torrent_with_metadata_deletes_files(tmp_path: Path):
+    root = tmp_path / "downloads"
+    root.mkdir()
+    payload = root / "x.bin"
+    payload.write_bytes(b"payload")
+    ti = _static_torrent_info()
+    magnet = f"magnet:?xt=urn:btih:{ti.info_hash()}"
+
+    manager = DownloadManager()
+    restored_info = torrent_info_from_info_section(ti.info_section())
+    assert restored_info is not None
+    manager.add_torrent(
+        magnet,
+        is_paused=True,
+        torrent_info=restored_info,
+        save_path=str(root),
+    )
+
+    assert manager.torrents[magnet].status().has_metadata
+    assert manager.remove_torrent(magnet, delete_files=True) is True
+
+    for _ in range(50):
+        if not payload.exists():
+            break
+        time.sleep(0.1)
+    assert not payload.exists()

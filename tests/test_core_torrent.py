@@ -41,6 +41,22 @@ def test_torrent_manager_persists_global_fallback_as_null():
     assert record["save_path"] is None
 
 
+def test_torrent_manager_persists_torrent_info():
+    manager = TorrentManager()
+    t = _torrent()
+    manager.add_torrent(t)
+
+    assert manager.get_torrent_info(t.magnet_uri) is None
+
+    manager.update_torrent_info(t.magnet_uri, b"bencoded-info")
+
+    assert manager.get_torrent_info(t.magnet_uri) == b"bencoded-info"
+
+    manager.remove_torrent(t.magnet_uri)
+
+    assert manager.get_torrent_info(t.magnet_uri) is None
+
+
 def test_init_db_migrates_existing_rows(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
@@ -80,6 +96,7 @@ def test_init_db_migrates_existing_rows(
     assert "max_ratio" in columns
     assert "max_seeding_time" in columns
     assert "sequential_download" in columns
+    assert "torrent_info" in columns
     assert record is not None
     assert record["save_path"] is None
     assert record["max_ratio"] is None

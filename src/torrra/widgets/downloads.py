@@ -265,7 +265,15 @@ class DownloadsContent(Vertical):
 
         magnet_uri = self._selected_torrent["magnet_uri"]
 
-        self._dm.remove_torrent(magnet_uri, delete_files=delete_files)
+        if not self._dm.remove_torrent(magnet_uri, delete_files=delete_files):
+            self.notify(
+                "Couldn't delete files: torrent metadata isn't loaded yet. "
+                "Try again once the torrent has fetched its metadata.",
+                title="Delete Failed",
+                severity="warning",
+            )
+            return
+
         self._tm.remove_torrent(magnet_uri)
 
         self._torrents = [t for t in self._torrents if t["magnet_uri"] != magnet_uri]

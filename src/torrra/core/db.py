@@ -36,7 +36,8 @@ def init_db() -> None:
                 save_path TEXT DEFAULT NULL,
                 max_ratio REAL DEFAULT NULL,
                 max_seeding_time INTEGER DEFAULT NULL,
-                sequential_download BOOLEAN DEFAULT 0
+                sequential_download BOOLEAN DEFAULT 0,
+                torrent_info BLOB DEFAULT NULL
             )
             """
         )
@@ -75,5 +76,9 @@ def init_db() -> None:
         if "sequential_download" not in columns:
             cursor.execute(
                 "ALTER TABLE torrents ADD COLUMN sequential_download BOOLEAN DEFAULT 0"
+            )
+        if "torrent_info" not in columns:
+            cursor.execute(
+                "ALTER TABLE torrents ADD COLUMN torrent_info BLOB DEFAULT NULL"
             )
         conn.commit()

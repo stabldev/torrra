@@ -5,7 +5,10 @@ from textual.widgets import ContentSwitcher
 from typing_extensions import override
 
 from torrra._types import Indexer, TorrentStatus
-from torrra.core.download import get_download_manager
+from torrra.core.download import (
+    get_download_manager,
+    torrent_info_from_info_section,
+)
 from torrra.core.exceptions import ConfigError, DownloadError
 from torrra.core.torrent import get_torrent_manager
 from torrra.widgets.downloads import DownloadsContent
@@ -72,12 +75,16 @@ class HomeScreen(Screen[None]):
         torrents = tm.get_all_torrents()
         for torrent in torrents:
             try:
+                info = tm.get_torrent_info(torrent["magnet_uri"])
                 dm.add_torrent(
                     torrent["magnet_uri"],
                     is_paused=torrent["is_paused"],
                     file_priorities=torrent.get("file_priorities"),
                     upload_limit=torrent.get("upload_limit"),
                     download_limit=torrent.get("download_limit"),
+                    torrent_info=(
+                        torrent_info_from_info_section(info) if info else None
+                    ),
                     save_path=torrent.get("save_path"),
                     create_path=torrent.get("save_path") is None,
                     max_ratio=torrent.get("max_ratio"),

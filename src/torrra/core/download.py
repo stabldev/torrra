@@ -40,6 +40,13 @@ def get_download_manager() -> DownloadManager:
     return DownloadManager()
 
 
+def torrent_info_from_info_section(info: bytes) -> lt.torrent_info | None:
+    """Rebuild a ``torrent_info`` from a persisted bencoded info section."""
+    with suppress(AttributeError, RuntimeError, TypeError, ValueError):
+        return lt.torrent_info(lt.bencode({"info": lt.bdecode(info)}))
+    return None
+
+
 class DownloadManager:
     _STATE_MAP: ClassVar[dict[int, tuple[str, str]]] = {
         lt.torrent_status.states.downloading: ("Downloading", "DOWN"),
@@ -265,6 +272,11 @@ class DownloadManager:
             atp.save_path = str(selected_path)
             if torrent_info is not None:
                 atp.ti = torrent_info
+                # A magnet may carry only a v1 hash while the torrent_info has
+                # both v1 and v2, which libtorrent rejects as a mismatch.
+                info_hashes = getattr(torrent_info, "info_hashes", None)
+                if callable(info_hashes):
+                    atp.info_hashes = info_hashes()
 
             if metadata_only:
                 atp.flags |= lt.torrent_flags.auto_managed
@@ -314,20 +326,46 @@ class DownloadManager:
 
         return handle
 
-    def remove_torrent(self, magnet_uri: str, delete_files: bool = False) -> None:
+    def remove_torrent(self, magnet_uri: str, delete_files: bool = False) -> bool:
+        """Remove a torrent from the session.
+
+        Returns ``False`` when ``delete_files`` was requested but the file list
+        is unknown (no metadata available), so callers can avoid dropping the
+        persisted record while the data on disk is left behind.
+        """
         handle = self.torrents.get(magnet_uri)
+
+        if delete_files:
+            if not handle or not handle.is_valid():
+                return False
+            if not handle.status().has_metadata:
+                info = self._get_persisted_torrent_info(magnet_uri)
+                if info is None:
+                    return False
+                try:
+                    handle.set_metadata(info)
+                except (AttributeError, RuntimeError):
+                    return False
+            self.session.remove_torrent(handle, lt.session.delete_files)
+        elif handle and handle.is_valid():
+            self.session.remove_torrent(handle)
+
         if handle:
-            if handle.is_valid():
-                if delete_files:
-                    self.session.remove_torrent(handle, lt.session.delete_files)
-                else:
-                    self.session.remove_torrent(handle)
             del self.torrents[magnet_uri]
         self._metadata_only_torrents.discard(magnet_uri)
         self._file_priorities.pop(magnet_uri, None)
         self._limits.pop(magnet_uri, None)
         self._options.pop(magnet_uri, None)
         self._metadata_updated.discard(magnet_uri)
+        return True
+
+    def _get_persisted_torrent_info(self, magnet_uri: str) -> bytes | None:
+        from torrra.core.torrent import get_torrent_manager
+
+        try:
+            return get_torrent_manager().get_torrent_info(magnet_uri)
+        except (AttributeError, RuntimeError):
+            return None
 
     def set_file_priorities(self, magnet_uri: str, priorities: list[int]) -> None:
         self._file_priorities[magnet_uri] = priorities
@@ -997,6 +1035,18 @@ class DownloadManager:
                         self._apply_stored_options(handle, magnet_uri)
 
                         tm.update_torrent_metadata(magnet_uri, title, size)
+
+                        # Persist the metadata so restored torrents know their
+                        # file list and `delete_files` works after a restart.
+                        info_section = getattr(torrent_info, "info_section", None)
+                        if callable(info_section):
+                            try:
+                                info = info_section()
+                            except (AttributeError, RuntimeError):
+                                info = None
+                            if isinstance(info, (bytes, bytearray)):
+                                tm.update_torrent_info(magnet_uri, bytes(info))
+
                         self._metadata_updated.add(magnet_uri)
                 except (AttributeError, RuntimeError):
                     continue

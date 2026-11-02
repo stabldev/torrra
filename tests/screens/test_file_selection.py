@@ -867,6 +867,50 @@ async def test_home_restores_persisted_custom_save_path(tmp_path: Any):
         assert handle.status().save_path == str(destination)
 
 
+async def test_home_restores_persisted_torrent_info(tmp_path: Any):
+    import libtorrent as lt
+
+    from torrra.app import TorrraApp
+
+    info = {
+        b"name": b"x.bin",
+        b"piece length": 16384,
+        b"pieces": b"\x00" * 20,
+        b"length": 16384,
+    }
+    blob = lt.bencode(info)
+    ti = lt.torrent_info(lt.bencode({b"info": lt.bdecode(blob)}))
+    magnet = f"magnet:?xt=urn:btih:{ti.info_hash()}"
+    destination = tmp_path / "restored-downloads"
+    destination.mkdir()
+    tm = get_torrent_manager()
+    tm.add_torrent(
+        Torrent(
+            magnet_uri=magnet,
+            title="Persisted Info",
+            size=16384,
+            seeders=0,
+            leechers=0,
+            source="Test",
+        ),
+        save_path=str(destination),
+    )
+    tm.update_torrent_info(magnet, blob)
+
+    app = TorrraApp(
+        indexer=None,
+        use_cache=False,
+        search_query=None,
+        show_downloads=True,
+    )
+
+    async with app.run_test() as pilot:
+        await pilot.pause()
+
+        handle = get_download_manager().torrents[magnet]
+        assert handle.status().has_metadata
+
+
 async def test_home_does_not_recreate_missing_custom_save_path(tmp_path: Any):
     from torrra.app import TorrraApp
 
