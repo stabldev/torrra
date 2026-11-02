@@ -2,6 +2,20 @@
 
 `torrra` offers several convenient methods for installation, allowing you to choose the approach that best fits your environment and preferences.
 
+## Requirements
+
+`torrra` requires **Python 3.10 to 3.13**. Python 3.14 is not supported yet because
+`libtorrent` (the torrent engine) does not publish wheels for it. Installing with a 3.14
+interpreter is rejected by `pip` and `uv`.
+
+If 3.14 is your default interpreter, tell the installer to use an older one:
+
+```bash
+uv tool install torrra --python 3.13
+# or
+pipx install --python 3.13 torrra
+```
+
 ## Cross-Platform (Recommended)
 
 For most users, `pipx` is the recommended installation method. It ensures `torrra` is installed in an isolated environment, preventing potential conflicts with your system's other Python packages.
@@ -157,6 +171,29 @@ Use the update command for your installation method:
 
 Update checks can be disabled with
 `torrra config set general.update_check false`.
+
+## Troubleshooting
+
+### `torrra` installed an old version (such as 0.1.2)
+
+This happened on Python 3.14 before 2.6.1. The current release depends on `libtorrent`,
+which has no 3.14 wheels, so the resolver silently fell back to the last release that did
+not need it. From 2.6.1 onwards the package declares `Requires-Python: <3.14`, and the
+pre-`libtorrent` releases (0.1.0–0.1.2) are yanked, so the install fails loudly instead.
+
+Remove the stale install and reinstall with a supported interpreter:
+
+```bash
+uv tool uninstall torrra
+uv tool install torrra --python 3.13
+```
+
+or
+
+```bash
+pipx uninstall torrra
+pipx install --python 3.13 torrra
+```
 
 ## Local Development
 

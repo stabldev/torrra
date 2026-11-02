@@ -3,7 +3,7 @@
 ## Setup and commands
 
 - This project uses `uv` and a `src/` layout. Run `uv sync` to install runtime + dev deps, then `uv run torrra` (or `uv run python -m torrra`).
-- Full test suite: `uv run pytest` (~330 tests). CI runs this on Python 3.10–3.14, so all code must stay 3.10-compatible.
+- Full test suite: `uv run pytest` (~330 tests). CI runs this on Python 3.10–3.13, so all code must stay 3.10-compatible.
 - Focused test: `uv run pytest tests/test_core_config.py -k config_get`.
 - CI (`.github/workflows/ci.yml`) only runs pytest on Linux. Lint/format are not in CI.
 - Ruff is not in the `dev` dependency group; the pinned version is in `.pre-commit-config.yaml`. Use `uvx ruff@0.17.2 check --fix .` and `uvx ruff@0.17.2 format .` (no Ruff config exists, so defaults apply).

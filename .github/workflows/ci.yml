@@ -15,6 +15,9 @@ jobs:
   test:
     name: Test (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
+    env:
+      # .python-version pins 3.13 for local dev; force the matrix interpreter here
+      UV_PYTHON: ${{ matrix.python-version }}
     strategy:
       fail-fast: false
       matrix:
@@ -23,7 +26,6 @@ jobs:
           - "3.11"
           - "3.12"
           - "3.13"
-          - "3.14"
 
     steps:
       - name: Checkout code

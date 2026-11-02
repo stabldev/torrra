@@ -22,6 +22,14 @@ uv tool install torrra
 # or pipx install torrra
 ```
 
+> **Requires Python 3.10–3.13.** `libtorrent` does not provide wheels for Python 3.14 yet, so
+> installs with a 3.14 interpreter are rejected. If 3.14 is your default, pick an older interpreter:
+>
+> ```bash
+> uv tool install torrra --python 3.13
+> # or pipx install --python 3.13 torrra
+> ```
+
 Other options: [`WinGet`](https://torrra.readthedocs.io/en/latest/installation.html#windows), [`AUR`](https://aur.archlinux.org/packages/torrra), [`Homebrew`](https://github.com/Maniacsan/homebrew-torrra), [`standalone binaries`](https://github.com/stabldev/torrra/releases), or [`Docker`](https://hub.docker.com/r/stabldev/torrra).
 
 [See full install options →](https://torrra.readthedocs.io/en/latest/installation.html)
