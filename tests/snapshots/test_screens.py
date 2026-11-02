@@ -100,7 +100,12 @@ def test_help_screen_snapshot(app_factory: Any, snap_compare: Any):
     # shorter than 50 clips the bottom sections and a regression down there
     # would go unseen. grow this if SHORTCUTS grows.
     async def run_before(pilot: Pilot[Any]):
+        # wait for the screen's auto-focus to settle before clearing it, otherwise the
+        # Input can regain focus on CPython 3.10/3.11 and its focused border is baked
+        # into the dimmed backdrop behind the modal
+        await pilot.pause()
         pilot.app.screen.set_focus(None)  # "?" is suppressed while an Input has focus
+        await pilot.pause()
         await pilot.press("question_mark")
         await pilot.pause()
 
