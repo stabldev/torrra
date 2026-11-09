@@ -1,7 +1,13 @@
+from pathlib import Path
+from typing import Any
+
 import pytest
 import respx
+from diskcache_community import Disk
 from httpx import Response
 
+from torrra.core import cache as cache_module
+from torrra.core.cache import Cache
 from torrra.indexers.base import BaseIndexer
 from torrra.indexers.jackett import JackettIndexer
 from torrra.indexers.prowlarr import ProwlarrIndexer
@@ -128,3 +134,42 @@ async def test_null_fields_are_coerced(indexer: BaseIndexer) -> None:
 
     # the S:L cell the results table builds must not read "None"
     assert f"{r.seeders!s}:{r.leechers!s}" == "0:0"
+
+
+def _write_marker(path: str) -> list[Any]:
+    with open(path, "w") as marker:
+        marker.write("ran")
+    return []
+
+
+class _Planted:
+    def __init__(self, path: str) -> None:
+        self.path = path
+
+    def __reduce__(self) -> tuple[Any, ...]:
+        return (_write_marker, (self.path,))
+
+
+@respx.mock
+async def test_tampered_cache_entry_is_a_miss(
+    indexer: BaseIndexer, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    indexer_name = indexer.__class__.__name__.removesuffix("Indexer").lower()
+    route = respx.get(indexer.get_search_url()).mock(
+        Response(200, json=MOCK_SEARCH_RESPONSE[indexer_name])
+    )
+    marker = tmp_path / "marker"
+
+    with Cache(tmp_path / "cache", disk=type(cache_module.cache.disk)) as cache:
+        monkeypatch.setattr(f"torrra.indexers.{indexer_name}.cache", cache)
+        await indexer.search("arch linux iso")
+        with Cache(tmp_path / "cache", disk=Disk) as other_writer:
+            key = cache.make_key(indexer_name, "arch linux iso")
+            other_writer.set(key, _Planted(str(marker)))
+
+        results = await indexer.search("arch linux iso")
+
+    assert not marker.exists()
+    assert route.call_count == 2
+    assert results is not None
+    assert results[0].title == "Arch Linux ISO (Mock)"
