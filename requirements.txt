@@ -205,9 +205,9 @@ coverage==7.11.3 \
     --hash=sha256:fb58da65e3339b3dbe266b607bb936efb983d86b00b03eb04c4ad5b442c58428 \
     --hash=sha256:fbffc22d80d86fbe456af9abb17f7a7766e7b2101f7edaacc3535501691563f7
     # via pytest-cov
-diskcache==5.6.3 \
-    --hash=sha256:2c3a3fa2743d8535d832ec61c2054a1641f41775aa7c556758a109941e33e4fc \
-    --hash=sha256:5e31b2d5fbad117cc363ebaf6b689474db18a1f6438bc82358b024abd4c2ca19
+diskcache-community==5.8.4 \
+    --hash=sha256:5c60a23a3f245616f9425144c936181709ccf69e5885ef25325b29cd7c4e3744 \
+    --hash=sha256:ed359124af93879978b2851a81f437c4e708f946e4ee5db7256b95f562ee0eeb
     # via torrra
 exceptiongroup==1.3.0 ; python_full_version < '3.11' \
     --hash=sha256:4d111e6e0c13d0644cad6ddaa7ed0261a0b36971f6d23e7ec9b4b9097da78a10 \

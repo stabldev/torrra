@@ -23,9 +23,8 @@ class JackettIndexer(BaseIndexer):
     async def search(self, query: str, use_cache: bool = True) -> list[Torrent] | None:
         key = cache.make_key("jackett", query)
 
-        if use_cache and key in cache:
-            raw_data = cast(list[TorrentDict], cache.get(key))
-            return [Torrent.from_dict(d) for d in raw_data]
+        if use_cache and (raw_data := cache.get(key)) is not None:
+            return [Torrent.from_dict(d) for d in cast(list[TorrentDict], raw_data)]
 
         url = self.get_search_url()
         params = {"apikey": self.api_key, "query": query}
