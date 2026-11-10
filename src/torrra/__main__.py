@@ -139,6 +139,7 @@ def config_get(key: str):
         click.echo(get_config().get(key))
     except ConfigError as e:
         click.secho(e, fg="red", err=True)
+        raise SystemExit(1)
 
 
 @config.command(name="set", help="Set a config value to path.")
@@ -152,6 +153,7 @@ def config_set(key: str, value: str):
         get_config().set(key, value)
     except ConfigError as e:
         click.secho(e, fg="red", err=True)
+        raise SystemExit(1)
 
 
 @config.command(name="list", help="List all configurations.")
