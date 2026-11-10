@@ -251,6 +251,7 @@ def test_downloads_command_calls_runner_without_indexer(
     assert result.exit_code == 0
     mock_run_func.assert_called_once_with(no_cache=True, show_downloads=True)
 
+
 def test_config_get_missing_key_exits_nonzero(mock_config: Config):
     # an unknown key is a usage error: the message must still be shown,
     # but the exit code has to signal failure so scripts can detect it
