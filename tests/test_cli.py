@@ -250,3 +250,24 @@ def test_downloads_command_calls_runner_without_indexer(
 
     assert result.exit_code == 0
     mock_run_func.assert_called_once_with(no_cache=True, show_downloads=True)
+
+
+def test_config_get_missing_key_exits_nonzero(mock_config: Config):
+    # an unknown key is a usage error: the message must still be shown,
+    # but the exit code has to signal failure so scripts can detect it
+    runner = CliRunner()
+    result = runner.invoke(cli, ["config", "get", "no.such.key"])
+
+    assert result.exit_code != 0
+    assert "no.such.key" in result.output
+
+
+def test_config_set_invalid_speed_limit_exits_nonzero(mock_config: Config):
+    # a rejected value must fail the command, not silently exit 0
+    runner = CliRunner()
+    result = runner.invoke(
+        cli, ["config", "set", "speed_limit.upload_limit", "not-a-speed"]
+    )
+
+    assert result.exit_code != 0
+    assert "speed_limit.upload_limit" in result.output
